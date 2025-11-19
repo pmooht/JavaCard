@@ -1,0 +1,14 @@
+<JavaCardProject name="BTVN">
+<USER>
+<PKG name="Bai1" aid="12 34 56 78 91" major="1" minor="0">
+<APPLET aid="12 34 56 78 91 00" instanceaid="" parameter="" authority="" privileges="" index="-25240" name="Bai1"/>
+<APPLET aid="12 34 56 78 91 23" instanceaid="" parameter="" authority="" privileges="" index="-4864" name="Bai2"/>
+<APPLET aid="12 34 56 78 91 23 45" instanceaid="" parameter="" authority="" privileges="" index="8504" name="Bai3"/>
+<APPLET aid="12 34 56 78 91 23 45 67" instanceaid="" parameter="" authority="" privileges="" index="-28576" name="Bai4"/>
+</PKG>
+<PKG name="BaiTH2" aid="12 34 56 78 90" major="1" minor="0">
+<APPLET aid="12 34 56 78 90 01" instanceaid="" parameter="" authority="" privileges="" index="23504" name="Bai1"/>
+</PKG>
+<Libs/>
+</USER>
+</JavaCardProject>
