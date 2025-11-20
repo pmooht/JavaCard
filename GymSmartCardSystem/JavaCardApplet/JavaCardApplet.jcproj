@@ -1,0 +1,8 @@
+<JavaCardProject name="JavaCardApplet">
+<USER>
+<PKG name="Applet" aid="12 34 56 78 90" major="1" minor="0">
+<CLASS name="GymCardApplet"/>
+</PKG>
+<Libs/>
+</USER>
+</JavaCardProject>
