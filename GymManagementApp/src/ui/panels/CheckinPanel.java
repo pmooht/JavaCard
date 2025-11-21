@@ -2,18 +2,18 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
  */
-package ui.panel;
+package ui.panels;
 
 /**
  *
  * @author ADMIN
  */
-public class MemberPanel extends javax.swing.JPanel {
+public class CheckinPanel extends javax.swing.JPanel {
 
     /**
-     * Creates new form MemberPanel
+     * Creates new form CheckinPanel
      */
-    public MemberPanel() {
+    public CheckinPanel() {
         initComponents();
     }
 
