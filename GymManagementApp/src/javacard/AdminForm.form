@@ -551,8 +551,7 @@
                                   <EmptySpace max="32767" attributes="0"/>
                               </Group>
                               <Group type="102" alignment="0" attributes="0">
-                                  <Group type="103" groupAlignment="1" max="-2" attributes="0">
-                                      <Component id="jDateChooser2" max="32767" attributes="0"/>
+                                  <Group type="103" groupAlignment="1" attributes="0">
                                       <Component id="jTextField2" linkSize="5" alignment="1" max="32767" attributes="0"/>
                                       <Component id="jTextField1" linkSize="5" alignment="1" pref="188" max="32767" attributes="0"/>
                                   </Group>
@@ -597,7 +596,6 @@
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Component id="jLabel11" linkSize="4" min="-2" max="-2" attributes="0"/>
                               <Component id="jLabel14" linkSize="4" min="-2" max="-2" attributes="0"/>
-                              <Component id="jDateChooser2" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <EmptySpace min="-2" pref="58" max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="3" attributes="0">
@@ -733,8 +731,6 @@
                     </Property>
                     <Property name="text" type="java.lang.String" value="C&#x1ead;p nh&#x1ead;t"/>
                   </Properties>
-                </Component>
-                <Component class="com.toedter.calendar.JDateChooser" name="jDateChooser2">
                 </Component>
               </SubComponents>
             </Container>
