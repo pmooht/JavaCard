@@ -6,17 +6,14 @@
 package javacard.connect;
 
 import javacard.utils.ConvertData;
-import com.sun.org.apache.xpath.internal.axes.HasPositionalPredChecker;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.TerminalFactory;
-import jdk.nashorn.internal.ir.Terminal;
 import java.util.List;
 import javax.smartcardio.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import javacard.define.APPLET;
 import javacard.define.RESPONS;

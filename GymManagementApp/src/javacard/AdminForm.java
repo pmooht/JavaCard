@@ -18,12 +18,89 @@ public class AdminForm extends javax.swing.JFrame {
     /**
      * Creates new form HomeForm
      */
+    private boolean isUserMenuExpanded = false;
+    private boolean isAttendanceMenuExpanded = false;
+    private boolean isOptionsMenuExpanded = false;
+    
     public AdminForm() {
         initComponents();
-        jpnInfo.setVisible(true);
-        jpnPIN.setVisible(false);
-        jpanelUnlock.setVisible(false);
-        jpanelResetPass.setVisible(false);
+        initCustomComponents(); // Gọi method tùy chỉnh - không bị NetBeans ghi đè
+    }
+    
+    /**
+     * Initialize custom components and behaviors
+     * This method is safe from NetBeans Form Editor regeneration
+     */
+    private void initCustomComponents() {
+        // Setup CardLayout cho jPanel4 để quản lý các panel nội dung
+        java.awt.CardLayout cardLayout = new java.awt.CardLayout();
+        jPanel4.setLayout(cardLayout);
+        
+        // Add các panel vào CardLayout với tên định danh
+        jPanel4.add(jpnInfo, "INFO");
+        jPanel4.add(jpnPIN, "PIN");
+        jPanel4.add(jpanelUnlock, "UNLOCK");
+        jPanel4.add(jpanelResetPass, "RESET");
+        
+        // Hiển thị panel mặc định
+        cardLayout.show(jPanel4, "INFO");
+        
+        // Setup submenu initial state
+        setupSubmenu();
+        
+        // Setup hover effects cho menu items
+        setupMenuItemHoverEffects();
+    }
+    
+    /**
+     * Setup hover effects for menu items
+     */
+    private void setupMenuItemHoverEffects() {
+        // Hover effect cho các submenu items
+        addHoverEffect(jpnInfor);
+        addHoverEffect(jPanelPIN);
+        addHoverEffect(jpnUnlock);
+        addHoverEffect(jpnResetPass);
+        addHoverEffect(jPanelConnect);
+    }
+    
+    /**
+     * Add hover effect to a panel
+     */
+    private void addHoverEffect(javax.swing.JPanel panel) {
+        panel.addMouseListener(new java.awt.event.MouseAdapter() {
+            private final Color defaultColor = panel.getBackground();
+            private final Color hoverColor = new Color(230, 230, 230);
+            
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                if (!panel.getBackground().equals(Color.WHITE)) {
+                    panel.setBackground(hoverColor);
+                }
+            }
+            
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                if (!panel.getBackground().equals(Color.WHITE)) {
+                    panel.setBackground(defaultColor);
+                }
+            }
+        });
+    }
+    
+    private void setupSubmenu() {
+        // Initially show user submenu items
+        isUserMenuExpanded = true;
+        jpnInfor.setVisible(true);
+        jPanelPIN.setVisible(true);
+        
+        // Hide other submenu items
+        isAttendanceMenuExpanded = false;
+        
+        isOptionsMenuExpanded = false;
+        jpnUnlock.setVisible(false);
+        jpnResetPass.setVisible(false);
+        jPanelConnect.setVisible(false);
     }
 
     /**
@@ -90,84 +167,114 @@ public class AdminForm extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setLocationByPlatform(true);
         setUndecorated(true);
-        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        getContentPane().setLayout(new java.awt.BorderLayout());
 
         jPanel1.setBackground(new java.awt.Color(0, 102, 153));
-        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel1.setLayout(null);
 
         jLabel2.setFont(new java.awt.Font("Tahoma", 0, 36)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(102, 204, 255));
         jLabel2.setText("Trang chủ");
-        jPanel1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 30, -1, -1));
+        jLabel2.setBounds(490, 30, 200, 50);
+        jPanel1.add(jLabel2);
 
         jLabel1.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setText("X");
+        jLabel1.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         jLabel1.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jLabel1MouseClicked(evt);
             }
         });
-        jPanel1.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(1070, 10, 20, 30));
+        jLabel1.setBounds(1070, 10, 20, 30);
+        jPanel1.add(jLabel1);
 
         jLabel6.setFont(new java.awt.Font("Tahoma", 3, 18)); // NOI18N
         jLabel6.setForeground(new java.awt.Color(255, 255, 255));
         jLabel6.setText("Quản trị viên");
-        jPanel1.add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 70, 170, 30));
-
-        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1100, 110));
+        jLabel6.setBounds(40, 70, 170, 30);
+        jPanel1.add(jLabel6);
+        
+        jPanel1.setPreferredSize(new java.awt.Dimension(1100, 110));
+        getContentPane().add(jPanel1, java.awt.BorderLayout.NORTH);
 
         jLabel3.setFont(new java.awt.Font("Tahoma", 1, 20)); // NOI18N
         jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel3.setText("Người dùng");
+        jLabel3.setText("Người dùng ▼");
+        jLabel3.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jLabel3.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLabel3MouseClicked(evt);
+            }
+        });
 
         jLabel4.setFont(new java.awt.Font("Tahoma", 1, 20)); // NOI18N
         jLabel4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel4.setText("Điểm danh");
+        jLabel4.setText("Điểm danh ▼");
+        jLabel4.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jLabel4.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLabel4MouseClicked(evt);
+            }
+        });
 
         jLabel5.setFont(new java.awt.Font("Tahoma", 1, 20)); // NOI18N
         jLabel5.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel5.setText("Tùy chọn");
+        jLabel5.setText("Tùy chọn ▼");
+        jLabel5.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jLabel5.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLabel5MouseClicked(evt);
+            }
+        });
 
-        jpnInfor.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jpnInfor.setLayout(new java.awt.BorderLayout());
 
         jlbInfo.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jlbInfo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/icons8-user-32.png"))); // NOI18N
         jlbInfo.setText("Thông tin");
+        jlbInfo.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jlbInfo.setPreferredSize(new java.awt.Dimension(190, 42));
         jlbInfo.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jlbInfoMouseClicked(evt);
             }
         });
-        jpnInfor.add(jlbInfo, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 190, 42));
+        jpnInfor.add(jlbInfo, java.awt.BorderLayout.CENTER);
 
-        jPanelPIN.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanelPIN.setLayout(new java.awt.BorderLayout());
 
         jlbPIN.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jlbPIN.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/icons8-pin-code-32.png"))); // NOI18N
         jlbPIN.setText("Mã PIN");
+        jlbPIN.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jlbPIN.setPreferredSize(new java.awt.Dimension(189, 39));
         jlbPIN.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jlbPINMouseClicked(evt);
             }
         });
-        jPanelPIN.add(jlbPIN, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 189, 39));
+        jPanelPIN.add(jlbPIN, java.awt.BorderLayout.CENTER);
 
-        jPanelConnect.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanelConnect.setLayout(new java.awt.BorderLayout());
 
         jlbConnect.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jlbConnect.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/icons8-link-32.png"))); // NOI18N
         jlbConnect.setText("Ngắt kết nối");
+        jlbConnect.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jlbConnect.setPreferredSize(new java.awt.Dimension(189, 36));
         jlbConnect.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jlbConnectMouseClicked(evt);
             }
         });
-        jPanelConnect.add(jlbConnect, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 189, 36));
+        jPanelConnect.add(jlbConnect, java.awt.BorderLayout.CENTER);
 
         jlbUnlock.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jlbUnlock.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/icons8-unlock-32.png"))); // NOI18N
         jlbUnlock.setText("Mở khóa thẻ");
+        jlbUnlock.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         jlbUnlock.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jlbUnlockMouseClicked(evt);
@@ -185,17 +292,19 @@ public class AdminForm extends javax.swing.JFrame {
             .addComponent(jlbUnlock, javax.swing.GroupLayout.DEFAULT_SIZE, 39, Short.MAX_VALUE)
         );
 
-        jpnResetPass.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jpnResetPass.setLayout(new java.awt.BorderLayout());
 
         jlbResetPass.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jlbResetPass.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/icons8-password-reset-32.png"))); // NOI18N
         jlbResetPass.setText("Lấy lại mật khẩu");
+        jlbResetPass.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jlbResetPass.setPreferredSize(new java.awt.Dimension(190, 37));
         jlbResetPass.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jlbResetPassMouseClicked(evt);
             }
         });
-        jpnResetPass.add(jlbResetPass, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 190, 37));
+        jpnResetPass.add(jlbResetPass, java.awt.BorderLayout.CENTER);
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
@@ -239,7 +348,7 @@ public class AdminForm extends javax.swing.JFrame {
         );
 
         jPanel4.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel4.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel4.setLayout(new java.awt.CardLayout());
 
         jpnPIN.setBackground(new java.awt.Color(255, 255, 255));
         jpnPIN.setPreferredSize(new java.awt.Dimension(712, 465));
@@ -314,7 +423,7 @@ public class AdminForm extends javax.swing.JFrame {
                 .addGroup(jpnPINLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel17)
                     .addComponent(jPasswordField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(70, 70, 70)
+                .addGap(79, 79, 79)
                 .addGroup(jpnPINLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel18)
                     .addComponent(jPasswordField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -322,7 +431,7 @@ public class AdminForm extends javax.swing.JFrame {
                 .addGroup(jpnPINLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, 39, Short.MAX_VALUE)
                     .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(64, Short.MAX_VALUE))
+                .addContainerGap(55, Short.MAX_VALUE))
         );
 
         jpnPINLayout.linkSize(javax.swing.SwingConstants.VERTICAL, new java.awt.Component[] {jLabel16, jLabel17, jLabel18});
@@ -331,7 +440,7 @@ public class AdminForm extends javax.swing.JFrame {
 
         jpnPINLayout.linkSize(javax.swing.SwingConstants.VERTICAL, new java.awt.Component[] {jButton2, jButton3});
 
-        jPanel4.add(jpnPIN, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
+        jPanel4.add(jpnPIN, "PIN");
 
         jpnInfo.setBackground(new java.awt.Color(255, 255, 255));
 
@@ -451,7 +560,7 @@ public class AdminForm extends javax.swing.JFrame {
 
         jpnInfoLayout.linkSize(javax.swing.SwingConstants.VERTICAL, new java.awt.Component[] {jTextField1, jTextField2, jTextField3, jTextField4});
 
-        jPanel4.add(jpnInfo, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
+        jPanel4.add(jpnInfo, "INFO");
 
         jpanelUnlock.setBackground(new java.awt.Color(255, 255, 255));
         jpanelUnlock.setPreferredSize(new java.awt.Dimension(712, 465));
@@ -500,7 +609,7 @@ public class AdminForm extends javax.swing.JFrame {
 
         jpanelUnlockLayout.linkSize(javax.swing.SwingConstants.VERTICAL, new java.awt.Component[] {jLabel7, txtID});
 
-        jPanel4.add(jpanelUnlock, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
+        jPanel4.add(jpanelUnlock, "UNLOCK");
 
         jpanelResetPass.setBackground(new java.awt.Color(255, 255, 255));
         jpanelResetPass.setPreferredSize(new java.awt.Dimension(712, 465));
@@ -544,7 +653,7 @@ public class AdminForm extends javax.swing.JFrame {
                 .addContainerGap(200, Short.MAX_VALUE))
         );
 
-        jPanel4.add(jpanelResetPass, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
+        jPanel4.add(jpanelResetPass, "RESET");
 
         jButton4.setBackground(new java.awt.Color(102, 102, 102));
         jButton4.setFont(new java.awt.Font("Tahoma", 0, 15)); // NOI18N
@@ -581,66 +690,130 @@ public class AdminForm extends javax.swing.JFrame {
                 .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(50, Short.MAX_VALUE))
+                .addContainerGap(58, Short.MAX_VALUE))
         );
 
-        getContentPane().add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 110, 1100, 580));
+        getContentPane().add(jPanel2, java.awt.BorderLayout.CENTER);
 
         pack();
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
     private void jLabel1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel1MouseClicked
-        // TODO add your handling code here:
         this.dispose();
     }//GEN-LAST:event_jLabel1MouseClicked
+    
+    private void jLabel3MouseClicked(java.awt.event.MouseEvent evt) {
+        toggleUserMenu();
+    }
+    
+    private void jLabel4MouseClicked(java.awt.event.MouseEvent evt) {
+        toggleAttendanceMenu();
+    }
+    
+    private void jLabel5MouseClicked(java.awt.event.MouseEvent evt) {
+        toggleOptionsMenu();
+    }
+    
+    /**
+     * Toggle Người dùng submenu
+     */
+    private void toggleUserMenu() {
+        isUserMenuExpanded = !isUserMenuExpanded;
+        jpnInfor.setVisible(isUserMenuExpanded);
+        jPanelPIN.setVisible(isUserMenuExpanded);
+        jLabel3.setText(isUserMenuExpanded ? "Người dùng ▼" : "Người dùng ▶");
+        jPanel3.revalidate();
+        jPanel3.repaint();
+    }
+    
+    /**
+     * Toggle Điểm danh submenu
+     */
+    private void toggleAttendanceMenu() {
+        isAttendanceMenuExpanded = !isAttendanceMenuExpanded;
+        jLabel4.setText(isAttendanceMenuExpanded ? "Điểm danh ▼" : "Điểm danh ▶");
+        // TODO: Nếu cần thêm submenu items cho Điểm danh, thêm vào đây
+        // Ví dụ: attendanceSubItem1.setVisible(isAttendanceMenuExpanded);
+        jPanel3.revalidate();
+        jPanel3.repaint();
+    }
+    
+    /**
+     * Toggle Tùy chọn submenu
+     */
+    private void toggleOptionsMenu() {
+        isOptionsMenuExpanded = !isOptionsMenuExpanded;
+        jpnUnlock.setVisible(isOptionsMenuExpanded);
+        jpnResetPass.setVisible(isOptionsMenuExpanded);
+        jPanelConnect.setVisible(isOptionsMenuExpanded);
+        jLabel5.setText(isOptionsMenuExpanded ? "Tùy chọn ▼" : "Tùy chọn ▶");
+        jPanel3.revalidate();
+        jPanel3.repaint();
+    }
 
     private void jlbPINMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jlbPINMouseClicked
-        // TODO add your handling code here:
-        jpnPIN.setVisible(true);
-        jpnInfo.setVisible(false);
-        jpanelUnlock.setVisible(false);
-        jpanelResetPass.setVisible(false);
-        jPanelPIN.setBackground(Color.white);
-        //jpnInfor.setBackground(new Color(240,240,240));
-        jlbInfo.setBackground(new Color(240,240,240));
-        //jPanelConnect.setBackground(new Color(240,240,240));
+        showPanel("PIN", jPanelPIN);
     }//GEN-LAST:event_jlbPINMouseClicked
 
     private void jlbInfoMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jlbInfoMouseClicked
-        // TODO add your handling code here:
-        jpnInfo.setVisible(true);
-        jpnPIN.setVisible(false);
-        jpanelUnlock.setVisible(false);
-        jpanelResetPass.setVisible(false);
-        jpnInfor.setBackground(Color.white);
-        //jPanelPIN.setBackground(new Color(240,240,240));
-        //jPanelConnect.setBackground(new Color(240,240,240));
-        
+        showPanel("INFO", jpnInfor);
     }//GEN-LAST:event_jlbInfoMouseClicked
 
     private void jlbConnectMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jlbConnectMouseClicked
-        // TODO add your handling code here:
-        jPanelConnect.setBackground(Color.white);
-        //jPanelPIN.setBackground(new Color(240,240,240));
-        //jpnInfor.setBackground(new Color(240,240,240));
+        handleDisconnect();
     }//GEN-LAST:event_jlbConnectMouseClicked
 
     private void jlbUnlockMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jlbUnlockMouseClicked
-        // TODO add your handling code here:
-        jpnInfo.setVisible(false);
-        jpnPIN.setVisible(false);
-        jpanelUnlock.setVisible(true);
-        jpanelResetPass.setVisible(false);
+        showPanel("UNLOCK", jpnUnlock);
     }//GEN-LAST:event_jlbUnlockMouseClicked
 
     private void jlbResetPassMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jlbResetPassMouseClicked
-        // TODO add your handling code here:
-        jpnInfo.setVisible(false);
-        jpnPIN.setVisible(false);
-        jpanelUnlock.setVisible(false);
-        jpanelResetPass.setVisible(true);
+        showPanel("RESET", jpnResetPass);
     }//GEN-LAST:event_jlbResetPassMouseClicked
+    
+    /**
+     * Show a specific panel in the CardLayout and highlight its menu item
+     */
+    private void showPanel(String panelName, javax.swing.JPanel activeMenuItem) {
+        // Switch to the selected panel
+        java.awt.CardLayout cl = (java.awt.CardLayout)(jPanel4.getLayout());
+        cl.show(jPanel4, panelName);
+        
+        // Update menu item backgrounds to highlight active one
+        updateMenuItemBackgrounds(activeMenuItem);
+    }
+    
+    /**
+     * Update menu item backgrounds to highlight the active one
+     */
+    private void updateMenuItemBackgrounds(javax.swing.JPanel activePanel) {
+        Color inactiveColor = new Color(240, 240, 240);
+        Color activeColor = Color.WHITE;
+        
+        jpnInfor.setBackground(jpnInfor == activePanel ? activeColor : inactiveColor);
+        jPanelPIN.setBackground(jPanelPIN == activePanel ? activeColor : inactiveColor);
+        jpnUnlock.setBackground(jpnUnlock == activePanel ? activeColor : inactiveColor);
+        jpnResetPass.setBackground(jpnResetPass == activePanel ? activeColor : inactiveColor);
+        jPanelConnect.setBackground(jPanelConnect == activePanel ? activeColor : inactiveColor);
+    }
+    
+    /**
+     * Handle disconnect card functionality
+     */
+    private void handleDisconnect() {
+        ConnectCard connect = new ConnectCard();
+        // TODO: Implement disconnect functionality
+        // connect.disconnect();
+        
+        // Highlight the disconnect menu item
+        updateMenuItemBackgrounds(jPanelConnect);
+        
+        javax.swing.JOptionPane.showMessageDialog(this, 
+            "Chức năng ngắt kết nối đang được phát triển",
+            "Thông báo",
+            javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         // TODO add your handling code here:

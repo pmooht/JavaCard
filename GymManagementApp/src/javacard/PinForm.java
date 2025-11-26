@@ -6,13 +6,8 @@
 
 package javacard;
 
-import java.security.PublicKey;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javacard.connect.ConnectCard;
-import javacard.connect.RSAAppletHelper;
-import javax.smartcardio.CardException;
 import javax.swing.JOptionPane;
+import javacard.connect.ConnectCard;
 
 /**
  *
@@ -23,6 +18,55 @@ public class PinForm extends javax.swing.JFrame {
     /** Creates new form PinForm */
     public PinForm() {
         initComponents();
+        initCustomComponents();
+    }
+    
+    /**
+     * Initialize custom UI improvements
+     */
+    private void initCustomComponents() {
+        // Setup hover effects for buttons
+        setupButtonHoverEffects();
+        
+        // Center form on screen
+        setLocationRelativeTo(null);
+    }
+    
+    /**
+     * Setup hover effects for buttons
+     */
+    private void setupButtonHoverEffects() {
+        // Save button hover
+        btnSave.addMouseListener(new java.awt.event.MouseAdapter() {
+            private final java.awt.Color defaultColor = new java.awt.Color(76, 175, 80);
+            private final java.awt.Color hoverColor = new java.awt.Color(67, 160, 71);
+            
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnSave.setBackground(hoverColor);
+            }
+            
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnSave.setBackground(defaultColor);
+            }
+        });
+        
+        // Exit button hover
+        btnExit.addMouseListener(new java.awt.event.MouseAdapter() {
+            private final java.awt.Color defaultColor = new java.awt.Color(158, 158, 158);
+            private final java.awt.Color hoverColor = new java.awt.Color(117, 117, 117);
+            
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnExit.setBackground(hoverColor);
+            }
+            
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnExit.setBackground(defaultColor);
+            }
+        });
     }
 
     /** This method is called from within the constructor to
@@ -155,14 +199,21 @@ public class PinForm extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExitActionPerformed
-        // TODO add your handling code here:
+        int confirm = javax.swing.JOptionPane.showConfirmDialog(
+            this,
+            "Bạn có chắc chắn muốn thoát?",
+            "Xác nhận",
+            javax.swing.JOptionPane.YES_NO_OPTION
+        );
         
+        if (confirm == javax.swing.JOptionPane.YES_OPTION) {
+            System.exit(0);
+        }
     }//GEN-LAST:event_btnExitActionPerformed
 
     private void btnSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
-        // TODO add your handling code here:
-        String txtSave = txtNewPin.getText();
-        String txtXacnhan = txtConfirmPin.getText();
+        String txtSave = new String(txtNewPin.getPassword());
+        String txtXacnhan = new String(txtConfirmPin.getPassword());
         ConnectCard connect = new ConnectCard();
         
         if(txtSave.equals(txtXacnhan) && !txtSave.equals("Spark99")){

@@ -132,7 +132,7 @@
                   <Component id="jPanel4" min="-2" max="-2" attributes="0"/>
                   <EmptySpace type="unrelated" max="-2" attributes="0"/>
                   <Component id="jButton4" min="-2" pref="39" max="-2" attributes="0"/>
-                  <EmptySpace pref="50" max="32767" attributes="0"/>
+                  <EmptySpace pref="58" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -414,7 +414,7 @@
                               <Component id="jLabel17" linkSize="8" min="-2" max="-2" attributes="0"/>
                               <Component id="jPasswordField2" linkSize="10" min="-2" max="-2" attributes="0"/>
                           </Group>
-                          <EmptySpace min="-2" pref="70" max="-2" attributes="0"/>
+                          <EmptySpace min="-2" pref="79" max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="3" attributes="0">
                               <Component id="jLabel18" linkSize="8" alignment="3" min="-2" max="-2" attributes="0"/>
                               <Component id="jPasswordField3" linkSize="10" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -424,7 +424,7 @@
                               <Component id="jButton2" linkSize="12" pref="39" max="32767" attributes="0"/>
                               <Component id="jButton3" linkSize="12" max="32767" attributes="0"/>
                           </Group>
-                          <EmptySpace pref="64" max="32767" attributes="0"/>
+                          <EmptySpace pref="55" max="32767" attributes="0"/>
                       </Group>
                   </Group>
                 </DimensionLayout>

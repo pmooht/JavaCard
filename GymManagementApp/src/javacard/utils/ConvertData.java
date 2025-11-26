@@ -5,8 +5,6 @@
  */
 package javacard.utils;
 
-import com.sun.javafx.image.BytePixelGetter;
-
 /**
  *
  * @author Spark_Mac
