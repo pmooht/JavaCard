@@ -1,17 +1,17 @@
 package gymcard.client;
 
 import gymcard.client.ui.*;
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
+
 
 /**
  * Main application - Gym Card Management System
  */
 public class GymCardApp extends JFrame {
     
-    private CardCommunicator cardComm;
+    private final CardCommunicator cardComm;
     private JTabbedPane mainTabbedPane;
     private AdminPanel adminPanel;
     private UserPanel userPanel;
@@ -165,6 +165,9 @@ public class GymCardApp extends JFrame {
             statusLabel.setForeground(Color.BLACK);
             connectBtn.setText("Kết nối thẻ");
             updateButtonColor(connectBtn, new Color(46, 204, 113));
+            
+            // Reset UserPanel về login screen
+            userPanel.resetToLogin();
             
             JOptionPane.showMessageDialog(this, 
                 "Đã ngắt kết nối với thẻ ảo",

@@ -21,7 +21,7 @@ public class CardCommunicator {
     private CheckInInfo lastCheckIn;
     private short balance;
     private int checkInCount;
-    private TransactionInfo[] transactions;
+    private final TransactionInfo[] transactions;
     private int transactionCount;
     
     public CardCommunicator() {
