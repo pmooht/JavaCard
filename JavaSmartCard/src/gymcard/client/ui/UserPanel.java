@@ -7,6 +7,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import javax.swing.*;
 import javax.swing.border.*;
+import com.toedter.calendar.JCalendar;
+import java.util.Calendar;
 
 
 /**
@@ -283,6 +285,14 @@ public class UserPanel extends JPanel {
         panel.setBorder(new EmptyBorder(30, 30, 30, 30));
         panel.setBackground(new Color(248, 249, 250));
         
+        // Title
+        JLabel titleLabel = new JLabel("👤 THÔNG TIN CÁ NHÂN");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(52, 73, 94));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        titleLabel.setBorder(new EmptyBorder(0, 0, 15, 0));
+        panel.add(titleLabel, BorderLayout.NORTH);
+        
         // Main card container
         JPanel cardPanel = new JPanel(new BorderLayout(20, 20));
         cardPanel.setBackground(Color.WHITE);
@@ -527,9 +537,16 @@ public class UserPanel extends JPanel {
                 JOptionPane.QUESTION_MESSAGE);
             
             if (confirm == JOptionPane.YES_OPTION) {
-                // Switch to payment tab
-                JTabbedPane tabbedPane = (JTabbedPane) card.getParent().getParent().getParent().getParent();
-                tabbedPane.setSelectedIndex(4); // Payment tab is index 4
+                // Switch to payment tab - find JTabbedPane by traversing up
+                Container parent = card.getParent();
+                while (parent != null && !(parent instanceof JTabbedPane)) {
+                    parent = parent.getParent();
+                }
+                
+                if (parent instanceof JTabbedPane) {
+                    JTabbedPane tabbedPane = (JTabbedPane) parent;
+                    tabbedPane.setSelectedIndex(4); // Payment tab is index 4
+                }
                 
                 JOptionPane.showMessageDialog(card,
                     "Vui lòng thanh toán " + price + "k VNĐ tại tab Thanh toán.\n" +
@@ -551,114 +568,84 @@ public class UserPanel extends JPanel {
      * Tab check-in/check-out với lịch
      */
     private JPanel createCheckInTab() {
-        JPanel panel = new JPanel(new BorderLayout(20, 20));
-        panel.setBorder(new EmptyBorder(30, 30, 30, 30));
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(new EmptyBorder(15, 15, 15, 15));
         panel.setBackground(new Color(248, 249, 250));
         
-        // Main content card
-        JPanel contentCard = new JPanel(new BorderLayout(15, 15));
-        contentCard.setBackground(Color.WHITE);
-        contentCard.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(52, 152, 219), 3),
-            new EmptyBorder(25, 25, 25, 25)));
-        
-        // Title
+        // Title - smaller
         JLabel titleLabel = new JLabel("📅 LỊCH TẬP GYM");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         titleLabel.setForeground(new Color(52, 73, 94));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        contentCard.add(titleLabel, BorderLayout.NORTH);
+        titleLabel.setBorder(new EmptyBorder(5, 0, 10, 0));
+        panel.add(titleLabel, BorderLayout.NORTH);
         
-        // Calendar panel (simplified - shows current month)
-        JPanel calendarPanel = new JPanel(new BorderLayout(10, 10));
-        calendarPanel.setBackground(Color.WHITE);
+        // Main content - split left (calendar) and right (buttons)
+        JPanel mainPanel = new JPanel(new BorderLayout(15, 0));
+        mainPanel.setBackground(new Color(248, 249, 250));
         
-        // Month/Year header
-        JPanel monthPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        monthPanel.setBackground(new Color(240, 248, 255));
-        monthPanel.setBorder(BorderFactory.createLineBorder(new Color(52, 152, 219), 2));
-        JLabel monthLabel = new JLabel("THÁNG 11/2025");
-        monthLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        monthLabel.setForeground(new Color(52, 73, 94));
-        monthPanel.add(monthLabel);
-        calendarPanel.add(monthPanel, BorderLayout.NORTH);
+        // LEFT SIDE - Calendar (3/4 width)
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.setBackground(Color.WHITE);
+        leftPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(52, 152, 219), 3),
+            new EmptyBorder(15, 15, 15, 15)));
+        leftPanel.setPreferredSize(new Dimension(900, 0));
         
-        // Calendar grid (7 columns for days of week)
-        JPanel gridPanel = new JPanel(new GridLayout(6, 7, 5, 5));
-        gridPanel.setBackground(Color.WHITE);
-        gridPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        // JCalendar component
+        JCalendar calendar = new JCalendar();
+        calendar.setBackground(Color.WHITE);
+        calendar.setWeekOfYearVisible(false);
         
-        // Day headers
-        String[] days = {"CN", "T2", "T3", "T4", "T5", "T6", "T7"};
-        for (String day : days) {
-            JLabel dayLabel = new JLabel(day);
-            dayLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-            dayLabel.setForeground(new Color(127, 140, 141));
-            dayLabel.setHorizontalAlignment(SwingConstants.CENTER);
-            dayLabel.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1));
-            dayLabel.setBackground(new Color(245, 245, 245));
-            dayLabel.setOpaque(true);
-            gridPanel.add(dayLabel);
-        }
+        // Customize calendar appearance - make month/year chooser wider
+        calendar.getDayChooser().setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        calendar.getDayChooser().setDecorationBackgroundColor(new Color(52, 152, 219));
+        calendar.getDayChooser().setWeekdayForeground(new Color(52, 73, 94));
+        calendar.getDayChooser().setDecorationBackgroundVisible(true);
+        calendar.getMonthChooser().setFont(new Font("Segoe UI", Font.BOLD, 18));
+        calendar.getMonthChooser().getComboBox().setFont(new Font("Segoe UI", Font.BOLD, 18));
+        calendar.getYearChooser().setFont(new Font("Segoe UI", Font.BOLD, 18));
         
-        // Calendar days (simplified - show example month with some check-ins)
-        // In real implementation, this would be populated with actual data
-        boolean[] checkedInDays = new boolean[42]; // 6 weeks * 7 days
-        // Mark some example days as checked in
-        checkedInDays[2] = true; checkedInDays[4] = true; checkedInDays[6] = true;
-        checkedInDays[9] = true; checkedInDays[11] = true; checkedInDays[16] = true;
-        checkedInDays[18] = true; checkedInDays[23] = true; checkedInDays[25] = true;
-        checkedInDays[28] = true;
+        // Make month/year area more prominent
+        calendar.getMonthChooser().setPreferredSize(new Dimension(150, 35));
+        calendar.getYearChooser().setPreferredSize(new Dimension(100, 35));
         
-        for (int i = 0; i < 42; i++) {
-            int dayNum = i < 3 ? 0 : (i > 32 ? 0 : i - 2); // Simplified month layout
-            
-            JPanel dayPanel = new JPanel(new BorderLayout());
-            dayPanel.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1));
-            
-            if (dayNum == 0) {
-                dayPanel.setBackground(new Color(250, 250, 250));
-            } else if (checkedInDays[i]) {
-                dayPanel.setBackground(new Color(212, 237, 218)); // Light green for checked-in days
-            } else {
-                dayPanel.setBackground(Color.WHITE);
-            }
-            
-            if (dayNum > 0) {
-                JLabel numLabel = new JLabel(String.valueOf(dayNum));
-                numLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-                numLabel.setHorizontalAlignment(SwingConstants.CENTER);
-                numLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
-                dayPanel.add(numLabel, BorderLayout.NORTH);
-                
-                if (checkedInDays[i]) {
-                    JLabel checkLabel = new JLabel("✓");
-                    checkLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-                    checkLabel.setForeground(new Color(46, 204, 113));
-                    checkLabel.setHorizontalAlignment(SwingConstants.CENTER);
-                    dayPanel.add(checkLabel, BorderLayout.CENTER);
-                }
-            }
-            
-            gridPanel.add(dayPanel);
-        }
+        // Create decorator for highlighting check-in days
+        CheckInDayDecorator decorator = new CheckInDayDecorator(calendar);
         
-        calendarPanel.add(gridPanel, BorderLayout.CENTER);
-        contentCard.add(calendarPanel, BorderLayout.CENTER);
+        // Demo check-in data with times (in real app, this would come from card)
+        java.util.Map<String, String[]> checkInTimes = new java.util.HashMap<>();
+        checkInTimes.put("02/11/2025", new String[]{"08:00:00", "10:30:00"});
+        checkInTimes.put("04/11/2025", new String[]{"07:45:00", "09:15:00"});
+        checkInTimes.put("06/11/2025", new String[]{"18:30:00", "20:00:00"});
+        checkInTimes.put("09/11/2025", new String[]{"08:15:00", "10:45:00"});
+        checkInTimes.put("11/11/2025", new String[]{"19:00:00", "21:00:00"});
+        checkInTimes.put("16/11/2025", new String[]{"08:30:00", "10:00:00"});
+        checkInTimes.put("18/11/2025", new String[]{"07:30:00", "09:30:00"});
+        checkInTimes.put("23/11/2025", new String[]{"17:45:00", "19:45:00"});
+        checkInTimes.put("25/11/2025", new String[]{"08:00:00", "10:15:00"});
+        checkInTimes.put("28/11/2025", new String[]{"18:00:00", "20:30:00"});
         
-        // Statistics and buttons panel
-        JPanel bottomPanel = new JPanel(new BorderLayout(15, 15));
-        bottomPanel.setBackground(Color.WHITE);
+        // Load demo check-in dates
+        decorator.addCheckInDates(checkInTimes.keySet());
+        decorator.install();
         
-        // Statistics
-        JPanel statsPanel = new JPanel(new GridLayout(3, 1, 5, 5));
+        leftPanel.add(calendar, BorderLayout.CENTER);
+        
+        // RIGHT SIDE - Buttons and Statistics (1/4 width)
+        JPanel rightPanel = new JPanel(new BorderLayout(0, 15));
+        rightPanel.setBackground(new Color(248, 249, 250));
+        rightPanel.setPreferredSize(new Dimension(300, 0));
+        
+        // Statistics panel
+        JPanel statsPanel = new JPanel(new GridLayout(3, 1, 10, 10));
         statsPanel.setBackground(new Color(240, 248, 255));
         statsPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(52, 152, 219), 2),
-            new EmptyBorder(15, 15, 15, 15)));
+            new EmptyBorder(20, 20, 20, 20)));
         
         JLabel statsTitle = new JLabel("📊 THỐNG KÊ");
-        statsTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        statsTitle.setFont(new Font("Segoe UI", Font.BOLD, 17));
         statsTitle.setForeground(new Color(52, 73, 94));
         statsPanel.add(statsTitle);
         
@@ -666,22 +653,44 @@ public class UserPanel extends JPanel {
         countLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         statsPanel.add(countLabel);
         
-        JLabel lastLabel = new JLabel("Lần tập gần nhất: 29/11/2025 | Vào: 08:30 | Ra: 10:00");
-        lastLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        JLabel lastLabel = new JLabel("<html>Click vào ngày check-in<br>để xem chi tiết<br>giờ vào - ra</html>");
+        lastLabel.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+        lastLabel.setForeground(new Color(127, 140, 141));
         statsPanel.add(lastLabel);
         
-        bottomPanel.add(statsPanel, BorderLayout.NORTH);
+        // Add click listener to calendar to show time details AFTER lastLabel is created
+        calendar.getDayChooser().addPropertyChangeListener("day", evt -> {
+            java.util.Calendar selectedCal = calendar.getCalendar();
+            String selectedDate = new SimpleDateFormat("dd/MM/yyyy").format(selectedCal.getTime());
+            
+            // Check if this date has check-in data
+            if (checkInTimes.containsKey(selectedDate)) {
+                String[] times = checkInTimes.get(selectedDate);
+                lastLabel.setText(String.format("<html>Ngày đã chọn:<br>%s<br>Vào: %s | Ra: %s</html>", 
+                    selectedDate, times[0], times[1]));
+                lastLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+                lastLabel.setForeground(new Color(52, 73, 94));
+                log("Xem chi tiết: " + selectedDate + " - " + times[0] + " -> " + times[1]);
+            } else {
+                lastLabel.setText("<html>Click vào ngày check-in<br>để xem chi tiết<br>giờ vào - ra</html>");
+                lastLabel.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+                lastLabel.setForeground(new Color(127, 140, 141));
+            }
+        });
         
-        // Buttons
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 15, 0));
-        buttonPanel.setBackground(Color.WHITE);
+        rightPanel.add(statsPanel, BorderLayout.NORTH);
         
-        JButton checkInBtn = createModernButton("✓ CHECK-IN", new Color(46, 204, 113), 16);
-        checkInBtn.setPreferredSize(new Dimension(0, 60));
+        // Buttons panel - only 2 buttons
+        JPanel buttonPanel = new JPanel(new GridLayout(2, 1, 0, 15));
+        buttonPanel.setBackground(new Color(248, 249, 250));
+        buttonPanel.setBorder(new EmptyBorder(15, 0, 0, 0));
+        
+        JButton checkInBtn = createModernButton("✓ CHECK-IN", new Color(46, 204, 113), 18);
+        checkInBtn.setPreferredSize(new Dimension(0, 80));
         checkInBtn.addActionListener(e -> {
             try {
-                String date = new SimpleDateFormat("yyyyMMdd").format(new Date());
-                String time = new SimpleDateFormat("HHmmss").format(new Date());
+                String date = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
+                String time = new SimpleDateFormat("HH:mm:ss").format(new Date());
                 
                 if (cardComm.checkIn(date, time)) {
                     log("Check-in thành công!");
@@ -690,7 +699,11 @@ public class UserPanel extends JPanel {
                     int count = cardComm.getCheckInCount();
                     
                     countLabel.setText("Số ngày đã tập: " + count + " ngày");
-                    lastLabel.setText("Lần tập gần nhất: " + info.date + " | Vào: " + info.checkInTime + " | Ra: " + info.checkOutTime);
+                    lastLabel.setText(String.format("<html>Lần tập gần nhất:<br>%s<br>Vào: %s | Ra: %s</html>", 
+                        info.date, info.checkInTime, info.checkOutTime));
+                    
+                    // Add today to check-in calendar
+                    decorator.addCheckInDate(date);
                     
                     JOptionPane.showMessageDialog(this, 
                         "Check-in thành công!\nChúc bạn buổi tập tốt! 💪",
@@ -707,17 +720,18 @@ public class UserPanel extends JPanel {
             }
         });
         
-        JButton checkOutBtn = createModernButton("✗ CHECK-OUT", new Color(231, 76, 60), 16);
-        checkOutBtn.setPreferredSize(new Dimension(0, 60));
+        JButton checkOutBtn = createModernButton("✗ CHECK-OUT", new Color(231, 76, 60), 18);
+        checkOutBtn.setPreferredSize(new Dimension(0, 80));
         checkOutBtn.addActionListener(e -> {
             try {
-                String time = new SimpleDateFormat("HHmmss").format(new Date());
+                String time = new SimpleDateFormat("HH:mm:ss").format(new Date());
                 
                 if (cardComm.checkOut(time)) {
                     log("Check-out thành công!");
                     
                     CheckInInfo info = cardComm.getLastCheckIn();
-                    lastLabel.setText("Lần tập gần nhất: " + info.date + " | Vào: " + info.checkInTime + " | Ra: " + info.checkOutTime);
+                    lastLabel.setText(String.format("<html>Lần tập gần nhất:<br>%s<br>Vào: %s | Ra: %s</html>", 
+                        info.date, info.checkInTime, info.checkOutTime));
                     
                     JOptionPane.showMessageDialog(this, 
                         "Check-out thành công!\nHẹn gặp lại! 👋",
@@ -734,32 +748,16 @@ public class UserPanel extends JPanel {
             }
         });
         
-        JButton refreshBtn = createModernButton("🔄 Tải lại", new Color(52, 152, 219), 16);
-        refreshBtn.setPreferredSize(new Dimension(0, 60));
-        refreshBtn.addActionListener(e -> {
-            try {
-                CheckInInfo info = cardComm.getLastCheckIn();
-                int count = cardComm.getCheckInCount();
-                
-                countLabel.setText("Số ngày đã tập: " + count + " ngày");
-                lastLabel.setText("Lần tập gần nhất: " + info.date + " | Vào: " + info.checkInTime + " | Ra: " + info.checkOutTime);
-                
-                log("Đã tải lại thông tin check-in");
-                
-            } catch (Exception ex) {
-                log("LỖI: " + ex.getMessage());
-            }
-        });
-        
         buttonPanel.add(checkInBtn);
         buttonPanel.add(checkOutBtn);
-        buttonPanel.add(refreshBtn);
         
-        bottomPanel.add(buttonPanel, BorderLayout.SOUTH);
+        rightPanel.add(buttonPanel, BorderLayout.CENTER);
         
-        contentCard.add(bottomPanel, BorderLayout.SOUTH);
+        // Add left and right panels to main
+        mainPanel.add(leftPanel, BorderLayout.CENTER);
+        mainPanel.add(rightPanel, BorderLayout.EAST);
         
-        panel.add(contentCard, BorderLayout.CENTER);
+        panel.add(mainPanel, BorderLayout.CENTER);
         
         return panel;
     }
@@ -919,7 +917,7 @@ public class UserPanel extends JPanel {
         balanceContent.setLayout(new BoxLayout(balanceContent, BoxLayout.Y_AXIS));
         
         JLabel balanceTitleLabel = new JLabel("💰 SỐ DƯ TÀI KHOẢN");
-        balanceTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        balanceTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         balanceTitleLabel.setForeground(Color.WHITE);
         balanceTitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         balanceContent.add(Box.createVerticalStrut(20));
@@ -927,7 +925,7 @@ public class UserPanel extends JPanel {
         balanceContent.add(Box.createVerticalStrut(10));
         
         JLabel balanceLabel = new JLabel("0 VNĐ");
-        balanceLabel.setFont(new Font("Segoe UI", Font.BOLD, 40));
+        balanceLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         balanceLabel.setForeground(Color.WHITE);
         balanceLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         balanceContent.add(balanceLabel);
@@ -980,7 +978,7 @@ public class UserPanel extends JPanel {
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(46, 204, 113), 2),
-            new EmptyBorder(25, 25, 25, 25)));
+            new EmptyBorder(15, 20, 15, 20)));
         
         // Title
         JLabel titleLabel = new JLabel("💳 Nạp tiền vào tài khoản");
@@ -1013,8 +1011,8 @@ public class UserPanel extends JPanel {
         gbc.gridy = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.insets = new Insets(20, 12, 12, 12);
-        JButton addBtn = createModernButton("💳 Nạp tiền", new Color(46, 204, 113), 15);
-        addBtn.setPreferredSize(new Dimension(180, 50));
+        JButton addBtn = createModernButton("💳 Nạp tiền", new Color(46, 204, 113), 16);
+        addBtn.setPreferredSize(new Dimension(200, 25));
         addBtn.addActionListener(e -> {
             try {
                 short amount = ((Number) amountSpinner.getValue()).shortValue();
@@ -1052,7 +1050,7 @@ public class UserPanel extends JPanel {
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(231, 76, 60), 2),
-            new EmptyBorder(20, 20, 20, 20)));
+            new EmptyBorder(15, 20, 15, 20)));
         
         // Title
         JLabel titleLabel = new JLabel("💰 Thanh toán dịch vụ");
@@ -1101,11 +1099,12 @@ public class UserPanel extends JPanel {
         // Quantity
         JPanel quantityPanel = new JPanel(new BorderLayout(10, 5));
         quantityPanel.setBackground(Color.WHITE);
-        quantityPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+        quantityPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
         JLabel quantityLabel = new JLabel("Số lượng:");
         quantityLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         JSpinner quantitySpinner = new JSpinner(new SpinnerNumberModel(1, 1, 20, 1));
         quantitySpinner.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        quantitySpinner.setPreferredSize(new Dimension(0, 40));
         ((JSpinner.DefaultEditor) quantitySpinner.getEditor()).getTextField().setBorder(
             BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(189, 195, 199), 2),
@@ -1114,7 +1113,7 @@ public class UserPanel extends JPanel {
         quantityPanel.add(quantitySpinner, BorderLayout.CENTER);
         serviceListPanel.add(quantityPanel);
         
-        serviceListPanel.add(Box.createVerticalStrut(10));
+        serviceListPanel.add(Box.createVerticalStrut(15));
         
         // Total amount display
         JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -1146,8 +1145,8 @@ public class UserPanel extends JPanel {
         // Payment button
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.setBackground(Color.WHITE);
-        JButton payBtn = createModernButton("💰 Thanh toán", new Color(231, 76, 60), 15);
-        payBtn.setPreferredSize(new Dimension(180, 50));
+        JButton payBtn = createModernButton("💰 Thanh toán", new Color(231, 76, 60), 16);
+        payBtn.setPreferredSize(new Dimension(200, 25));
         payBtn.addActionListener(e -> {
             try {
                 int selectedIndex = serviceCombo.getSelectedIndex();

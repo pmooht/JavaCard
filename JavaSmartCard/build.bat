@@ -16,7 +16,7 @@ mkdir dist
 
 REM Compile
 echo [3/4] Compiling Java files...
-javac -d build\classes -sourcepath src -encoding UTF-8 src\gymcard\client\*.java src\gymcard\client\ui\*.java
+javac -cp lib\jcalendar-1.4.jar -d build\classes -sourcepath src -encoding UTF-8 src\gymcard\client\*.java src\gymcard\client\ui\*.java
 
 if %ERRORLEVEL% EQU 0 (
     echo [SUCCESS] Compilation successful!

@@ -17,6 +17,7 @@
         <java classname="gymcard.client.GymCardApp" fork="true">
             <classpath>
                 <pathelement location="${dist.jar}"/>
+                <pathelement location="lib/jcalendar-1.4.jar"/>
                 <pathelement path="${java.class.path}"/>
             </classpath>
         </java>

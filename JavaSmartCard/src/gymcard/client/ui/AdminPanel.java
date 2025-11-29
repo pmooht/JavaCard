@@ -187,7 +187,7 @@ public class AdminPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = 1;
         gbc.weightx = 0;
         gbc.anchor = GridBagConstraints.EAST;
-        JLabel birthLabel = new JLabel("Ngày sinh (YYYYMMDD): *");
+        JLabel birthLabel = new JLabel("Ngày sinh (dd/MM/yyyy): *");
         birthLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         formPanel.add(birthLabel, gbc);
         
@@ -198,7 +198,7 @@ public class AdminPanel extends JPanel {
         birthDateField.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(189, 195, 199), 2),
             BorderFactory.createEmptyBorder(8, 12, 8, 12)));
-        birthDateField.setText(new SimpleDateFormat("yyyyMMdd").format(new Date()));
+        birthDateField.setText(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
         formPanel.add(birthDateField, gbc);
         
         // Số điện thoại
@@ -742,7 +742,7 @@ public class AdminPanel extends JPanel {
      */
     private void clearForm() {
         nameField.setText("");
-        birthDateField.setText(new SimpleDateFormat("yyyyMMdd").format(new Date()));
+        birthDateField.setText(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
         phoneField.setText("");
         addressArea.setText("");
         pinField.setText("");

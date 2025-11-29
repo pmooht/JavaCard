@@ -23,7 +23,7 @@ if not exist build\classes\gymcard\client\GymCardApp.class (
 REM Run application
 echo Dang khoi dong ung dung...
 echo.
-java -cp build\classes gymcard.client.GymCardApp
+java -cp "build\classes;lib\jcalendar-1.4.jar" gymcard.client.GymCardApp
 
 if errorlevel 1 (
     echo.

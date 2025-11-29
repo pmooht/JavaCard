@@ -379,9 +379,9 @@ public class CardCommunicator {
         
         TransactionInfo trans = new TransactionInfo();
         trans.date = lastCheckIn.date.isEmpty() ? 
-            new java.text.SimpleDateFormat("yyyyMMdd").format(new java.util.Date()) : 
+            new java.text.SimpleDateFormat("dd/MM/yyyy").format(new java.util.Date()) : 
             lastCheckIn.date;
-        trans.time = new java.text.SimpleDateFormat("HHmmss").format(new java.util.Date());
+        trans.time = new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date());
         trans.amount = amount;
         trans.type = type;
         
@@ -407,18 +407,18 @@ public class CardCommunicator {
      */
     public void loadDemoData() {
         memberInfo.name = "Nguyễn Văn Demo";
-        memberInfo.birthDate = "19900101";
+        memberInfo.birthDate = "01/01/1990";
         memberInfo.phone = "0987654321";
         memberInfo.address = "123 Đường ABC, Quận XYZ, Hà Nội";
         
-        packageInfo.type = 3; // VIP
-        packageInfo.expiry = "20261231";
-        packageInfo.registration = "20250101";
+        packageInfo.type = 2; // Buoi
+        packageInfo.expiry = "31/12/2026";
+        packageInfo.registration = "01/01/2025";
         packageInfo.remainingSessions = 50;
         
-        lastCheckIn.date = "20251129";
-        lastCheckIn.checkInTime = "080000";
-        lastCheckIn.checkOutTime = "100000";
+        lastCheckIn.date = "29/11/2025";
+        lastCheckIn.checkInTime = "08:00:00";
+        lastCheckIn.checkOutTime = "10:00:00";
         
         balance = 500; // 500k VND
         checkInCount = 15;

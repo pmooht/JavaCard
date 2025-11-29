@@ -136,6 +136,21 @@ JavaSmartCard/
 
 ## 🎨 Design System
 
+### Date & Time Format
+- **Date Format**: `dd/MM/yyyy` (định dạng Việt Nam)
+- **Time Format**: `HH:mm:ss` (24 giờ với giây)
+- **Examples**:
+  - Date: `30/11/2025`
+  - Time: `14:30:45`
+
+### Calendar Component
+- **Library**: JCalendar 1.4
+- **Features**:
+  - Interactive month/year selection
+  - Check-in days highlighted with green background
+  - Automatic refresh on check-in/check-out
+  - Clean, professional appearance
+
 ### Colors
 - **Green** (#2ecc71): Success, Check-in
 - **Blue** (#3498db): Info, Primary
