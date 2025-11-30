@@ -91,156 +91,157 @@ public class UserPanel extends JPanel {
     /**
      * Panel đăng nhập
      */
-    private JPanel createLoginPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(new Color(248, 249, 250));
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(15, 15, 15, 15);
-        
-        // Icon or logo
-        JLabel iconLabel = new JLabel("🔐");
-        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 90));
-        gbc.gridx = 0; gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        panel.add(iconLabel, gbc);
-        
-        // Title
-        JLabel titleLabel = new JLabel("Vui lòng nhập mã PIN");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        titleLabel.setForeground(new Color(52, 73, 94));
-        gbc.gridy = 1;
-        panel.add(titleLabel, gbc);
-        
-        // Subtitle
-        JLabel subtitleLabel = new JLabel("Mã PIN gồm 4 chữ số");
-        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        subtitleLabel.setForeground(new Color(127, 140, 141));
-        gbc.gridy = 2;
-        gbc.insets = new Insets(0, 15, 15, 15);
-        panel.add(subtitleLabel, gbc);
-        
-        // PIN field
-        gbc.gridy = 3;
-        gbc.insets = new Insets(10, 15, 10, 15);
-        JPasswordField pinField = new JPasswordField(10);
-        pinField.setFont(new Font("Segoe UI", Font.BOLD, 32));
-        pinField.setHorizontalAlignment(JTextField.CENTER);
-        pinField.setBorder(BorderFactory.createCompoundBorder(
+private JPanel createLoginPanel() {
+    JPanel panel = new JPanel(new GridBagLayout());
+    panel.setBackground(new Color(248, 249, 250));
+
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.insets = new Insets(15, 15, 15, 15);
+
+    // Icon or logo
+    JLabel iconLabel = new JLabel("🔐");
+    iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 90));
+    gbc.gridx = 0; gbc.gridy = 0;
+    gbc.gridwidth = 2;
+    panel.add(iconLabel, gbc);
+
+    // Title
+    JLabel titleLabel = new JLabel("Vui lòng nhập mã PIN");
+    titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+    titleLabel.setForeground(new Color(52, 73, 94));
+    gbc.gridy = 1;
+    panel.add(titleLabel, gbc);
+
+    // Subtitle
+    JLabel subtitleLabel = new JLabel("Mã PIN gồm 6 chữ số (do Admin thiết lập khi cấp thẻ)");
+    subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+    subtitleLabel.setForeground(new Color(127, 140, 141));
+    gbc.gridy = 2;
+    gbc.insets = new Insets(0, 15, 15, 15);
+    panel.add(subtitleLabel, gbc);
+
+    // PIN field
+    gbc.gridy = 3;
+    gbc.insets = new Insets(10, 15, 10, 15);
+    JPasswordField pinField = new JPasswordField(10);
+    pinField.setFont(new Font("Segoe UI", Font.BOLD, 32));
+    pinField.setHorizontalAlignment(JTextField.CENTER);
+    pinField.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(52, 152, 219), 3),
             BorderFactory.createEmptyBorder(12, 15, 12, 15)));
-        panel.add(pinField, gbc);
-        
-        // Tries remaining label
-        JLabel triesLabel = new JLabel("");
-        triesLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        triesLabel.setForeground(new Color(231, 76, 60));
-        gbc.gridy = 4;
-        panel.add(triesLabel, gbc);
-        
-        // Login button
-        JButton loginBtn = createModernButton("🔓 Đăng nhập", new Color(46, 204, 113), 17);
-        loginBtn.setPreferredSize(new Dimension(200, 55));
-        gbc.gridy = 5;
-        gbc.gridwidth = 1;
-        panel.add(loginBtn, gbc);
-        
-        // Check tries button
-        JButton checkTriesBtn = createModernButton("🔍 Kiểm tra số lần thử", new Color(155, 89, 182), 12);
-        checkTriesBtn.setPreferredSize(new Dimension(200, 40));
-        gbc.gridx = 0; gbc.gridy = 6;
-        gbc.gridwidth = 2;
-        gbc.insets = new Insets(5, 15, 15, 15);
-        panel.add(checkTriesBtn, gbc);
-        
-        // Action listeners
-        ActionListener loginAction = e -> {
-            try {
-                if (!cardComm.isConnected()) {
-                    log("Vui lòng kết nối thẻ trước!");
-                    JOptionPane.showMessageDialog(this, 
+    panel.add(pinField, gbc);
+
+    // Tries remaining label
+    JLabel triesLabel = new JLabel("");
+    triesLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+    triesLabel.setForeground(new Color(231, 76, 60));
+    gbc.gridy = 4;
+    panel.add(triesLabel, gbc);
+
+    // Login button
+    JButton loginBtn = createModernButton("🔓 Đăng nhập", new Color(46, 204, 113), 17);
+    loginBtn.setPreferredSize(new Dimension(200, 55));
+    gbc.gridy = 5;
+    gbc.gridwidth = 1;
+    panel.add(loginBtn, gbc);
+
+    // Check tries button
+    JButton checkTriesBtn = createModernButton("🔍 Kiểm tra số lần thử", new Color(155, 89, 182), 12);
+    checkTriesBtn.setPreferredSize(new Dimension(200, 40));
+    gbc.gridx = 0; gbc.gridy = 6;
+    gbc.gridwidth = 2;
+    gbc.insets = new Insets(5, 15, 15, 15);
+    panel.add(checkTriesBtn, gbc);
+
+    // Action listeners
+    ActionListener loginAction = e -> {
+        try {
+            if (!cardComm.isConnected()) {
+                log("Vui lòng kết nối thẻ trước!");
+                JOptionPane.showMessageDialog(this,
                         "Vui lòng kết nối thẻ!",
                         "Lỗi", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-                
-                String pin = new String(pinField.getPassword());
-                
-                if (pin.length() != 4) {
-                    JOptionPane.showMessageDialog(this, 
-                        "Mã PIN phải có 4 chữ số!",
+                return;
+            }
+
+            String pin = new String(pinField.getPassword()).trim();
+
+            // 🔑 PIN phải 6 chữ số – khớp với applet & CardCommunicator
+            if (!pin.matches("\\d{6}")) {
+                JOptionPane.showMessageDialog(this,
+                        "Mã PIN phải gồm đúng 6 chữ số (0-9)!",
                         "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                
-                // Check remaining tries first
-                int tries = cardComm.getPinTries();
-                if (tries == 0) {
-                    log("Thẻ đã bị khóa!");
-                    JOptionPane.showMessageDialog(this, 
+                return;
+            }
+
+            // Check remaining tries trước khi verify
+            int tries = cardComm.getPinTries();
+            if (tries == 0) {
+                log("Thẻ đã bị khóa!");
+                JOptionPane.showMessageDialog(this,
                         "Thẻ của bạn đã bị khóa do nhập sai PIN quá nhiều lần!\n" +
                         "Vui lòng liên hệ quản trị viên để mở khóa.",
                         "Thẻ bị khóa", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                
-                if (cardComm.verifyPin(pin)) {
-                    log("Đăng nhập thành công!");
-                    pinField.setText("");
-                    cardLayout.show(contentPanel, "main");
-                } else {
-                    tries = cardComm.getPinTries();
-                    log("Sai mã PIN! Còn " + tries + " lần thử");
-                    triesLabel.setText("⚠ Sai mã PIN! Còn " + tries + " lần thử");
-                    pinField.setText("");
-                    
-                    if (tries == 0) {
-                        JOptionPane.showMessageDialog(this, 
+                return;
+            }
+
+            if (cardComm.verifyPin(pin)) {
+                log("Đăng nhập thành công!");
+                pinField.setText("");
+                triesLabel.setText("");
+                // Sau verifyPin() thành công, CardCommunicator.authenticated = true
+                cardLayout.show(contentPanel, "main");
+            } else {
+                tries = cardComm.getPinTries();
+                log("Sai mã PIN! Còn " + tries + " lần thử");
+                triesLabel.setText("⚠ Sai mã PIN! Còn " + tries + " lần thử");
+                pinField.setText("");
+
+                if (tries == 0) {
+                    JOptionPane.showMessageDialog(this,
                             "Thẻ của bạn đã bị khóa!\n" +
                             "Vui lòng liên hệ quản trị viên để mở khóa.",
                             "Thẻ bị khóa", JOptionPane.ERROR_MESSAGE);
-                    } else {
-                        JOptionPane.showMessageDialog(this, 
+                } else {
+                    JOptionPane.showMessageDialog(this,
                             "Mã PIN không đúng!\nCòn " + tries + " lần thử.",
                             "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    }
                 }
-                
-            } catch (Exception ex) {
-                log("LỖI: " + ex.getMessage());
-                JOptionPane.showMessageDialog(this, 
+            }
+
+        } catch (Exception ex) {
+            log("LỖI: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this,
                     "Lỗi xác thực: " + ex.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    };
+
+    loginBtn.addActionListener(loginAction);
+    pinField.addActionListener(loginAction);
+
+    checkTriesBtn.addActionListener(e -> {
+        try {
+            if (!cardComm.isConnected()) {
+                log("Vui lòng kết nối thẻ trước!");
+                return;
             }
-        };
-        
-        loginBtn.addActionListener(loginAction);
-        pinField.addActionListener(loginAction);
-        
-        checkTriesBtn.addActionListener(e -> {
-            try {
-                if (!cardComm.isConnected()) {
-                    log("Vui lòng kết nối thẻ trước!");
-                    return;
-                }
-                
-                int tries = cardComm.getPinTries();
-                if (tries == 0) {
-                    triesLabel.setText("⚠ Thẻ đã bị khóa!");
-                    log("Thẻ đã bị khóa");
-                } else {
-                    triesLabel.setText("Còn " + tries + " lần nhập PIN");
-                    log("Còn " + tries + " lần nhập PIN");
-                }
-                
-            } catch (Exception ex) {
-                log("LỖI: " + ex.getMessage());
+
+            int tries = cardComm.getPinTries();
+            if (tries == 0) {
+                triesLabel.setText("⚠ Thẻ đã bị khóa!");
+                log("Thẻ đã bị khóa");
+            } else {
+                triesLabel.setText("Còn " + tries + " lần nhập PIN");
             }
-        });
-        
-        return panel;
-    }
-    
+
+        } catch (Exception ex) {
+            log("LỖI: " + ex.getMessage());
+        }
+    });
+
+    return panel;
+}
     /**
      * Panel chính sau khi đăng nhập
      */
@@ -280,103 +281,100 @@ public class UserPanel extends JPanel {
     /**
      * Tab thông tin cá nhân - với avatar
      */
-    private JPanel createInfoTab() {
-        JPanel panel = new JPanel(new BorderLayout(20, 20));
-        panel.setBorder(new EmptyBorder(30, 30, 30, 30));
-        panel.setBackground(new Color(248, 249, 250));
-        
-        // Title
-        JLabel titleLabel = new JLabel("👤 THÔNG TIN CÁ NHÂN");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        titleLabel.setForeground(new Color(52, 73, 94));
-        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        titleLabel.setBorder(new EmptyBorder(0, 0, 15, 0));
-        panel.add(titleLabel, BorderLayout.NORTH);
-        
-        // Main card container
-        JPanel cardPanel = new JPanel(new BorderLayout(20, 20));
-        cardPanel.setBackground(Color.WHITE);
-        cardPanel.setBorder(BorderFactory.createCompoundBorder(
+private JPanel createInfoTab() {
+    JPanel panel = new JPanel(new BorderLayout(20, 20));
+    panel.setBorder(new EmptyBorder(30, 30, 30, 30));
+    panel.setBackground(new Color(248, 249, 250));
+
+    // Title
+    JLabel titleLabel = new JLabel("👤 THÔNG TIN CÁ NHÂN");
+    titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+    titleLabel.setForeground(new Color(52, 73, 94));
+    titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+    titleLabel.setBorder(new EmptyBorder(0, 0, 15, 0));
+    panel.add(titleLabel, BorderLayout.NORTH);
+
+    // Main card container
+    JPanel cardPanel = new JPanel(new BorderLayout(20, 20));
+    cardPanel.setBackground(Color.WHITE);
+    cardPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(52, 152, 219), 3),
             new EmptyBorder(30, 30, 30, 30)));
-        
-        // Left side - Avatar
-        JPanel avatarPanel = new JPanel(new GridBagLayout());
-        avatarPanel.setBackground(Color.WHITE);
-        avatarPanel.setPreferredSize(new Dimension(220, 0));
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        
-        // Avatar placeholder
-        JLabel avatarLabel = new JLabel("👤");
-        avatarLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 80));
-        avatarLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        avatarLabel.setPreferredSize(new Dimension(150, 150));
-        avatarLabel.setBorder(BorderFactory.createCompoundBorder(
+
+    // Left side - Avatar
+    JPanel avatarPanel = new JPanel(new GridBagLayout());
+    avatarPanel.setBackground(Color.WHITE);
+    avatarPanel.setPreferredSize(new Dimension(220, 0));
+
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.insets = new Insets(10, 10, 10, 10);
+
+    JLabel avatarLabel = new JLabel("👤");
+    avatarLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 80));
+    avatarLabel.setHorizontalAlignment(SwingConstants.CENTER);
+    avatarLabel.setPreferredSize(new Dimension(150, 150));
+    avatarLabel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(52, 152, 219), 3),
             BorderFactory.createEmptyBorder(20, 20, 20, 20)));
-        avatarLabel.setOpaque(true);
-        avatarLabel.setBackground(new Color(240, 248, 255));
-        gbc.gridx = 0; gbc.gridy = 0;
-        avatarPanel.add(avatarLabel, gbc);
-        
-        cardPanel.add(avatarPanel, BorderLayout.WEST);
-        
-        // Right side - Info display
-        JPanel infoPanel = new JPanel(new BorderLayout(10, 10));
-        infoPanel.setBackground(Color.WHITE);
-        
-        // Info text area
-        JTextArea infoArea = new JTextArea(15, 40);
-        infoArea.setEditable(false);
-        infoArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        infoArea.setBackground(new Color(250, 250, 250));
-        infoArea.setBorder(new EmptyBorder(15, 15, 15, 15));
-        JScrollPane scrollPane = new JScrollPane(infoArea);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1));
-        
-        infoPanel.add(scrollPane, BorderLayout.CENTER);
-        
-        cardPanel.add(infoPanel, BorderLayout.CENTER);
-        
-        panel.add(cardPanel, BorderLayout.CENTER);
-        
-        // Load button
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        buttonPanel.setBackground(new Color(248, 249, 250));
-        JButton loadBtn = createModernButton("📋 Tải thông tin", new Color(52, 152, 219), 15);
-        loadBtn.setPreferredSize(new Dimension(200, 50));
-        loadBtn.addActionListener(e -> {
-            try {
-                MemberInfo member = cardComm.getMemberInfo();
-                
-                StringBuilder sb = new StringBuilder();
-                sb.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-                sb.append("     THÔNG TIN CÁ NHÂN\n");
-                sb.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n");
-                sb.append(String.format("Họ và tên:      %s\n\n", member.name));
-                sb.append(String.format("Ngày sinh:      %s\n\n", member.birthDate));
-                sb.append(String.format("Số điện thoại:  %s\n\n", member.phone));
-                sb.append(String.format("Địa chỉ:        %s\n", member.address));
-                
-                infoArea.setText(sb.toString());
-                log("Đã tải thông tin cá nhân");
-                
-            } catch (Exception ex) {
-                log("LỖI: " + ex.getMessage());
-                JOptionPane.showMessageDialog(this, 
+    avatarLabel.setOpaque(true);
+    avatarLabel.setBackground(new Color(240, 248, 255));
+    gbc.gridx = 0; gbc.gridy = 0;
+    avatarPanel.add(avatarLabel, gbc);
+
+    cardPanel.add(avatarPanel, BorderLayout.WEST);
+
+    // Right side - Info display
+    JPanel infoPanel = new JPanel(new BorderLayout(10, 10));
+    infoPanel.setBackground(Color.WHITE);
+
+    JTextArea infoArea = new JTextArea(15, 40);
+    infoArea.setEditable(false);
+    infoArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+    infoArea.setBackground(new Color(250, 250, 250));
+    infoArea.setBorder(new EmptyBorder(15, 15, 15, 15));
+    JScrollPane scrollPane = new JScrollPane(infoArea);
+    scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1));
+
+    infoPanel.add(scrollPane, BorderLayout.CENTER);
+
+    cardPanel.add(infoPanel, BorderLayout.CENTER);
+
+    panel.add(cardPanel, BorderLayout.CENTER);
+
+    // Load button
+    JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+    buttonPanel.setBackground(new Color(248, 249, 250));
+    JButton loadBtn = createModernButton("📋 Tải thông tin từ thẻ", new Color(52, 152, 219), 15);
+    loadBtn.setPreferredSize(new Dimension(230, 50));
+    loadBtn.addActionListener(e -> {
+        try {
+            MemberInfo member = cardComm.getMemberInfo(); // cần PIN đã verify
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+            sb.append("     THÔNG TIN CÁ NHÂN (TRÊN THẺ)\n");
+            sb.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n");
+            sb.append(String.format("Họ và tên:      %s\n\n", member.name));
+            sb.append(String.format("Ngày sinh:      %s\n\n", member.birthDate));
+            sb.append(String.format("Số điện thoại:  %s\n\n", member.phone));
+            sb.append(String.format("Địa chỉ:        %s\n", member.address));
+
+            infoArea.setText(sb.toString());
+            log("Đã tải thông tin cá nhân từ thẻ (đã giải mã AES)");
+
+        } catch (Exception ex) {
+            log("LỖI: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this,
                     "Lỗi tải thông tin: " + ex.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-        buttonPanel.add(loadBtn);
-        
-        panel.add(buttonPanel, BorderLayout.SOUTH);
-        
-        return panel;
-    }
-    
+        }
+    });
+    buttonPanel.add(loadBtn);
+
+    panel.add(buttonPanel, BorderLayout.SOUTH);
+
+    return panel;
+}
     /**
      * Tab xem các gói tập
      */
@@ -765,127 +763,150 @@ public class UserPanel extends JPanel {
     /**
      * Tab thay đổi PIN
      */
-    private JPanel createChangePinTab() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(new EmptyBorder(40, 40, 40, 40));
-        panel.setBackground(new Color(248, 249, 250));
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(12, 12, 12, 12);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        
-        // Info label
-        JLabel infoLabel = new JLabel("🔒 Thay đổi mã PIN của bạn");
-        infoLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        infoLabel.setForeground(new Color(52, 73, 94));
-        gbc.gridx = 0; gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        panel.add(infoLabel, gbc);
-        
-        gbc.gridwidth = 1;
-        
-        // Old PIN
-        gbc.gridx = 0; gbc.gridy = 1;
-        gbc.anchor = GridBagConstraints.EAST;
-        JLabel oldPinLabel = new JLabel("Mã PIN hiện tại:");
-        oldPinLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        panel.add(oldPinLabel, gbc);
-        
-        gbc.gridx = 1;
-        gbc.anchor = GridBagConstraints.WEST;
-        JPasswordField oldPinField = new JPasswordField(15);
-        oldPinField.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        oldPinField.setBorder(BorderFactory.createCompoundBorder(
+private JPanel createChangePinTab() {
+    JPanel panel = new JPanel(new GridBagLayout());
+    panel.setBorder(new EmptyBorder(40, 40, 40, 40));
+    panel.setBackground(new Color(248, 249, 250));
+
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.insets = new Insets(12, 12, 12, 12);
+    gbc.fill = GridBagConstraints.HORIZONTAL;
+
+    // Info label
+    JLabel infoLabel = new JLabel("🔒 Thay đổi mã PIN của bạn");
+    infoLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+    infoLabel.setForeground(new Color(52, 73, 94));
+    gbc.gridx = 0; gbc.gridy = 0;
+    gbc.gridwidth = 2;
+    panel.add(infoLabel, gbc);
+
+    gbc.gridwidth = 1;
+
+    // Old PIN
+    gbc.gridx = 0; gbc.gridy = 1;
+    gbc.anchor = GridBagConstraints.EAST;
+    JLabel oldPinLabel = new JLabel("Mã PIN hiện tại (6 số):");
+    oldPinLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+    panel.add(oldPinLabel, gbc);
+
+    gbc.gridx = 1;
+    gbc.anchor = GridBagConstraints.WEST;
+    JPasswordField oldPinField = new JPasswordField(15);
+    oldPinField.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    oldPinField.setHorizontalAlignment(JTextField.CENTER);
+    oldPinField.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(189, 195, 199), 2),
             BorderFactory.createEmptyBorder(8, 12, 8, 12)));
-        panel.add(oldPinField, gbc);
-        
-        // New PIN
-        gbc.gridx = 0; gbc.gridy = 2;
-        gbc.anchor = GridBagConstraints.EAST;
-        JLabel newPinLabel = new JLabel("Mã PIN mới:");
-        newPinLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        panel.add(newPinLabel, gbc);
-        
-        gbc.gridx = 1;
-        gbc.anchor = GridBagConstraints.WEST;
-        JPasswordField newPinField = new JPasswordField(15);
-        newPinField.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        newPinField.setBorder(BorderFactory.createCompoundBorder(
+    panel.add(oldPinField, gbc);
+
+    // New PIN
+    gbc.gridx = 0; gbc.gridy = 2;
+    gbc.anchor = GridBagConstraints.EAST;
+    JLabel newPinLabel = new JLabel("Mã PIN mới (6 số):");
+    newPinLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+    panel.add(newPinLabel, gbc);
+
+    gbc.gridx = 1;
+    gbc.anchor = GridBagConstraints.WEST;
+    JPasswordField newPinField = new JPasswordField(15);
+    newPinField.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    newPinField.setHorizontalAlignment(JTextField.CENTER);
+    newPinField.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(189, 195, 199), 2),
             BorderFactory.createEmptyBorder(8, 12, 8, 12)));
-        panel.add(newPinField, gbc);
-        
-        // Confirm PIN
-        gbc.gridx = 0; gbc.gridy = 3;
-        gbc.anchor = GridBagConstraints.EAST;
-        JLabel confirmPinLabel = new JLabel("Xác nhận PIN mới:");
-        confirmPinLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        panel.add(confirmPinLabel, gbc);
-        
-        gbc.gridx = 1;
-        gbc.anchor = GridBagConstraints.WEST;
-        JPasswordField confirmPinField = new JPasswordField(15);
-        confirmPinField.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        confirmPinField.setBorder(BorderFactory.createCompoundBorder(
+    panel.add(newPinField, gbc);
+
+    // Confirm PIN
+    gbc.gridx = 0; gbc.gridy = 3;
+    gbc.anchor = GridBagConstraints.EAST;
+    JLabel confirmPinLabel = new JLabel("Xác nhận PIN mới:");
+    confirmPinLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+    panel.add(confirmPinLabel, gbc);
+
+    gbc.gridx = 1;
+    gbc.anchor = GridBagConstraints.WEST;
+    JPasswordField confirmPinField = new JPasswordField(15);
+    confirmPinField.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    confirmPinField.setHorizontalAlignment(JTextField.CENTER);
+    confirmPinField.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(189, 195, 199), 2),
             BorderFactory.createEmptyBorder(8, 12, 8, 12)));
-        panel.add(confirmPinField, gbc);
-        
-        // Change button
-        gbc.gridx = 0; gbc.gridy = 4;
-        gbc.gridwidth = 2;
-        gbc.anchor = GridBagConstraints.CENTER;
-        gbc.insets = new Insets(25, 12, 12, 12);
-        JButton changeBtn = createModernButton("🔐 Thay đổi PIN", new Color(52, 152, 219), 16);
-        changeBtn.setPreferredSize(new Dimension(220, 55));
-        changeBtn.addActionListener(e -> {
-            try {
-                String oldPin = new String(oldPinField.getPassword());
-                String newPin = new String(newPinField.getPassword());
-                String confirmPin = new String(confirmPinField.getPassword());
-                
-                if (oldPin.length() != 4 || newPin.length() != 4) {
-                    JOptionPane.showMessageDialog(this, 
-                        "Mã PIN phải có 4 chữ số!",
+    panel.add(confirmPinField, gbc);
+
+    // Change button
+    gbc.gridx = 0; gbc.gridy = 4;
+    gbc.gridwidth = 2;
+    gbc.anchor = GridBagConstraints.CENTER;
+    gbc.insets = new Insets(25, 12, 12, 12);
+    JButton changeBtn = createModernButton("🔐 Thay đổi PIN", new Color(52, 152, 219), 16);
+    changeBtn.setPreferredSize(new Dimension(220, 55));
+    changeBtn.addActionListener(e -> {
+        try {
+            String oldPin = new String(oldPinField.getPassword()).trim();
+            String newPin = new String(newPinField.getPassword()).trim();
+            String confirmPin = new String(confirmPinField.getPassword()).trim();
+
+            // Validate
+            if (oldPin.isEmpty() || newPin.isEmpty() || confirmPin.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Vui lòng nhập đầy đủ các trường PIN.",
+                        "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (!oldPin.matches("\\d{6}") || !newPin.matches("\\d{6}")) {
+                JOptionPane.showMessageDialog(this,
+                        "Mã PIN phải gồm đúng 6 chữ số (0-9)!",
+                        "PIN không hợp lệ", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!newPin.equals(confirmPin)) {
+                JOptionPane.showMessageDialog(this,
+                        "Mã PIN mới và xác nhận PIN không khớp!",
                         "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                
-                if (!newPin.equals(confirmPin)) {
-                    JOptionPane.showMessageDialog(this, 
-                        "Mã PIN mới và xác nhận không khớp!",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                
-                if (cardComm.changePin(oldPin, newPin)) {
-                    log("Đã thay đổi PIN thành công");
-                    JOptionPane.showMessageDialog(this, 
-                        "Thay đổi mã PIN thành công!",
+                return;
+            }
+
+            if (!cardComm.isConnected()) {
+                log("Vui lòng kết nối thẻ trước khi đổi PIN!");
+                JOptionPane.showMessageDialog(this,
+                        "Vui lòng kết nối thẻ!",
+                        "Lỗi", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Gửi lệnh đổi PIN xuống thẻ
+            if (cardComm.changePin(oldPin, newPin)) {
+                log("Đã thay đổi PIN thành công (dữ liệu được mã hóa lại bằng PIN mới).");
+                JOptionPane.showMessageDialog(this,
+                        "Thay đổi mã PIN thành công!\n" +
+                        "Dữ liệu trên thẻ đã được bảo vệ bằng mã PIN mới.",
                         "Thành công", JOptionPane.INFORMATION_MESSAGE);
-                    oldPinField.setText("");
-                    newPinField.setText("");
-                    confirmPinField.setText("");
-                } else {
-                    log("Thay đổi PIN thất bại");
-                    JOptionPane.showMessageDialog(this, 
-                        "Thay đổi PIN thất bại!\nVui lòng kiểm tra lại mã PIN hiện tại.",
+
+                oldPinField.setText("");
+                newPinField.setText("");
+                confirmPinField.setText("");
+            } else {
+                log("Thay đổi PIN thất bại (sai PIN hiện tại?)");
+                JOptionPane.showMessageDialog(this,
+                        "Thay đổi PIN thất bại!\n" +
+                        "Vui lòng kiểm tra lại mã PIN hiện tại.",
                         "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }
-                
-            } catch (Exception ex) {
-                log("LỖI: " + ex.getMessage());
-                JOptionPane.showMessageDialog(this, 
+            }
+
+        } catch (Exception ex) {
+            log("LỖI khi đổi PIN: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this,
                     "Lỗi thay đổi PIN: " + ex.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-        panel.add(changeBtn, gbc);
-        
-        return panel;
-    }
-    
+        }
+    });
+    panel.add(changeBtn, gbc);
+
+    return panel;
+}
+
     /**
      * Tab thanh toán
      */

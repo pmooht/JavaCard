@@ -5,60 +5,60 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-
 /**
- * Main application - Gym Card Management System
+ * Main application - Gym Card Management System (SmartCard + AES + RSA)
  */
 public class GymCardApp extends JFrame {
-    
+
     private final CardCommunicator cardComm;
     private JTabbedPane mainTabbedPane;
     private AdminPanel adminPanel;
     private UserPanel userPanel;
     private JLabel statusLabel;
+    private JLabel securityLabel;
     private JButton connectBtn;
-    
+
     public GymCardApp() {
-        cardComm = new CardCommunicator();
+        cardComm = new CardCommunicator(); // TODO: trong CardCommunicator.connect() bạn thực hiện: kết nối reader + select applet + bắt tay RSA
         initUI();
     }
-    
+
     private void initUI() {
-        setTitle("Hệ thống Quản lý Thẻ Tập Gym - Gym Card System");
+        setTitle("Hệ thống Quản lý Thẻ Tập Gym - SmartCard Gym System");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1000, 700);
+        setSize(1100, 720);
         setLocationRelativeTo(null);
-        
+
         // Main panel
         JPanel mainPanel = new JPanel(new BorderLayout());
-        
+
         // Top toolbar
         JPanel toolbarPanel = createToolbar();
         mainPanel.add(toolbarPanel, BorderLayout.NORTH);
-        
+
         // Tabbed pane
         mainTabbedPane = new JTabbedPane();
-        mainTabbedPane.setFont(new Font("Arial", Font.BOLD, 14));
-        
-        // Admin panel
+        mainTabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+        // Admin panel (quản trị hệ thống, init thẻ, đổi PIN, unlock, v.v.)
         adminPanel = new AdminPanel(cardComm);
         mainTabbedPane.addTab("👤 Quản trị viên", adminPanel);
-        
-        // User panel
+
+        // User panel (check-in, xem thông tin, ... )
         userPanel = new UserPanel(cardComm);
         mainTabbedPane.addTab("👥 Hội viên", userPanel);
-        
+
         mainPanel.add(mainTabbedPane, BorderLayout.CENTER);
-        
+
         // Status bar
         JPanel statusBar = createStatusBar();
         mainPanel.add(statusBar, BorderLayout.SOUTH);
-        
+
         setContentPane(mainPanel);
     }
-    
+
     /**
-     * Create toolbar
+     * Create toolbar (gradient header + nút Kết nối)
      */
     private JPanel createToolbar() {
         JPanel panel = new JPanel(new BorderLayout()) {
@@ -69,112 +69,152 @@ public class GymCardApp extends JFrame {
                 g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
                 int w = getWidth();
                 int h = getHeight();
-                GradientPaint gp = new GradientPaint(0, 0, new Color(41, 128, 185), w, 0, new Color(109, 213, 250));
+                GradientPaint gp = new GradientPaint(
+                        0, 0, new Color(40, 116, 166),
+                        w, 0, new Color(93, 173, 226)
+                );
                 g2d.setPaint(gp);
                 g2d.fillRect(0, 0, w, h);
             }
         };
-        panel.setBorder(new EmptyBorder(15, 15, 15, 15));
+        panel.setBorder(new EmptyBorder(15, 15, 10, 15));
         panel.setOpaque(false);
-        
-        // Left side - title
-        JLabel titleLabel = new JLabel("🏋️ GYM CARD MANAGEMENT SYSTEM");
+
+        // Left side - title & subtitle
+        JPanel leftPanel = new JPanel();
+        leftPanel.setOpaque(false);
+        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
+
+        JLabel titleLabel = new JLabel("🏋️ GYM SMARTCARD MANAGEMENT SYSTEM");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         titleLabel.setForeground(Color.WHITE);
-        panel.add(titleLabel, BorderLayout.WEST);
-        
-        // Right side - connect button
-        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+
+        JLabel subTitle = new JLabel("JavaCard • AES-128 on card • RSA secure channel");
+        subTitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        subTitle.setForeground(new Color(230, 248, 255));
+
+        leftPanel.add(titleLabel);
+        leftPanel.add(Box.createVerticalStrut(4));
+        leftPanel.add(subTitle);
+
+        panel.add(leftPanel, BorderLayout.WEST);
+
+        // Right side - connect button + security status
+        JPanel rightPanel = new JPanel();
         rightPanel.setOpaque(false);
-        
+        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+
+        JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        buttonRow.setOpaque(false);
+
         connectBtn = createModernButton("Kết nối thẻ", new Color(46, 204, 113));
         connectBtn.addActionListener(e -> toggleConnection());
-        
-        rightPanel.add(connectBtn);
+        buttonRow.add(connectBtn);
+
+        rightPanel.add(buttonRow);
+        rightPanel.add(Box.createVerticalStrut(6));
+
+        securityLabel = new JLabel("🔒 Chưa thiết lập kênh bảo mật (chưa kết nối thẻ)");
+        securityLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        securityLabel.setForeground(new Color(230, 248, 255));
+        securityLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+
+        rightPanel.add(securityLabel);
+
         panel.add(rightPanel, BorderLayout.EAST);
-        
+
         return panel;
     }
-    
+
     /**
-     * Create status bar
+     * Create status bar (bottom)
      */
     private JPanel createStatusBar() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         panel.setBackground(new Color(248, 249, 250));
-        
-        statusLabel = new JLabel("⚫ Chưa kết nối");
+
+        statusLabel = new JLabel("⚫ Chưa kết nối đầu đọc / thẻ");
         statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         panel.add(statusLabel, BorderLayout.WEST);
-        
-        JLabel versionLabel = new JLabel("v1.0 - JavaCard Gym System");
+
+        JLabel versionLabel = new JLabel("v1.0 - SmartCard Gym System (Java, JavaCard)");
         versionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         versionLabel.setForeground(Color.GRAY);
         panel.add(versionLabel, BorderLayout.EAST);
-        
+
         return panel;
     }
-    
+
     /**
-     * Toggle card connection (Simulated)
+     * Toggle card connection (REAL smartcard logic)
+     *
+     * Gợi ý: trong CardCommunicator.connect():
+     * - Kết nối terminal + card
+     * - SELECT applet
+     * - Sinh / load keypair RSA của app
+     * - Lấy cardPublicKey từ thẻ
+     * - Gửi appPublicKey xuống thẻ
      */
     private void toggleConnection() {
         if (!cardComm.isConnected()) {
-            // Connect (simulated)
+            // Connect REAL card
             try {
-                cardComm.connect();
-                statusLabel.setText("🟢 Đã kết nối với thẻ ảo (Mock Mode)");
-                statusLabel.setForeground(new Color(46, 204, 113));
+                cardComm.connect(); // TODO: triển khai trong CardCommunicator cho đúng logic
+
+                statusLabel.setText("🟢 Đã kết nối thẻ JavaCard • Sẵn sàng thao tác PIN & dữ liệu");
+                statusLabel.setForeground(new Color(39, 174, 96));
                 connectBtn.setText("Ngắt kết nối");
                 updateButtonColor(connectBtn, new Color(231, 76, 60));
-                
-                // Ask if want to load demo data
-                int option = JOptionPane.showConfirmDialog(this, 
-                    "Kết nối thẻ ảo thành công!\n\n" +
-                    "Bạn có muốn tải dữ liệu mẫu để demo không?",
-                    "Tải dữ liệu Demo", 
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.QUESTION_MESSAGE);
-                
-                if (option == JOptionPane.YES_OPTION) {
-                    cardComm.loadDemoData();
-                    JOptionPane.showMessageDialog(this, 
-                        "Đã tải dữ liệu demo!\n\n" +
-                        "Thông tin demo:\n" +
-                        "- Hội viên: Nguyễn Văn Demo\n" +
-                        "- Gói: VIP\n" +
-                        "- Số dư: 500,000 VNĐ\n" +
-                        "- Số ngày tập: 15\n\n" +
-                        "PIN: 1234",
-                        "Demo Data", JOptionPane.INFORMATION_MESSAGE);
-                }
-                
+
+                // Cập nhật text bảo mật
+                securityLabel.setText("🛡 Kênh bảo mật: AES-128 trên thẻ + RSA trên đường truyền (App ↔ Card)");
+
+                JOptionPane.showMessageDialog(this,
+                        "Đã kết nối thành công với thẻ JavaCard.\n\n" +
+                        "Các bước tiếp theo:\n" +
+                        "1. Vào tab \"Quản trị viên\" để khởi tạo thẻ (INIT_CARD) cho hội viên mới.\n" +
+                        "2. Đặt PIN cho thẻ (mặc định ban đầu có thể là 123456).\n" +
+                        "3. Sau khi INIT_CARD, dùng các chức năng: Verify PIN, Ghi thông tin, Đọc thông tin.\n\n" +
+                        "Lưu ý: Mọi thông tin trên thẻ đều được mã hóa bằng AES với khóa sinh từ PIN.",
+                        "Kết nối thành công", JOptionPane.INFORMATION_MESSAGE);
+
             } catch (Exception ex) {
-                statusLabel.setText("🔴 Lỗi kết nối");
+                ex.printStackTrace();
+                statusLabel.setText("🔴 Lỗi kết nối thẻ: " + ex.getMessage());
                 statusLabel.setForeground(Color.RED);
-                
-                JOptionPane.showMessageDialog(this, 
-                    "Không thể kết nối với thẻ:\n" + ex.getMessage(),
-                    "Lỗi kết nối", JOptionPane.ERROR_MESSAGE);
+                securityLabel.setText("🔒 Chưa thiết lập kênh bảo mật (kết nối thất bại)");
+
+                JOptionPane.showMessageDialog(this,
+                        "Không thể kết nối với thẻ / đầu đọc:\n" + ex.getMessage(),
+                        "Lỗi kết nối", JOptionPane.ERROR_MESSAGE);
             }
         } else {
             // Disconnect
-            cardComm.disconnect();
-            statusLabel.setText("⚫ Chưa kết nối");
+            try {
+                cardComm.disconnect();
+            } catch (Exception e) {
+                // ignore, chỉ log
+                e.printStackTrace();
+            }
+
+            statusLabel.setText("⚫ Chưa kết nối đầu đọc / thẻ");
             statusLabel.setForeground(Color.BLACK);
             connectBtn.setText("Kết nối thẻ");
             updateButtonColor(connectBtn, new Color(46, 204, 113));
-            
-            // Reset UserPanel về login screen
-            userPanel.resetToLogin();
-            
-            JOptionPane.showMessageDialog(this, 
-                "Đã ngắt kết nối với thẻ ảo",
-                "Ngắt kết nối", JOptionPane.INFORMATION_MESSAGE);
+            securityLabel.setText("🔒 Chưa thiết lập kênh bảo mật (chưa kết nối thẻ)");
+
+            // Reset giao diện người dùng về trạng thái chưa login
+            if (userPanel != null) {
+                userPanel.resetToLogin();
+            }
+
+            JOptionPane.showMessageDialog(this,
+                    "Đã ngắt kết nối với thẻ.",
+                    "Ngắt kết nối", JOptionPane.INFORMATION_MESSAGE);
         }
     }
-    
+
     /**
      * Create modern rounded button
      */
@@ -184,7 +224,7 @@ public class GymCardApp extends JFrame {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
+
                 if (getModel().isPressed()) {
                     g2d.setColor(bgColor.darker());
                 } else if (getModel().isRollover()) {
@@ -192,7 +232,7 @@ public class GymCardApp extends JFrame {
                 } else {
                     g2d.setColor(bgColor);
                 }
-                
+
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
                 g2d.dispose();
                 super.paintComponent(g);
@@ -205,18 +245,19 @@ public class GymCardApp extends JFrame {
         button.setContentAreaFilled(false);
         button.setOpaque(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        button.setPreferredSize(new Dimension(150, 40));
+        button.setPreferredSize(new Dimension(160, 40));
         return button;
     }
-    
+
     /**
      * Update button color
      */
     private void updateButtonColor(JButton button, Color color) {
+        button.putClientProperty("bgColor", color); // nếu sau này muốn lấy lại
         button.setBackground(color);
         button.repaint();
     }
-    
+
     /**
      * Main method
      */
@@ -227,7 +268,7 @@ public class GymCardApp extends JFrame {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         // Run application
         SwingUtilities.invokeLater(() -> {
             GymCardApp app = new GymCardApp();

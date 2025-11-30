@@ -102,3 +102,6 @@ InitTestScene*.unity*
 /GUI/JavaCard/GymManagementApp/build/
 /GUI/JavaCard/GymManagementApp/nbproject/private/
 /GymManagementApp/dist/
+/JavaSmartCard/nbproject/private/
+/JavaSmartCard/build/
+/JavaSmartCard/dist/
