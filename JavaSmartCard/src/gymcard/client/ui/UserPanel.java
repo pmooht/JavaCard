@@ -136,19 +136,21 @@ public class UserPanel extends JPanel {
         triesLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         triesLabel.setForeground(new Color(231, 76, 60));
         gbc.gridy = 4;
+        gbc.gridwidth = 2;
         panel.add(triesLabel, gbc);
         
         // Login button
         JButton loginBtn = createModernButton("Đăng nhập", new Color(46, 204, 113), 17);
         loginBtn.setPreferredSize(new Dimension(200, 55));
         gbc.gridy = 5;
-        gbc.gridwidth = 1;
+        gbc.gridwidth = 2;
+        gbc.insets = new Insets(15, 15, 5, 15);
         panel.add(loginBtn, gbc);
         
         // Check tries button
         JButton checkTriesBtn = createModernButton("Kiểm tra số lần thử", new Color(155, 89, 182), 12);
         checkTriesBtn.setPreferredSize(new Dimension(200, 40));
-        gbc.gridx = 0; gbc.gridy = 6;
+        gbc.gridy = 6;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(5, 15, 15, 15);
         panel.add(checkTriesBtn, gbc);
@@ -264,7 +266,7 @@ public class UserPanel extends JPanel {
         // Logout button
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
         bottomPanel.setBackground(new Color(248, 249, 250));
-        JButton logoutBtn = createModernButton("🚪 Đăng xuất", new Color(149, 165, 166), 14);
+        JButton logoutBtn = createModernButton("Đăng xuất", new Color(149, 165, 166), 14);
         logoutBtn.setPreferredSize(new Dimension(150, 40));
         logoutBtn.addActionListener(e -> {
             cardLayout.show(contentPanel, "login");
@@ -309,8 +311,8 @@ public class UserPanel extends JPanel {
         gbc.insets = new Insets(10, 10, 10, 10);
         
         // Avatar placeholder
-        JLabel avatarLabel = new JLabel("");
-        avatarLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 80));
+        JLabel avatarLabel = new JLabel("USER");
+        avatarLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
         avatarLabel.setHorizontalAlignment(SwingConstants.CENTER);
         avatarLabel.setPreferredSize(new Dimension(150, 150));
         avatarLabel.setBorder(BorderFactory.createCompoundBorder(
@@ -613,21 +615,9 @@ public class UserPanel extends JPanel {
         // Create decorator for highlighting check-in days
         CheckInDayDecorator decorator = new CheckInDayDecorator(calendar);
         
-        // Demo check-in data with times (in real app, this would come from card)
+        // Check-in data will be loaded from card
         java.util.Map<String, String[]> checkInTimes = new java.util.HashMap<>();
-        checkInTimes.put("02/11/2025", new String[]{"08:00:00", "10:30:00"});
-        checkInTimes.put("04/11/2025", new String[]{"07:45:00", "09:15:00"});
-        checkInTimes.put("06/11/2025", new String[]{"18:30:00", "20:00:00"});
-        checkInTimes.put("09/11/2025", new String[]{"08:15:00", "10:45:00"});
-        checkInTimes.put("11/11/2025", new String[]{"19:00:00", "21:00:00"});
-        checkInTimes.put("16/11/2025", new String[]{"08:30:00", "10:00:00"});
-        checkInTimes.put("18/11/2025", new String[]{"07:30:00", "09:30:00"});
-        checkInTimes.put("23/11/2025", new String[]{"17:45:00", "19:45:00"});
-        checkInTimes.put("25/11/2025", new String[]{"08:00:00", "10:15:00"});
-        checkInTimes.put("28/11/2025", new String[]{"18:00:00", "20:30:00"});
         
-        // Load demo check-in dates
-        decorator.addCheckInDates(checkInTimes.keySet());
         decorator.install();
         
         leftPanel.add(calendar, BorderLayout.CENTER);
@@ -649,7 +639,7 @@ public class UserPanel extends JPanel {
         statsTitle.setForeground(new Color(52, 73, 94));
         statsPanel.add(statsTitle);
         
-        JLabel countLabel = new JLabel("Số ngày đã tập: 10 ngày");
+        JLabel countLabel = new JLabel("Số ngày đã tập: 0 ngày");
         countLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         statsPanel.add(countLabel);
         
@@ -706,7 +696,7 @@ public class UserPanel extends JPanel {
                     decorator.addCheckInDate(date);
                     
                     JOptionPane.showMessageDialog(this, 
-                        "Check-in thành công!\nChúc bạn buổi tập tốt! 💪",
+                        "Check-in thành công!\nChúc bạn buổi tập tốt!",
                         "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     log("Check-in thất bại");
@@ -734,7 +724,7 @@ public class UserPanel extends JPanel {
                         info.date, info.checkInTime, info.checkOutTime));
                     
                     JOptionPane.showMessageDialog(this, 
-                        "Check-out thành công!\nHẹn gặp lại! 👋",
+                        "Check-out thành công!\nHẹn gặp lại!",
                         "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     log("Check-out thất bại");
