@@ -46,11 +46,11 @@ private void initUI() {
 
     // Admin panel (quản trị hệ thống, init thẻ, đổi PIN, unlock, v.v.)
     adminPanel = new AdminPanel(cardComm);
-    mainTabbedPane.addTab("👤 Quản trị viên", adminPanel);
+    mainTabbedPane.addTab("Quản trị viên", adminPanel);
 
     // User panel (check-in, xem thông tin, ... )
     userPanel = new UserPanel(cardComm);
-    mainTabbedPane.addTab("👥 Hội viên", userPanel);
+    mainTabbedPane.addTab("Hội viên", userPanel);
 
     // Card trắng ở giữa
     JPanel cardPanel = new JPanel(new BorderLayout());
@@ -104,7 +104,7 @@ private JPanel createToolbar() {
     leftPanel.setOpaque(false);
     leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 
-    JLabel titleLabel = new JLabel("🏋️  GYM SMARTCARD MANAGEMENT SYSTEM");
+    JLabel titleLabel = new JLabel("GYM SMARTCARD MANAGEMENT SYSTEM");
     titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
     titleLabel.setForeground(Color.WHITE);
 
@@ -134,7 +134,7 @@ private JPanel createToolbar() {
     rightPanel.add(buttonRow);
     rightPanel.add(Box.createVerticalStrut(4));
 
-    securityLabel = new JLabel("🔒 Chưa thiết lập kênh bảo mật (chưa kết nối thẻ)");
+    securityLabel = new JLabel("Chưa thiết lập kênh bảo mật (chưa kết nối thẻ)");
     securityLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
     securityLabel.setForeground(new Color(230, 248, 255));
     securityLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
@@ -204,7 +204,7 @@ private JPanel createStatusBar() {
                 updateButtonColor(connectBtn, new Color(231, 76, 60));
 
                 // Cập nhật text bảo mật
-                securityLabel.setText("🛡 Kênh bảo mật: AES-128 trên thẻ + RSA trên đường truyền (App ↔ Card)");
+                securityLabel.setText("Kênh bảo mật: AES-128 trên thẻ + RSA trên đường truyền (App ↔ Card)");
 
                 JOptionPane.showMessageDialog(this,
                         "Đã kết nối thành công với thẻ JavaCard.\n\n" +
@@ -219,7 +219,7 @@ private JPanel createStatusBar() {
                 ex.printStackTrace();
                 statusLabel.setText("🔴 Lỗi kết nối thẻ: " + ex.getMessage());
                 statusLabel.setForeground(Color.RED);
-                securityLabel.setText("🔒 Chưa thiết lập kênh bảo mật (kết nối thất bại)");
+                securityLabel.setText("Chưa thiết lập kênh bảo mật (kết nối thất bại)");
 
                 JOptionPane.showMessageDialog(this,
                         "Không thể kết nối với thẻ / đầu đọc:\n" + ex.getMessage(),
@@ -238,7 +238,7 @@ private JPanel createStatusBar() {
             statusLabel.setForeground(Color.BLACK);
             connectBtn.setText("Kết nối thẻ");
             updateButtonColor(connectBtn, new Color(46, 204, 113));
-            securityLabel.setText("🔒 Chưa thiết lập kênh bảo mật (chưa kết nối thẻ)");
+            securityLabel.setText("Chưa thiết lập kênh bảo mật (chưa kết nối thẻ)");
 
             // Reset giao diện người dùng về trạng thái chưa login
             if (userPanel != null) {
