@@ -1,7 +1,10 @@
 package gymcard.CardManager;
 
+import java.math.BigInteger;
 import javax.smartcardio.*;
 import java.security.*;
+import java.security.spec.KeySpec;
+import java.security.spec.RSAPublicKeySpec;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
@@ -43,6 +46,7 @@ public class CardManager {
     private Card card;
     private CardChannel channel;
 
+    private PublicKey cardRSAPublicKey; // JCE public key để encrypt
     // ---------------------------------------------------------
     // KẾT NỐI / NGẮT KẾT NỐI
     // ---------------------------------------------------------
@@ -77,6 +81,8 @@ public void connect() throws Exception {
                 // SELECT applet
                 selectApplet();
                 System.out.println("[CARD] Connected & SELECT applet OK");
+                // load public key để dùng cho mã hoá đường truyền (PIN, v.v.)
+                ensureCardPublicKeyLoaded();
                 return; // thành công, thoát luôn
             } catch (CardException e) {
                 lastEx = e;
@@ -90,6 +96,22 @@ public void connect() throws Exception {
         throw lastEx;
     }
     throw new IllegalStateException("Không tìm thấy reader nào có thẻ kết nối được");
+}
+private void ensureCardPublicKeyLoaded() throws Exception {
+    if (cardRSAPublicKey != null) return;
+
+    // 1. Lấy modulus từ thẻ (128 bytes)
+    byte[] modulusBytes = getCardPublicKey();  // đã implement chunk 64-64
+
+    // 2. Tạo BigInteger modulus & exponent
+    BigInteger mod = new BigInteger(1, modulusBytes);
+    BigInteger exp = new BigInteger("65537"); // 0x10001
+
+    KeySpec spec = new RSAPublicKeySpec(mod, exp);
+    KeyFactory kf = KeyFactory.getInstance("RSA");
+    cardRSAPublicKey = kf.generatePublic(spec);
+
+    System.out.println("[CARD] Built RSA public key from modulus, size=" + modulusBytes.length);
 }
 
     public void disconnect() throws Exception {
@@ -149,11 +171,20 @@ public void connect() throws Exception {
             throw new IllegalArgumentException("PIN phải 6 ký tự");
         }
         byte[] pinBytes = pin.getBytes("ASCII");
-        CommandAPDU cmd = new CommandAPDU(CLA, INS_VERIFY_PIN, 0x00, 0x00, pinBytes);
-        ResponseAPDU resp = channel.transmit(cmd);
-        checkStatus(resp, "VERIFY_PIN");
-    }
+            // RSA encrypt
+    // RSA encrypt
+    byte[] enc = rsaEncryptForCard(pinBytes);
 
+    CommandAPDU cmd = new CommandAPDU(CLA, INS_VERIFY_PIN, 0x00, 0x00, enc);
+    ResponseAPDU resp = channel.transmit(cmd);
+    checkStatus(resp, "VERIFY_PIN");
+    }
+private byte[] rsaEncryptForCard(byte[] plain) throws Exception {
+    ensureCardPublicKeyLoaded();
+    Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+    rsa.init(Cipher.ENCRYPT_MODE, cardRSAPublicKey);
+    return rsa.doFinal(plain);
+}
     /**
      * CHANGE_PIN: data = oldPIN(6) | newPIN(6)
      */
@@ -168,9 +199,14 @@ public void connect() throws Exception {
         System.arraycopy(oldBytes, 0, data, 0, 6);
         System.arraycopy(newBytes, 0, data, 6, 6);
 
-        CommandAPDU cmd = new CommandAPDU(CLA, INS_CHANGE_PIN, 0x00, 0x00, data);
-        ResponseAPDU resp = channel.transmit(cmd);
-        checkStatus(resp, "CHANGE_PIN");
+//        CommandAPDU cmd = new CommandAPDU(CLA, INS_CHANGE_PIN, 0x00, 0x00, data);
+//        ResponseAPDU resp = channel.transmit(cmd);
+//        checkStatus(resp, "CHANGE_PIN");
+            byte[] enc = rsaEncryptForCard(data);
+
+    CommandAPDU cmd = new CommandAPDU(CLA, INS_CHANGE_PIN, 0x00, 0x00, enc);
+    ResponseAPDU resp = channel.transmit(cmd);
+    checkStatus(resp, "CHANGE_PIN");
     }
 
     /**
@@ -401,7 +437,12 @@ public void adminSetUserPin(String adminPass, String newPin) throws Exception {
 System.arraycopy(adminBytes, 0, data, 0, adminBytes.length);
 System.arraycopy(pinBytes, 0, data, adminBytes.length, pinBytes.length);
 
-    CommandAPDU cmd = new CommandAPDU(CLA, INS_ADMIN_SET_PIN, 0x00, 0x00, data);
+//    CommandAPDU cmd = new CommandAPDU(CLA, INS_ADMIN_SET_PIN, 0x00, 0x00, data);
+//    ResponseAPDU resp = channel.transmit(cmd);
+//    checkStatus(resp, "ADMIN_SET_PIN");
+        byte[] enc = rsaEncryptForCard(data);
+
+    CommandAPDU cmd = new CommandAPDU(CLA, INS_ADMIN_SET_PIN, 0x00, 0x00, enc);
     ResponseAPDU resp = channel.transmit(cmd);
     checkStatus(resp, "ADMIN_SET_PIN");
 }

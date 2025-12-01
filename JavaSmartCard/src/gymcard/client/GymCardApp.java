@@ -21,130 +21,166 @@ public class GymCardApp extends JFrame {
     public GymCardApp() {
         cardComm = new CardCommunicator(); // TODO: trong CardCommunicator.connect() bạn thực hiện: kết nối reader + select applet + bắt tay RSA
         initUI();
+            // KHÔNG cho cửa sổ nhỏ hơn layout “an toàn”
+    setMinimumSize(new Dimension(1000, 650));
     }
 
-    private void initUI() {
-        setTitle("Hệ thống Quản lý Thẻ Tập Gym - SmartCard Gym System");
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1100, 720);
-        setLocationRelativeTo(null);
+private void initUI() {
+    setTitle("Hệ thống Quản lý Thẻ Tập Gym - SmartCard Gym System");
+    setDefaultCloseOperation(EXIT_ON_CLOSE);
+    setSize(1200, 750);
+    setLocationRelativeTo(null);
 
-        // Main panel
-        JPanel mainPanel = new JPanel(new BorderLayout());
+    // Nền chung
+    JPanel mainPanel = new JPanel(new BorderLayout());
+    mainPanel.setBackground(new Color(236, 240, 241));
 
-        // Top toolbar
-        JPanel toolbarPanel = createToolbar();
-        mainPanel.add(toolbarPanel, BorderLayout.NORTH);
+    // Top toolbar (gradient)
+    JPanel toolbarPanel = createToolbar();
+    mainPanel.add(toolbarPanel, BorderLayout.NORTH);
 
-        // Tabbed pane
-        mainTabbedPane = new JTabbedPane();
-        mainTabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 14));
+    // ===== CENTER: bọc TabbedPane vào một "card" trắng =====
+    mainTabbedPane = new JTabbedPane();
+    mainTabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 14));
+    mainTabbedPane.setBackground(new Color(248, 249, 250));
 
-        // Admin panel (quản trị hệ thống, init thẻ, đổi PIN, unlock, v.v.)
-        adminPanel = new AdminPanel(cardComm);
-        mainTabbedPane.addTab("👤 Quản trị viên", adminPanel);
+    // Admin panel (quản trị hệ thống, init thẻ, đổi PIN, unlock, v.v.)
+    adminPanel = new AdminPanel(cardComm);
+    mainTabbedPane.addTab("👤 Quản trị viên", adminPanel);
 
-        // User panel (check-in, xem thông tin, ... )
-        userPanel = new UserPanel(cardComm);
-        mainTabbedPane.addTab("👥 Hội viên", userPanel);
+    // User panel (check-in, xem thông tin, ... )
+    userPanel = new UserPanel(cardComm);
+    mainTabbedPane.addTab("👥 Hội viên", userPanel);
 
-        mainPanel.add(mainTabbedPane, BorderLayout.CENTER);
+    // Card trắng ở giữa
+    JPanel cardPanel = new JPanel(new BorderLayout());
+    cardPanel.setBackground(Color.WHITE);
+    cardPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(210, 215, 218), 1, true),
+            new EmptyBorder(15, 15, 15, 15)
+    ));
+    cardPanel.add(mainTabbedPane, BorderLayout.CENTER);
 
-        // Status bar
-        JPanel statusBar = createStatusBar();
-        mainPanel.add(statusBar, BorderLayout.SOUTH);
+    // Wrapper có padding, giúp “thẻ trắng” không dính sát mép
+    JPanel centerWrapper = new JPanel(new BorderLayout());
+    centerWrapper.setBackground(new Color(236, 240, 241));
+    centerWrapper.setBorder(new EmptyBorder(15, 15, 10, 15));
+    centerWrapper.add(cardPanel, BorderLayout.CENTER);
 
-        setContentPane(mainPanel);
-    }
+    mainPanel.add(centerWrapper, BorderLayout.CENTER);
 
-    /**
-     * Create toolbar (gradient header + nút Kết nối)
-     */
-    private JPanel createToolbar() {
-        JPanel panel = new JPanel(new BorderLayout()) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                int w = getWidth();
-                int h = getHeight();
-                GradientPaint gp = new GradientPaint(
-                        0, 0, new Color(40, 116, 166),
-                        w, 0, new Color(93, 173, 226)
-                );
-                g2d.setPaint(gp);
-                g2d.fillRect(0, 0, w, h);
-            }
-        };
-        panel.setBorder(new EmptyBorder(15, 15, 10, 15));
-        panel.setOpaque(false);
+    // Status bar
+    JPanel statusBar = createStatusBar();
+    mainPanel.add(statusBar, BorderLayout.SOUTH);
 
-        // Left side - title & subtitle
-        JPanel leftPanel = new JPanel();
-        leftPanel.setOpaque(false);
-        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
+    setContentPane(mainPanel);
+}
 
-        JLabel titleLabel = new JLabel("🏋️ GYM SMARTCARD MANAGEMENT SYSTEM");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        titleLabel.setForeground(Color.WHITE);
+/**
+ * Create toolbar (gradient header + nút Kết nối)
+ */
+private JPanel createToolbar() {
+    JPanel panel = new JPanel(new BorderLayout()) {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            int w = getWidth();
+            int h = getHeight();
+            GradientPaint gp = new GradientPaint(
+                    0, 0, new Color(40, 116, 166),
+                    w, 0, new Color(93, 173, 226)
+            );
+            g2d.setPaint(gp);
+            g2d.fillRect(0, 0, w, h);
+        }
+    };
+    panel.setBorder(new EmptyBorder(12, 18, 10, 18));
+    panel.setOpaque(false);
 
-        JLabel subTitle = new JLabel("JavaCard • AES-128 on card • RSA secure channel");
-        subTitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        subTitle.setForeground(new Color(230, 248, 255));
+    // Left side - title & subtitle
+    JPanel leftPanel = new JPanel();
+    leftPanel.setOpaque(false);
+    leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 
-        leftPanel.add(titleLabel);
-        leftPanel.add(Box.createVerticalStrut(4));
-        leftPanel.add(subTitle);
+    JLabel titleLabel = new JLabel("🏋️  GYM SMARTCARD MANAGEMENT SYSTEM");
+    titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+    titleLabel.setForeground(Color.WHITE);
 
-        panel.add(leftPanel, BorderLayout.WEST);
+    JLabel subTitle = new JLabel("JavaCard • AES-128 on-card • RSA secure channel • PIN-based access control");
+    subTitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+    subTitle.setForeground(new Color(230, 248, 255));
 
-        // Right side - connect button + security status
-        JPanel rightPanel = new JPanel();
-        rightPanel.setOpaque(false);
-        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+    leftPanel.add(titleLabel);
+    leftPanel.add(Box.createVerticalStrut(4));
+    leftPanel.add(subTitle);
 
-        JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        buttonRow.setOpaque(false);
+    panel.add(leftPanel, BorderLayout.WEST);
 
-        connectBtn = createModernButton("Kết nối thẻ", new Color(46, 204, 113));
-        connectBtn.addActionListener(e -> toggleConnection());
-        buttonRow.add(connectBtn);
+    // Right side - connect button + security status
+    JPanel rightPanel = new JPanel();
+    rightPanel.setOpaque(false);
+    rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
 
-        rightPanel.add(buttonRow);
-        rightPanel.add(Box.createVerticalStrut(6));
+    JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+    buttonRow.setOpaque(false);
 
-        securityLabel = new JLabel("🔒 Chưa thiết lập kênh bảo mật (chưa kết nối thẻ)");
-        securityLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        securityLabel.setForeground(new Color(230, 248, 255));
-        securityLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+    connectBtn = createModernButton("Kết nối thẻ", new Color(46, 204, 113));
+    connectBtn.addActionListener(e -> toggleConnection());
+    connectBtn.setPreferredSize(new Dimension(150, 36));
+    buttonRow.add(connectBtn);
 
-        rightPanel.add(securityLabel);
+    rightPanel.add(buttonRow);
+    rightPanel.add(Box.createVerticalStrut(4));
 
-        panel.add(rightPanel, BorderLayout.EAST);
+    securityLabel = new JLabel("🔒 Chưa thiết lập kênh bảo mật (chưa kết nối thẻ)");
+    securityLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+    securityLabel.setForeground(new Color(230, 248, 255));
+    securityLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
 
-        return panel;
-    }
+    rightPanel.add(securityLabel);
+
+    panel.add(rightPanel, BorderLayout.EAST);
+
+    return panel;
+}
 
     /**
      * Create status bar (bottom)
      */
-    private JPanel createStatusBar() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
-        panel.setBackground(new Color(248, 249, 250));
+/**
+ * Create status bar (bottom)
+ */
+private JPanel createStatusBar() {
+    JPanel panel = new JPanel(new BorderLayout());
+    panel.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
+    panel.setBackground(new Color(248, 249, 250));
 
-        statusLabel = new JLabel("⚫ Chưa kết nối đầu đọc / thẻ");
-        statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        panel.add(statusLabel, BorderLayout.WEST);
+    // Trái: trạng thái kết nối
+    JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+    left.setOpaque(false);
 
-        JLabel versionLabel = new JLabel("v1.0 - SmartCard Gym System (Java, JavaCard)");
-        versionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        versionLabel.setForeground(Color.GRAY);
-        panel.add(versionLabel, BorderLayout.EAST);
+    JLabel dotLabel = new JLabel("●");
+    dotLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+    dotLabel.setForeground(Color.GRAY);
 
-        return panel;
-    }
+    statusLabel = new JLabel("Chưa kết nối đầu đọc / thẻ");
+    statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+
+    left.add(dotLabel);
+    left.add(statusLabel);
+
+    // Phải: version
+    JLabel versionLabel = new JLabel("v1.0  •  SmartCard Gym System (Java SE + JavaCard)");
+    versionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+    versionLabel.setForeground(Color.GRAY);
+
+    panel.add(left, BorderLayout.WEST);
+    panel.add(versionLabel, BorderLayout.EAST);
+
+    return panel;
+}
 
     /**
      * Toggle card connection (REAL smartcard logic)
@@ -215,39 +251,54 @@ public class GymCardApp extends JFrame {
         }
     }
 
-    /**
-     * Create modern rounded button
-     */
-    private JButton createModernButton(String text, Color bgColor) {
-        JButton button = new JButton(text) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                if (getModel().isPressed()) {
-                    g2d.setColor(bgColor.darker());
-                } else if (getModel().isRollover()) {
-                    g2d.setColor(bgColor.brighter());
-                } else {
-                    g2d.setColor(bgColor);
-                }
-
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
-                g2d.dispose();
-                super.paintComponent(g);
+/**
+ * Create modern rounded button
+ */
+private JButton createModernButton(String text, Color bgColor) {
+    JButton button = new JButton(text) {
+        @Override
+        protected void paintComponent(Graphics g) {
+            Color base = (Color) getClientProperty("baseColor");
+            if (base == null) {
+                base = new Color(52, 152, 219); // fallback
             }
-        };
-        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        button.setForeground(Color.WHITE);
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setContentAreaFilled(false);
-        button.setOpaque(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        button.setPreferredSize(new Dimension(160, 40));
-        return button;
-    }
+
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            if (getModel().isPressed()) {
+                g2d.setColor(base.darker());
+            } else if (getModel().isRollover()) {
+                g2d.setColor(base.brighter());
+            } else {
+                g2d.setColor(base);
+            }
+
+            g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+            g2d.dispose();
+            super.paintComponent(g);
+        }
+    };
+    button.putClientProperty("baseColor", bgColor);
+
+    button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+    button.setForeground(Color.WHITE);
+    button.setFocusPainted(false);
+    button.setBorderPainted(false);
+    button.setContentAreaFilled(false);
+    button.setOpaque(false);
+    button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    button.setPreferredSize(new Dimension(160, 40));
+    return button;
+}
+
+/**
+ * Update button color
+ */
+//private void updateButtonColor(JButton button, Color color) {
+//    button.putClientProperty("baseColor", color);
+//    button.repaint();
+//}
 
     /**
      * Update button color
