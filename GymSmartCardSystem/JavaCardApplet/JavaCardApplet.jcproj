@@ -1,10 +1,7 @@
 <JavaCardProject name="JavaCardApplet">
 <USER>
-<PKG name="Applet" aid="12 34 56 78 90" major="1" minor="0">
-<CLASS name="GymCardApplet"/>
-<CLASS name="ObjectStaff"/>
-<CLASS name="HMACSHA512"/>
-<CLASS name="SHA512"/>
+<PKG name="ProjectCuoiKy" aid="11 22 33 44 55 00" major="1" minor="0">
+<APPLET aid="11 22 33 44 55 00 00" instanceaid="" parameter="" authority="" privileges="" index="25824" name="ProjectCuoiKy"/>
 </PKG>
 <Libs/>
 </USER>

@@ -52,7 +52,7 @@ public class AdminPanel extends JPanel {
         };
         headerPanel.setPreferredSize(new Dimension(0, 80));
         headerPanel.setOpaque(false);
-        JLabel titleLabel = new JLabel("👥 QUẢN TRỊ HỆ THỐNG GYM CARD");
+        JLabel titleLabel = new JLabel("QUẢN TRỊ HỆ THỐNG GYM CARD");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(Color.WHITE);
         headerPanel.add(titleLabel);
@@ -63,9 +63,9 @@ public class AdminPanel extends JPanel {
         tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         tabbedPane.setBackground(Color.WHITE);
         
-        tabbedPane.addTab("📝 Đăng ký hội viên", createRegistrationPanel());
-        tabbedPane.addTab("🔐 Đổi PIN & Mở khóa", createPinManagementPanel());
-        tabbedPane.addTab("📊 Quản lý thẻ", createCardManagementPanel());
+        tabbedPane.addTab("Đăng ký hội viên", createRegistrationPanel());
+        tabbedPane.addTab("Đổi PIN & Mở khóa", createPinManagementPanel());
+        tabbedPane.addTab("Quản lý thẻ", createCardManagementPanel());
         
         add(tabbedPane, BorderLayout.CENTER);
         
@@ -146,7 +146,7 @@ public class AdminPanel extends JPanel {
         
         gbc.gridy = 2;
         gbc.insets = new Insets(20, 10, 10, 10);
-        JButton uploadBtn = createModernButton("📁 Chọn ảnh", new Color(52, 152, 219), 13);
+        JButton uploadBtn = createModernButton("Chọn ảnh", new Color(52, 152, 219), 13);
         uploadBtn.setPreferredSize(new Dimension(150, 40));
         uploadBtn.setEnabled(false); // Disable for now
         leftPanel.add(uploadBtn, gbc);
@@ -282,11 +282,11 @@ public class AdminPanel extends JPanel {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
         buttonPanel.setBackground(new Color(248, 249, 250));
         
-        JButton registerBtn = createModernButton("✅ Đăng ký hội viên", new Color(46, 204, 113), 16);
+        JButton registerBtn = createModernButton("Đăng ký hội viên", new Color(46, 204, 113), 16);
         registerBtn.setPreferredSize(new Dimension(220, 50));
         registerBtn.addActionListener(e -> registerMember());
         
-        JButton clearBtn = createModernButton("🔄 Xóa form", new Color(149, 165, 166), 14);
+        JButton clearBtn = createModernButton("Xóa form", new Color(149, 165, 166), 14);
         clearBtn.setPreferredSize(new Dimension(140, 50));
         clearBtn.addActionListener(e -> clearForm());
         
@@ -313,7 +313,7 @@ public class AdminPanel extends JPanel {
             BorderFactory.createLineBorder(new Color(52, 152, 219), 2),
             new EmptyBorder(30, 30, 30, 30)));
         
-        JLabel changePinTitle = new JLabel("🔑 Đổi mã PIN khi quên");
+        JLabel changePinTitle = new JLabel("Đổi mã PIN khi quên");
         changePinTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         changePinTitle.setForeground(new Color(52, 152, 219));
         changePinCard.add(changePinTitle, BorderLayout.NORTH);
@@ -415,7 +415,7 @@ public class AdminPanel extends JPanel {
             BorderFactory.createLineBorder(new Color(231, 76, 60), 2),
             new EmptyBorder(30, 30, 30, 30)));
         
-        JLabel unlockTitle = new JLabel("🔓 Mở khóa thẻ");
+        JLabel unlockTitle = new JLabel("Mở khóa thẻ");
         unlockTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         unlockTitle.setForeground(new Color(231, 76, 60));
         unlockCard.add(unlockTitle, BorderLayout.NORTH);
@@ -568,7 +568,7 @@ public class AdminPanel extends JPanel {
                 sb.append("  • Giờ ra: ").append(checkIn.checkOutTime).append("\n");
                 sb.append("  • Số ngày tập tháng này: ").append(checkInCount).append("\n\n");
                 
-                sb.append("SỐ DỮ TÀI KHOẢN:\n");
+                sb.append("SỐ DƯ TÀI KHOẢN:\n");
                 sb.append("  • Số dư: ").append(balance).append(" nghìn VNĐ\n");
                 sb.append("\n═══════════════════════════════════════════════════\n");
                 

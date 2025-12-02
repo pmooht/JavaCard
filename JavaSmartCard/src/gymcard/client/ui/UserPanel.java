@@ -49,7 +49,7 @@ public class UserPanel extends JPanel {
         };
         headerPanel.setPreferredSize(new Dimension(0, 80));
         headerPanel.setOpaque(false);
-        JLabel titleLabel = new JLabel("💪 HỘI VIÊN GYM CARD");
+        JLabel titleLabel = new JLabel("HỘI VIÊN GYM CARD");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(Color.WHITE);
         headerPanel.add(titleLabel);
@@ -136,19 +136,21 @@ public class UserPanel extends JPanel {
         triesLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         triesLabel.setForeground(new Color(231, 76, 60));
         gbc.gridy = 4;
+        gbc.gridwidth = 2;
         panel.add(triesLabel, gbc);
         
         // Login button
-        JButton loginBtn = createModernButton("🔓 Đăng nhập", new Color(46, 204, 113), 17);
+        JButton loginBtn = createModernButton("Đăng nhập", new Color(46, 204, 113), 17);
         loginBtn.setPreferredSize(new Dimension(200, 55));
         gbc.gridy = 5;
-        gbc.gridwidth = 1;
+        gbc.gridwidth = 2;
+        gbc.insets = new Insets(15, 15, 5, 15);
         panel.add(loginBtn, gbc);
         
         // Check tries button
-        JButton checkTriesBtn = createModernButton("🔍 Kiểm tra số lần thử", new Color(155, 89, 182), 12);
+        JButton checkTriesBtn = createModernButton("Kiểm tra số lần thử", new Color(155, 89, 182), 12);
         checkTriesBtn.setPreferredSize(new Dimension(200, 40));
-        gbc.gridx = 0; gbc.gridy = 6;
+        gbc.gridy = 6;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(5, 15, 15, 15);
         panel.add(checkTriesBtn, gbc);
@@ -226,7 +228,7 @@ public class UserPanel extends JPanel {
                 
                 int tries = cardComm.getPinTries();
                 if (tries == 0) {
-                    triesLabel.setText("⚠ Thẻ đã bị khóa!");
+                    triesLabel.setText("Thẻ đã bị khóa!");
                     log("Thẻ đã bị khóa");
                 } else {
                     triesLabel.setText("Còn " + tries + " lần nhập PIN");
@@ -253,18 +255,18 @@ public class UserPanel extends JPanel {
         tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 14));
         tabbedPane.setBackground(new Color(248, 249, 250));
         
-        tabbedPane.addTab("👤 Thông tin cá nhân", createInfoTab());
-        tabbedPane.addTab("📦 Gói tập", createPackageTab());
-        tabbedPane.addTab("📅 Check-in/Check-out", createCheckInTab());
-        tabbedPane.addTab("🔐 Thay đổi PIN", createChangePinTab());
-        tabbedPane.addTab("💰 Thanh toán", createPaymentTab());
+        tabbedPane.addTab("Thông tin cá nhân", createInfoTab());
+        tabbedPane.addTab("Gói tập", createPackageTab());
+        tabbedPane.addTab("Check-in/Check-out", createCheckInTab());
+        tabbedPane.addTab("Thay đổi PIN", createChangePinTab());
+        tabbedPane.addTab("Thanh toán", createPaymentTab());
         
         panel.add(tabbedPane, BorderLayout.CENTER);
         
         // Logout button
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
         bottomPanel.setBackground(new Color(248, 249, 250));
-        JButton logoutBtn = createModernButton("🚪 Đăng xuất", new Color(149, 165, 166), 14);
+        JButton logoutBtn = createModernButton("Đăng xuất", new Color(149, 165, 166), 14);
         logoutBtn.setPreferredSize(new Dimension(150, 40));
         logoutBtn.addActionListener(e -> {
             cardLayout.show(contentPanel, "login");
@@ -286,7 +288,7 @@ public class UserPanel extends JPanel {
         panel.setBackground(new Color(248, 249, 250));
         
         // Title
-        JLabel titleLabel = new JLabel("👤 THÔNG TIN CÁ NHÂN");
+        JLabel titleLabel = new JLabel("THÔNG TIN CÁ NHÂN");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         titleLabel.setForeground(new Color(52, 73, 94));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -309,8 +311,8 @@ public class UserPanel extends JPanel {
         gbc.insets = new Insets(10, 10, 10, 10);
         
         // Avatar placeholder
-        JLabel avatarLabel = new JLabel("👤");
-        avatarLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 80));
+        JLabel avatarLabel = new JLabel("USER");
+        avatarLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
         avatarLabel.setHorizontalAlignment(SwingConstants.CENTER);
         avatarLabel.setPreferredSize(new Dimension(150, 150));
         avatarLabel.setBorder(BorderFactory.createCompoundBorder(
@@ -406,7 +408,7 @@ public class UserPanel extends JPanel {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 20, 5, 20);
         
-        JLabel currentTitleLabel = new JLabel("📦 GÓI TẬP HIỆN TẠI");
+        JLabel currentTitleLabel = new JLabel("GÓI TẬP HIỆN TẠI");
         currentTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         currentTitleLabel.setForeground(Color.WHITE);
         gbc.gridx = 0; gbc.gridy = 0;
@@ -449,7 +451,7 @@ public class UserPanel extends JPanel {
         // Load current package button
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.setBackground(new Color(248, 249, 250));
-        JButton loadBtn = createModernButton("🔄 Tải thông tin gói hiện tại", new Color(52, 152, 219), 14);
+        JButton loadBtn = createModernButton("Tải thông tin gói hiện tại", new Color(52, 152, 219), 14);
         loadBtn.setPreferredSize(new Dimension(250, 45));
         loadBtn.addActionListener(e -> {
             try {
@@ -526,7 +528,7 @@ public class UserPanel extends JPanel {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.setBackground(Color.WHITE);
         
-        JButton buyBtn = createModernButton("💳 Mua gói", color, 15);
+        JButton buyBtn = createModernButton("Mua gói", color, 15);
         buyBtn.setPreferredSize(new Dimension(150, 45));
         buyBtn.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(card,
@@ -573,7 +575,7 @@ public class UserPanel extends JPanel {
         panel.setBackground(new Color(248, 249, 250));
         
         // Title - smaller
-        JLabel titleLabel = new JLabel("📅 LỊCH TẬP GYM");
+        JLabel titleLabel = new JLabel("LỊCH TẬP GYM");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         titleLabel.setForeground(new Color(52, 73, 94));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -613,21 +615,9 @@ public class UserPanel extends JPanel {
         // Create decorator for highlighting check-in days
         CheckInDayDecorator decorator = new CheckInDayDecorator(calendar);
         
-        // Demo check-in data with times (in real app, this would come from card)
+        // Check-in data will be loaded from card
         java.util.Map<String, String[]> checkInTimes = new java.util.HashMap<>();
-        checkInTimes.put("02/11/2025", new String[]{"08:00:00", "10:30:00"});
-        checkInTimes.put("04/11/2025", new String[]{"07:45:00", "09:15:00"});
-        checkInTimes.put("06/11/2025", new String[]{"18:30:00", "20:00:00"});
-        checkInTimes.put("09/11/2025", new String[]{"08:15:00", "10:45:00"});
-        checkInTimes.put("11/11/2025", new String[]{"19:00:00", "21:00:00"});
-        checkInTimes.put("16/11/2025", new String[]{"08:30:00", "10:00:00"});
-        checkInTimes.put("18/11/2025", new String[]{"07:30:00", "09:30:00"});
-        checkInTimes.put("23/11/2025", new String[]{"17:45:00", "19:45:00"});
-        checkInTimes.put("25/11/2025", new String[]{"08:00:00", "10:15:00"});
-        checkInTimes.put("28/11/2025", new String[]{"18:00:00", "20:30:00"});
         
-        // Load demo check-in dates
-        decorator.addCheckInDates(checkInTimes.keySet());
         decorator.install();
         
         leftPanel.add(calendar, BorderLayout.CENTER);
@@ -644,12 +634,12 @@ public class UserPanel extends JPanel {
             BorderFactory.createLineBorder(new Color(52, 152, 219), 2),
             new EmptyBorder(20, 20, 20, 20)));
         
-        JLabel statsTitle = new JLabel("📊 THỐNG KÊ");
+        JLabel statsTitle = new JLabel("THỐNG KÊ");
         statsTitle.setFont(new Font("Segoe UI", Font.BOLD, 17));
         statsTitle.setForeground(new Color(52, 73, 94));
         statsPanel.add(statsTitle);
         
-        JLabel countLabel = new JLabel("Số ngày đã tập: 10 ngày");
+        JLabel countLabel = new JLabel("Số ngày đã tập: 0 ngày");
         countLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         statsPanel.add(countLabel);
         
@@ -706,7 +696,7 @@ public class UserPanel extends JPanel {
                     decorator.addCheckInDate(date);
                     
                     JOptionPane.showMessageDialog(this, 
-                        "Check-in thành công!\nChúc bạn buổi tập tốt! 💪",
+                        "Check-in thành công!\nChúc bạn buổi tập tốt!",
                         "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     log("Check-in thất bại");
@@ -734,7 +724,7 @@ public class UserPanel extends JPanel {
                         info.date, info.checkInTime, info.checkOutTime));
                     
                     JOptionPane.showMessageDialog(this, 
-                        "Check-out thành công!\nHẹn gặp lại! 👋",
+                        "Check-out thành công!\nHẹn gặp lại!",
                         "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     log("Check-out thất bại");
@@ -775,7 +765,7 @@ public class UserPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         
         // Info label
-        JLabel infoLabel = new JLabel("🔒 Thay đổi mã PIN của bạn");
+        JLabel infoLabel = new JLabel("Thay đổi mã PIN của bạn");
         infoLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         infoLabel.setForeground(new Color(52, 73, 94));
         gbc.gridx = 0; gbc.gridy = 0;
@@ -837,7 +827,7 @@ public class UserPanel extends JPanel {
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.insets = new Insets(25, 12, 12, 12);
-        JButton changeBtn = createModernButton("🔐 Thay đổi PIN", new Color(52, 152, 219), 16);
+        JButton changeBtn = createModernButton("Thay đổi PIN", new Color(52, 152, 219), 16);
         changeBtn.setPreferredSize(new Dimension(220, 55));
         changeBtn.addActionListener(e -> {
             try {
@@ -916,7 +906,7 @@ public class UserPanel extends JPanel {
         balanceContent.setOpaque(false);
         balanceContent.setLayout(new BoxLayout(balanceContent, BoxLayout.Y_AXIS));
         
-        JLabel balanceTitleLabel = new JLabel("💰 SỐ DƯ TÀI KHOẢN");
+        JLabel balanceTitleLabel = new JLabel("SỐ DƯ TÀI KHOẢN");
         balanceTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         balanceTitleLabel.setForeground(Color.WHITE);
         balanceTitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -952,7 +942,7 @@ public class UserPanel extends JPanel {
         // Load balance button at bottom
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         bottomPanel.setBackground(new Color(248, 249, 250));
-        JButton loadBalanceBtn = createModernButton("🔄 Tải lại số dư", new Color(52, 152, 219), 14);
+        JButton loadBalanceBtn = createModernButton("Tải lại số dư", new Color(52, 152, 219), 14);
         loadBalanceBtn.setPreferredSize(new Dimension(180, 45));
         loadBalanceBtn.addActionListener(e -> {
             try {
@@ -981,7 +971,7 @@ public class UserPanel extends JPanel {
             new EmptyBorder(15, 20, 15, 20)));
         
         // Title
-        JLabel titleLabel = new JLabel("💳 Nạp tiền vào tài khoản");
+        JLabel titleLabel = new JLabel("Nạp tiền vào tài khoản");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLabel.setForeground(new Color(46, 204, 113));
         card.add(titleLabel, BorderLayout.NORTH);
@@ -1011,7 +1001,7 @@ public class UserPanel extends JPanel {
         gbc.gridy = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.insets = new Insets(20, 12, 12, 12);
-        JButton addBtn = createModernButton("💳 Nạp tiền", new Color(46, 204, 113), 16);
+        JButton addBtn = createModernButton("Nạp tiền", new Color(46, 204, 113), 16);
         addBtn.setPreferredSize(new Dimension(200, 25));
         addBtn.addActionListener(e -> {
             try {
@@ -1053,7 +1043,7 @@ public class UserPanel extends JPanel {
             new EmptyBorder(15, 20, 15, 20)));
         
         // Title
-        JLabel titleLabel = new JLabel("💰 Thanh toán dịch vụ");
+        JLabel titleLabel = new JLabel("Thanh toán dịch vụ");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLabel.setForeground(new Color(231, 76, 60));
         card.add(titleLabel, BorderLayout.NORTH);
@@ -1065,11 +1055,11 @@ public class UserPanel extends JPanel {
         
         // Define services with prices
         String[][] services = {
-            {"🏋️ HLV riêng", "200"},
-            {"💧 Nước uống", "20"},
-            {"🧖 Khăn tập", "10"},
-            {"🥤 Protein shake", "50"},
-            {"🍎 Dinh dưỡng", "100"}
+            {"HLV riêng", "200"},
+            {"Nước uống", "20"},
+            {"Khăn tập", "10"},
+            {"Protein shake", "50"},
+            {"Dinh dưỡng", "100"}
         };
         
         JComboBox<String> serviceCombo = new JComboBox<>();
@@ -1145,7 +1135,7 @@ public class UserPanel extends JPanel {
         // Payment button
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.setBackground(Color.WHITE);
-        JButton payBtn = createModernButton("💰 Thanh toán", new Color(231, 76, 60), 16);
+        JButton payBtn = createModernButton("Thanh toán", new Color(231, 76, 60), 16);
         payBtn.setPreferredSize(new Dimension(200, 25));
         payBtn.addActionListener(e -> {
             try {
