@@ -951,6 +951,7 @@ log("Xác thực PIN OK.");
         addressArea.setText("");
         pinField.setText("");
         confirmPinField.setText("");
+        avatarLabel.setIcon(null);
     }
     
     /**
