@@ -8,7 +8,10 @@ import java.util.Date;
 import javax.swing.*;
 import javax.swing.border.*;
 import com.toedter.calendar.JCalendar;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.util.Calendar;
+import javax.imageio.ImageIO;
 
 
 /**
@@ -385,7 +388,7 @@ private JPanel createInfoTab() {
     loadBtn.addActionListener(e -> {
         try {
             MemberInfo member = cardComm.getMemberInfo(); // cần PIN đã verify
-
+setAvatarToLabel(avatarLabel, member.avatarBytes);
             StringBuilder sb = new StringBuilder();
             sb.append("━━━━━━━━ THÔNG TIN CÁ NHÂN ━━━━━━━━\n\n");
             sb.append(String.format("Họ và tên   : %s\n\n", member.name));
@@ -409,6 +412,60 @@ private JPanel createInfoTab() {
     panel.add(buttonPanel, BorderLayout.SOUTH);
 
     return panel;
+}
+private boolean isAllZero(byte[] data) {
+    if (data == null) return true;
+    for (byte b : data) if (b != 0x00) return false;
+    return true;
+}
+
+private String hexdumpHead(byte[] data, int n) {
+    if (data == null) return "null";
+    int len = Math.min(n, data.length);
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < len; i++) {
+        sb.append(String.format("%02X ", data[i]));
+    }
+    return sb.toString().trim();
+}
+
+private void setAvatarToLabel(JLabel avatarLabel, byte[] avatarBytes) {
+    try {
+        log("[AVATAR] bytes=" + (avatarBytes == null ? "null" : avatarBytes.length));
+        if (avatarBytes == null || avatarBytes.length != 192) {
+            log("[AVATAR] no avatar or wrong size -> default");
+            avatarLabel.setIcon(null);
+            avatarLabel.setText("👤");
+            return;
+        }
+
+        // nếu thẻ chưa ghi avatar: thường ciphertext = 0... hoặc decrypt ra pattern lặp
+        // bạn có thể coi như "không có" bằng heuristic đơn giản:
+        boolean allSame = true;
+        for (int i = 1; i < avatarBytes.length; i++) {
+            if (avatarBytes[i] != avatarBytes[0]) { allSame = false; break; }
+        }
+        if (allSame) {
+            log("[AVATAR] looks like uninitialized data (all same byte) -> default");
+            avatarLabel.setIcon(null);
+            avatarLabel.setText("👤");
+            return;
+        }
+
+        int w = 16, h = 12;
+        BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
+        img.getRaster().setDataElements(0, 0, w, h, avatarBytes);
+
+        Image scaled = img.getScaledInstance(120, 120, Image.SCALE_SMOOTH);
+        avatarLabel.setText("");
+        avatarLabel.setIcon(new ImageIcon(scaled));
+
+        log("[AVATAR] rendered grayscale 16x12 OK");
+    } catch (Exception e) {
+        log("[AVATAR] exception: " + e.getMessage());
+        avatarLabel.setIcon(null);
+        avatarLabel.setText("👤");
+    }
 }
 
     /**

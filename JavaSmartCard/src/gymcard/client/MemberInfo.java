@@ -8,6 +8,7 @@ public class MemberInfo {
     public String birthDate;
     public String phone;
     public String address;
+    public byte[] avatarBytes;
     
     public MemberInfo() {
         this.name = "";

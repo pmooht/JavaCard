@@ -3,8 +3,16 @@ package gymcard.client.ui;
 import gymcard.client.*;
 import gymcard.databaseManager.DatabaseManager;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 import javax.swing.*;
 import javax.swing.border.*;
 
@@ -229,7 +237,36 @@ private JPanel createRegistrationPanel() {
             BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
             BorderFactory.createEmptyBorder(6, 10, 6, 10)));
     formPanel.add(confirmPinField, gbc);
+// ===== AVATAR =====
+row++;
+gbc.gridx = 0; gbc.gridy = row;
+gbc.weightx = 0;
+gbc.anchor = GridBagConstraints.NORTHEAST;
+JLabel avatarTitle = new JLabel("Ảnh đại diện (tùy chọn):");
+avatarTitle.setFont(labelFont);
+formPanel.add(avatarTitle, gbc);
 
+gbc.gridx = 1; gbc.weightx = 1.0;
+gbc.anchor = GridBagConstraints.WEST;
+
+JPanel avatarPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+avatarPanel.setBackground(Color.WHITE);
+
+avatarLabel = new JLabel("Chưa chọn ảnh");
+avatarLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+avatarLabel.setForeground(new Color(127, 140, 141));
+avatarLabel.setPreferredSize(new Dimension(90, 90));
+avatarLabel.setHorizontalAlignment(SwingConstants.CENTER);
+avatarLabel.setBorder(BorderFactory.createLineBorder(new Color(189, 195, 199)));
+
+JButton chooseAvatarBtn = new JButton("Chọn ảnh...");
+chooseAvatarBtn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+chooseAvatarBtn.addActionListener(e -> chooseAvatarImage());
+
+avatarPanel.add(avatarLabel);
+avatarPanel.add(chooseAvatarBtn);
+
+formPanel.add(avatarPanel, gbc);
     // ===== GHI CHÚ BẢO MẬT (nhỏ lại) =====
     row++;
     gbc.gridx = 0; gbc.gridy = row;
@@ -269,6 +306,63 @@ private JPanel createRegistrationPanel() {
     panel.add(buttonPanel, BorderLayout.SOUTH);
 
     return panel;
+}
+private void chooseAvatarImage() {
+    JFileChooser chooser = new JFileChooser();
+    chooser.setDialogTitle("Chọn ảnh đại diện");
+    chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+            "Ảnh (JPG, PNG)", "jpg", "jpeg", "png"
+    ));
+
+    int result = chooser.showOpenDialog(this);
+    if (result == JFileChooser.APPROVE_OPTION) {
+        File file = chooser.getSelectedFile();
+        avatarPath = file.getAbsolutePath();
+
+        try {
+            BufferedImage img = javax.imageio.ImageIO.read(file);
+            if (img == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Không đọc được ảnh này. Vui lòng chọn file JPG/PNG.",
+                        "Lỗi ảnh", JOptionPane.ERROR_MESSAGE);
+                avatarPath = null;
+                return;
+            }
+
+            Image scaled = img.getScaledInstance(90, 90, Image.SCALE_SMOOTH);
+            avatarLabel.setIcon(new ImageIcon(scaled));
+            avatarLabel.setText("");
+            log("Đã chọn avatar: " + avatarPath);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi đọc ảnh: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            avatarPath = null;
+        }
+    }
+}
+private byte[] compressAvatarToCardSize(String path, int maxBytes) throws Exception {
+    // maxBytes = 192
+    BufferedImage src = ImageIO.read(new File(path));
+    if (src == null) return null;
+
+    int w = 16, h = 12; // 16*12 = 192 bytes
+    BufferedImage scaled = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
+
+    Graphics2D g = scaled.createGraphics();
+    g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+    g.drawImage(src, 0, 0, w, h, null);
+    g.dispose();
+
+    byte[] out = ((java.awt.image.DataBufferByte) scaled.getRaster().getDataBuffer()).getData();
+    if (out.length != maxBytes) {
+        // cực hiếm, nhưng để chắc
+        byte[] fixed = new byte[maxBytes];
+        System.arraycopy(out, 0, fixed, 0, Math.min(out.length, maxBytes));
+        return fixed;
+    }
+    return out;
 }
 
     /**
@@ -662,7 +756,6 @@ private void registerMember() {
             return;
         }
 
-        // 1. Lấy & kiểm tra dữ liệu từ form
         String name       = nameField.getText().trim();
         String birthDate  = birthDateField.getText().trim();
         String phone      = phoneField.getText().trim();
@@ -670,21 +763,19 @@ private void registerMember() {
         String pin        = new String(pinField.getPassword()).trim();
         String confirmPin = new String(confirmPinField.getPassword()).trim();
 
+        // validate như cũ...
         if (name.isEmpty() || birthDate.isEmpty() || phone.isEmpty() || pin.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "Vui lòng điền đầy đủ các trường bắt buộc (*)",
                     "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
-        // PIN phải 6 chữ số
-        if (pin.length() != 6 || !pin.matches("\\d{6}")) {
+        if (!pin.matches("\\d{6}")) {
             JOptionPane.showMessageDialog(this,
                     "Mã PIN phải gồm đúng 6 chữ số (0-9)!",
                     "PIN không hợp lệ", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
         if (!pin.equals(confirmPin)) {
             JOptionPane.showMessageDialog(this,
                     "Mã PIN và xác nhận PIN không khớp!",
@@ -692,36 +783,47 @@ private void registerMember() {
             return;
         }
 
-        // (tuỳ bạn) có thể validate thêm định dạng ngày sinh, số điện thoại,...
+        // 2. Khởi tạo thẻ: cardId dùng luôn số điện thoại (tối đa 32 byte)
+        String cardId = phone;
+        log("Đang khởi tạo thẻ (INIT_CARD) với CardID = " + cardId + " ...");
+        cardComm.initNewCard(cardId, pin);   // <-- bạn implement trong CardCommunicator, gọi CardManager.initCard(...)
+        log("Khởi tạo thẻ thành công.");
 
-        // 2. Khởi tạo thẻ: INIT_CARD (CardID auto-generate + set PIN + masterKey từ PIN)
-        log("Đang khởi tạo thẻ (INIT_CARD)...");
-        // TODO: cần implement hàm này trong CardCommunicator
-        String cardId = cardComm.initNewCard(pin);
-        log("Khởi tạo thẻ thành công. CardID = " + cardId);
+// 3. VERIFY_PIN (BẮT BUỘC trước khi ghi dữ liệu)
+log("Đang xác thực PIN...");
+if (!cardComm.verifyPin(pin)) {
+    log("Xác thực PIN thất bại sau INIT_CARD!");
+    JOptionPane.showMessageDialog(this,
+            "PIN không đúng hoặc thẻ chưa sẵn sàng.\n" +
+            "Vui lòng thử lại.",
+            "Lỗi", JOptionPane.ERROR_MESSAGE);
+    return;
+}
+log("Xác thực PIN OK.");
 
-        // 3. Verify PIN để thẻ set trạng thái pin.isValidated()
-        log("Đang verify PIN trên thẻ...");
-        boolean verified = cardComm.verifyPin(pin);
-        if (!verified) {
-            log("Verify PIN thất bại sau khi init!");
-            JOptionPane.showMessageDialog(this,
-                    "Verify PIN không thành công sau khi khởi tạo thẻ.\n" +
-                    "Vui lòng thử lại hoặc kiểm tra thẻ.",
-                    "Lỗi verify PIN", JOptionPane.ERROR_MESSAGE);
-            return;
+        // 4. Nén avatar (nếu có chọn)
+        byte[] avatarBytes = null;
+        if (avatarPath != null) {
+            avatarBytes = compressAvatarToCardSize(avatarPath, 192); // AVATAR_LEN
+            if (avatarBytes == null) {
+                log("Không thể nén avatar xuống <= 192 bytes, bỏ qua lưu avatar.");
+            } else {
+                log("Avatar đã nén: " + avatarBytes.length + " bytes.");
+            }
         }
 
-        // 4. Ghi thông tin cá nhân xuống thẻ (thẻ tự mã hóa AES-128 bên trong)
+        // 5. Ghi thông tin hội viên xuống thẻ (thẻ tự mã hóa AES-128)
         log("Đang lưu thông tin hội viên (mã hóa AES trên thẻ)...");
-        if (!cardComm.setMemberInfo(name, birthDate, phone, address)) {
+        boolean ok = cardComm.setMemberInfo(name, birthDate, phone, address, avatarBytes);
+        if (!ok) {
             log("Lưu thông tin hội viên thất bại");
             JOptionPane.showMessageDialog(this,
                     "Không thể lưu thông tin hội viên lên thẻ.",
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        // 5. Thông báo thành công
+
+        // 6. Thông báo
         log("Đăng ký hội viên & khởi tạo thẻ thành công!");
         JOptionPane.showMessageDialog(this,
                 "Đăng ký hội viên mới và khởi tạo thẻ thành công!\n\n" +
@@ -732,7 +834,6 @@ private void registerMember() {
                 "• PIN dùng để hội viên check-in và bảo vệ dữ liệu trên thẻ.\n",
                 "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
-        // 6. Xoá form sau khi xong
         clearForm();
 
     } catch (Exception ex) {
@@ -743,6 +844,7 @@ private void registerMember() {
                 "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
 }
+
 
     
     /**

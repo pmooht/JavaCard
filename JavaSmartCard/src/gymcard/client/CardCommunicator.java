@@ -2,14 +2,20 @@ package gymcard.client;
 
 import gymcard.CardManager.CardIdGenerator;
 import gymcard.CardManager.CardManager;
-import gymcard.databaseManager.DatabaseManager;
-import java.sql.SQLException;
+
 /**
  * Card Communicator - Nói chuyện với thẻ JavaCard thật
  * Một số chức năng (check-in, balance, transaction) vẫn còn giả lập trong RAM,
  * nhưng yêu cầu phải kết nối & xác thực PIN.
  */
 public class CardCommunicator {
+
+    // Giới hạn kích thước field (phải khớp với applet)
+    private static final int NAME_MAX_LEN    = 64;
+    private static final int DOB_MAX_LEN     = 16;
+    private static final int PHONE_MAX_LEN   = 16;
+    private static final int ADDRESS_MAX_LEN = 128;
+    private static final int AVATAR_MAX_LEN  = 192; // khớp AVATAR_LEN trên thẻ
 
     // Trạng thái kết nối & xác thực
     private boolean connected;
@@ -48,6 +54,8 @@ public class CardCommunicator {
         memberInfo.birthDate = "";
         memberInfo.phone = "";
         memberInfo.address = "";
+        memberInfo.avatarBytes = null;
+        // nếu bạn có field avatarBytes trong MemberInfo thì nhớ set null ở đây
 
         packageInfo = new PackageInfo();
         packageInfo.type = 0;
@@ -96,6 +104,7 @@ public class CardCommunicator {
 
         System.out.println("[CARD] Disconnected");
     }
+
     // ---------------------------------------------------------------------
     // KHỞI TẠO THẺ MỚI (INIT_CARD) - dùng cho AdminPanel.registerMember()
     // ---------------------------------------------------------------------
@@ -109,49 +118,18 @@ public class CardCommunicator {
      * @param pin PIN 6 chữ số do admin nhập
      * @return CardID đã gán cho thẻ (để hiển thị cho admin / lưu DB)
      */
-public String initNewCard(String pin) throws Exception {
-    if (!connected) {
-        throw new Exception("Chưa kết nối thẻ");
-    }
-    if (pin == null || !pin.matches("\\d{6}")) {
-        throw new Exception("PIN phải gồm đúng 6 chữ số");
-    }
+public String initNewCard(String cardId, String userPin) throws Exception {
+    if (!connected) throw new Exception("Chưa kết nối thẻ");
+    if (cardId == null || cardId.isBlank()) throw new Exception("CardID rỗng");
+    if (!userPin.matches("\\d{6}")) throw new Exception("PIN phải 6 số");
 
-    // 1. Sinh CardID tự động
-    String cardId = CardIdGenerator.nextId();   // tự viết class này tăng dần 001, 002,...
+    String adminPin = "123456";
+    cardManager.initCard(cardId, userPin, adminPin);
 
-    // 2. Gửi INIT_CARD xuống thẻ
-    cardManager.initCard(cardId, pin);
+    System.out.println("[CARD] triesAfterInit=" + (cardManager.getTriesRemaining() & 0xFF));
 
-    // 3. Lấy modulus public key của thẻ
-    byte[] cardPubMod = null;
-    try {
-        cardPubMod = cardManager.getCardPublicKey();
-        System.out.println("[CARD] cardPublicKey modulus length = " + cardPubMod.length);
-    } catch (Exception e) {
-        System.out.println("[CARD] GET_CARD_PUB lỗi: " + e.getMessage());
-    }
-
-    // 4. Lưu DB: users(user_code, card_public_key)
-    try {
-        gymcard.databaseManager.DatabaseManager db = 
-                gymcard.databaseManager.DatabaseManager.getInstance();
-
-        if (cardPubMod != null && cardPubMod.length > 0) {
-            db.insertUser(cardId, cardPubMod);
-        } else {
-            // fallback: lưu placeholder
-            db.insertUser(cardId, ("TEMP-" + cardId).getBytes("UTF-8"));
-        }
-
-    } catch (Exception ex) {
-        System.err.println("[DB] Lỗi insert user: " + ex.getMessage());
-    }
-
-    // 5. reset state in-memory
     authenticated = false;
     initializeDefaultData();
-
     return cardId;
 }
 
@@ -238,71 +216,209 @@ public String initNewCard(String pin) throws Exception {
         return tries & 0xFF;
     }
 
+    /**
+     * Admin đổi PIN cho hội viên khi hội viên quên PIN.
+     * Chỉ cần mật khẩu admin + PIN mới.
+     */
+    public boolean adminResetMemberPin(String adminPass, String newPin) throws Exception {
+        if (!connected) throw new Exception("Chưa kết nối thẻ");
+        // KHÔNG yêu cầu authenticated, vì applet tự kiểm tra adminPass
+
+        if (newPin == null || newPin.length() != 6) {
+            throw new Exception("PIN mới phải 6 ký tự");
+        }
+        if (adminPass == null || adminPass.isEmpty()) {
+            throw new Exception("Mật khẩu admin không được rỗng");
+        }
+
+        try {
+            cardManager.adminSetUserPin(adminPass, newPin);
+            System.out.println("[CARD] Admin reset member PIN OK");
+            // Sau khi đổi PIN, masterKey AES trên thẻ đã đổi theo PIN mới.
+            // Ở phía client không cần làm gì thêm.
+            return true;
+        } catch (RuntimeException ex) {
+            System.out.println("[CARD] Admin reset member PIN FAIL: " + ex.getMessage());
+            return false;
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // VALIDATE INPUT & CHUYỂN UTF-8 + GIỚI HẠN ĐỘ DÀI
+    // ---------------------------------------------------------------------
+
+    private byte[] toUtf8AndLimit(String value, int maxBytes, String fieldName) throws Exception {
+        if (value == null) {
+            return null;
+        }
+        byte[] bytes = value.getBytes("UTF-8");
+        if (bytes.length > maxBytes) {
+            throw new Exception(String.format(
+                    "%s quá dài (tối đa %d bytes UTF-8, hiện tại %d)",
+                    fieldName, maxBytes, bytes.length));
+        }
+        return bytes;
+    }
+
+    private void validateBirthDate(String birthDate) throws Exception {
+        if (birthDate == null || birthDate.trim().isEmpty()) {
+            throw new Exception("Ngày sinh không được để trống");
+        }
+        if (!birthDate.matches("\\d{2}/\\d{2}/\\d{4}")) {
+            throw new Exception("Ngày sinh phải theo định dạng dd/MM/yyyy (ví dụ: 01/10/2000)");
+        }
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy");
+        sdf.setLenient(false);
+        try {
+            sdf.parse(birthDate);
+        } catch (java.text.ParseException e) {
+            throw new Exception("Ngày sinh không hợp lệ (ngày/tháng không tồn tại)");
+        }
+    }
+
+    private void validatePhone(String phone) throws Exception {
+        if (phone == null || phone.trim().isEmpty()) {
+            throw new Exception("Số điện thoại không được để trống");
+        }
+        String normalized = phone.trim().replaceAll("\\s+", "");
+        // Ví dụ: 0xxxxxxxxx (10–11 số)
+        if (!normalized.matches("0\\d{9,10}")) {
+            throw new Exception("Số điện thoại không hợp lệ (phải bắt đầu bằng 0, dài 10–11 số)");
+        }
+    }
+
     // ---------------------------------------------------------------------
     // THÔNG TIN HỘI VIÊN – map với các FIELD trên thẻ
     // ---------------------------------------------------------------------
 
     /**
-     * Ghi thông tin người dùng xuống thẻ:
+     * Ghi thông tin người dùng xuống thẻ (kèm avatar):
      * - name → FIELD_NAME
      * - birthDate → FIELD_DOB
      * - phone → FIELD_PHONE
      * - address → FIELD_ADDRESS
+     * - avatarBytes → FIELD_AVATAR
+     *
+     * avatarBytes là byte[] đã nén sẵn ở UI (ví dụ JPEG chất lượng thấp + resize).
      */
-    public boolean setMemberInfo(String name, String birthDate, String phone, String address)
+    public boolean setMemberInfo(String name,
+                                 String birthDate,
+                                 String phone,
+                                 String address,
+                                 byte[] avatarBytes)
             throws Exception {
 
         if (!connected || !authenticated) {
             throw new Exception("Chưa xác thực PIN");
         }
 
-        // Charset nên thống nhất: UTF-8
-        if (name != null) {
-            cardManager.writeField(CardManager.FIELD_NAME, name.getBytes("UTF-8"));
-            memberInfo.name = name;
+        // Validate logic
+        if (name == null || name.trim().isEmpty()) {
+            throw new Exception("Họ và tên không được để trống");
         }
-        if (birthDate != null) {
-            cardManager.writeField(CardManager.FIELD_DOB, birthDate.getBytes("UTF-8"));
-            memberInfo.birthDate = birthDate;
-        }
-        if (phone != null) {
-            cardManager.writeField(CardManager.FIELD_PHONE, phone.getBytes("UTF-8"));
-            memberInfo.phone = phone;
-        }
-        if (address != null) {
-            cardManager.writeField(CardManager.FIELD_ADDRESS, address.getBytes("UTF-8"));
-            memberInfo.address = address;
+        validateBirthDate(birthDate);
+        validatePhone(phone);
+
+        if (address != null && address.trim().isEmpty()) {
+            address = null;
         }
 
-        System.out.println("[CARD] Member info written to card");
+        // Chuyển UTF-8 + giới hạn độ dài
+        byte[] nameBytes    = toUtf8AndLimit(name.trim(),      NAME_MAX_LEN,    "Họ và tên");
+        byte[] dobBytes     = toUtf8AndLimit(birthDate.trim(), DOB_MAX_LEN,     "Ngày sinh");
+        byte[] phoneBytes   = toUtf8AndLimit(phone.trim(),     PHONE_MAX_LEN,   "Số điện thoại");
+        byte[] addressBytes = (address != null)
+                ? toUtf8AndLimit(address.trim(), ADDRESS_MAX_LEN, "Địa chỉ")
+                : null;
+
+        // Avatar: đã nén sẵn ở UI, ở đây chỉ check size
+        if (avatarBytes != null && avatarBytes.length > AVATAR_MAX_LEN) {
+            throw new Exception("Ảnh đại diện sau khi nén vẫn quá lớn (>"
+                    + AVATAR_MAX_LEN + " bytes)");
+        }
+
+        // Ghi xuống thẻ (thẻ tự AES bên trong)
+        if (nameBytes != null) {
+            cardManager.writeField(CardManager.FIELD_NAME, nameBytes);
+            memberInfo.name = name;
+        }
+        if (dobBytes != null) {
+            cardManager.writeField(CardManager.FIELD_DOB, dobBytes);
+            memberInfo.birthDate = birthDate;
+        }
+        if (phoneBytes != null) {
+            cardManager.writeField(CardManager.FIELD_PHONE, phoneBytes);
+            memberInfo.phone = phone;
+        }
+        if (addressBytes != null) {
+            cardManager.writeField(CardManager.FIELD_ADDRESS, addressBytes);
+            memberInfo.address = address;
+        }
+        if (avatarBytes != null) {
+            cardManager.writeField(CardManager.FIELD_AVATAR, avatarBytes);
+                memberInfo.avatarBytes = avatarBytes; // thêm dòng này
+            // nếu MemberInfo có field avatarBytes:
+            // memberInfo.avatarBytes = avatarBytes;
+        }
+
+        System.out.println("[CARD] Member info written to card (with avatar)");
         return true;
+    }
+
+    /**
+     * Overload cũ: không truyền avatar -> avatar = null
+     * Để bạn khỏi phải sửa quá nhiều code đang dùng hàm này.
+     */
+    public boolean setMemberInfo(String name,
+                                 String birthDate,
+                                 String phone,
+                                 String address)
+            throws Exception {
+        return setMemberInfo(name, birthDate, phone, address, null);
     }
 
     /**
      * Đọc thông tin hội viên từ thẻ
      */
-    public MemberInfo getMemberInfo() throws Exception {
-        if (!connected || !authenticated) {
-            throw new Exception("Chưa xác thực PIN");
-        }
-
-        MemberInfo info = new MemberInfo();
-
-        byte[] nameBytes = cardManager.readField(CardManager.FIELD_NAME);
-        byte[] dobBytes = cardManager.readField(CardManager.FIELD_DOB);
-        byte[] phoneBytes = cardManager.readField(CardManager.FIELD_PHONE);
-        byte[] addrBytes = cardManager.readField(CardManager.FIELD_ADDRESS);
-
-        info.name = new String(nameBytes, "UTF-8");
-        info.birthDate = new String(dobBytes, "UTF-8");
-        info.phone = new String(phoneBytes, "UTF-8");
-        info.address = new String(addrBytes, "UTF-8");
-
-        // Cache lại in-memory cho UI dùng
-        this.memberInfo = info;
-
-        return info;
+public MemberInfo getMemberInfo() throws Exception {
+    if (!connected || !authenticated) {
+        throw new Exception("Chưa xác thực PIN");
     }
+
+    MemberInfo info = new MemberInfo();
+
+    byte[] nameBytes  = cardManager.readField(CardManager.FIELD_NAME);
+    byte[] dobBytes   = cardManager.readField(CardManager.FIELD_DOB);
+    byte[] phoneBytes = cardManager.readField(CardManager.FIELD_PHONE);
+    byte[] addrBytes  = cardManager.readField(CardManager.FIELD_ADDRESS);
+
+    // ✅ đọc avatar
+    byte[] avatarBytes = null;
+    try {
+        avatarBytes = cardManager.readField(CardManager.FIELD_AVATAR);
+        // nếu thẻ chưa có avatar thì thường toàn 0x00 hoặc length=0
+        if (avatarBytes != null) {
+            boolean allZero = true;
+            for (byte b : avatarBytes) {
+                if (b != 0x00) { allZero = false; break; }
+            }
+            if (allZero) avatarBytes = null;
+        }
+    } catch (Exception ignore) {
+        // tùy bạn: nếu applet chưa hỗ trợ/field không có thì bỏ qua
+        avatarBytes = null;
+    }
+
+    info.name      = new String(nameBytes,  "UTF-8");
+    info.birthDate = new String(dobBytes,   "UTF-8");
+    info.phone     = new String(phoneBytes, "UTF-8");
+    info.address   = new String(addrBytes,  "UTF-8");
+    info.avatarBytes = avatarBytes; // ✅ gán
+
+    this.memberInfo = info;
+    return info;
+}
+
 
     // ---------------------------------------------------------------------
     // GÓI TẬP – mã hóa đơn giản vào 1 field trên thẻ (FIELD_PACKAGE)
@@ -382,9 +498,7 @@ public String initNewCard(String pin) throws Exception {
     }
 
     // ---------------------------------------------------------------------
-    // CHECK-IN / CHECK-OUT / BALANCE / TRANSACTION
-    // → Hiện tại vẫn mô phỏng trong RAM,
-    //   nhưng bắt buộc phải connected + authenticated (logic đúng hơn)
+    // CHECK-IN / CHECK-OUT / BALANCE / TRANSACTION (mock trong RAM)
     // ---------------------------------------------------------------------
 
     public boolean checkIn(String date, String time) throws Exception {
@@ -531,30 +645,4 @@ public String initNewCard(String pin) throws Exception {
 
         System.out.println("[MOCK] Local demo data loaded (RAM only)");
     }
-    /**
- * Admin đổi PIN cho hội viên khi hội viên quên PIN.
- * Chỉ cần mật khẩu admin + PIN mới.
- */
-public boolean adminResetMemberPin(String adminPass, String newPin) throws Exception {
-    if (!connected) throw new Exception("Chưa kết nối thẻ");
-    // KHÔNG yêu cầu authenticated, vì applet tự kiểm tra adminPass
-
-    if (newPin == null || newPin.length() != 6) {
-        throw new Exception("PIN mới phải 6 ký tự");
-    }
-    if (adminPass == null || adminPass.isEmpty()) {
-        throw new Exception("Mật khẩu admin không được rỗng");
-    }
-
-    try {
-        cardManager.adminSetUserPin(adminPass, newPin);
-        System.out.println("[CARD] Admin reset member PIN OK");
-        // Sau khi đổi PIN, masterKey AES trên thẻ đã đổi theo PIN mới.
-        // Ở phía client không cần làm gì thêm.
-        return true;
-    } catch (RuntimeException ex) {
-        System.out.println("[CARD] Admin reset member PIN FAIL: " + ex.getMessage());
-        return false;
-    }
-}
 }
