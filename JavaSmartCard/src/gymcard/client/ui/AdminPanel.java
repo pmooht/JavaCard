@@ -343,26 +343,48 @@ private void chooseAvatarImage() {
     }
 }
 private byte[] compressAvatarToCardSize(String path, int maxBytes) throws Exception {
-    // maxBytes = 192
     BufferedImage src = ImageIO.read(new File(path));
     if (src == null) return null;
 
-    int w = 16, h = 12; // 16*12 = 192 bytes
-    BufferedImage scaled = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
+    int target = 256;        // bắt đầu 256px
+    float quality = 0.85f;   // bắt đầu quality cao
 
-    Graphics2D g = scaled.createGraphics();
-    g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-    g.drawImage(src, 0, 0, w, h, null);
-    g.dispose();
+    while (true) {
+        BufferedImage scaled = new BufferedImage(target, target, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = scaled.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.drawImage(src, 0, 0, target, target, null);
+        g.dispose();
 
-    byte[] out = ((java.awt.image.DataBufferByte) scaled.getRaster().getDataBuffer()).getData();
-    if (out.length != maxBytes) {
-        // cực hiếm, nhưng để chắc
-        byte[] fixed = new byte[maxBytes];
-        System.arraycopy(out, 0, fixed, 0, Math.min(out.length, maxBytes));
-        return fixed;
+        byte[] jpg = encodeJpeg(scaled, quality);
+
+        if (jpg.length <= maxBytes) return jpg;
+
+        if (quality > 0.25f) {
+            quality -= 0.10f;
+        } else if (target > 64) {
+            target = (int)(target * 0.80);
+            quality = 0.85f; // reset quality khi giảm size
+        } else {
+            return null; // không thể nén nhỏ hơn
+        }
     }
-    return out;
+}
+
+private byte[] encodeJpeg(BufferedImage img, float quality) throws Exception {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
+    ImageWriteParam param = writer.getDefaultWriteParam();
+    param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+    param.setCompressionQuality(quality);
+
+    try (ImageOutputStream ios = ImageIO.createImageOutputStream(baos)) {
+        writer.setOutput(ios);
+        writer.write(null, new IIOImage(img, null, null), param);
+    } finally {
+        writer.dispose();
+    }
+    return baos.toByteArray();
 }
 
     /**
@@ -804,7 +826,7 @@ log("Xác thực PIN OK.");
         // 4. Nén avatar (nếu có chọn)
         byte[] avatarBytes = null;
         if (avatarPath != null) {
-            avatarBytes = compressAvatarToCardSize(avatarPath, 192); // AVATAR_LEN
+            avatarBytes = compressAvatarToCardSize(avatarPath, 4096); // AVATAR_LEN
             if (avatarBytes == null) {
                 log("Không thể nén avatar xuống <= 192 bytes, bỏ qua lưu avatar.");
             } else {

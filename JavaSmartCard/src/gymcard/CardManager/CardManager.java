@@ -1,17 +1,11 @@
 package gymcard.CardManager;
 
-import java.math.BigInteger;
 import javax.smartcardio.*;
-import java.security.*;
-import java.security.spec.KeySpec;
-import java.security.spec.RSAPublicKeySpec;
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
 
 public class CardManager {
 
-    // AID applet
+    // ================== APPLET ==================
     private static final byte[] APPLET_AID = new byte[] {
         (byte)0x11, (byte)0x22, (byte)0x33,
         (byte)0x44, (byte)0x55, (byte)0x00
@@ -19,21 +13,25 @@ public class CardManager {
 
     private static final byte CLA = (byte)0x80;
 
+    // ================== INS ==================
     private static final byte INS_INIT_CARD      = (byte)0x10;
     private static final byte INS_VERIFY_PIN     = (byte)0x20;
     private static final byte INS_CHANGE_PIN     = (byte)0x21;
     private static final byte INS_UNLOCK         = (byte)0x22;
     private static final byte INS_ADMIN_SET_PIN  = (byte)0x23;
+
     private static final byte INS_WRITE_PERSONAL = (byte)0x30;
     private static final byte INS_READ_PERSONAL  = (byte)0x31;
     private static final byte INS_GET_TRIES      = (byte)0x32;
 
-    private static final byte INS_GET_CARD_PUB   = (byte)0x40;
-private static final byte INS_SIGN_CHALLENGE = (byte)0x41;
-    private static final byte INS_WRITE_SECURE   = (byte)0x42;
-    private static final byte INS_READ_SECURE    = (byte)0x43;
+    // ===== AVATAR CHUNK (T=0 SAFE) =====
+    private static final byte INS_AVATAR_BEGIN = (byte)0x50;
+    private static final byte INS_AVATAR_CHUNK = (byte)0x51;
+    private static final byte INS_AVATAR_END   = (byte)0x52;
+private static final byte INS_AVATAR_READ_CHUNK = (byte)0x53;
 
-    // Field IDs
+private static final int AVATAR_CHUNK = 220; // an toàn T=0 (<=255)
+    // ================== FIELD ==================
     public static final byte FIELD_NAME    = (byte)0x00;
     public static final byte FIELD_DOB     = (byte)0x01;
     public static final byte FIELD_PHONE   = (byte)0x02;
@@ -42,51 +40,34 @@ private static final byte INS_SIGN_CHALLENGE = (byte)0x41;
     public static final byte FIELD_CARDID  = (byte)0x05;
     public static final byte FIELD_AVATAR  = (byte)0x06;
 
+    // ================== AVATAR CONFIG ==================
+    public static final int AVATAR_STORE_LEN = 4096;
+    private static final int AVATAR_MAX_DATA = AVATAR_STORE_LEN - 2; // 2 bytes length prefix
+    private static final int AVATAR_CHUNK_SIZE = 220; // T=0 safe
+
     private Card card;
     private CardChannel channel;
 
+    // ===================================================
+    // CONNECT
+    // ===================================================
     public void connect() throws Exception {
         TerminalFactory factory = TerminalFactory.getDefault();
-        java.util.List<CardTerminal> terminals = factory.terminals().list();
+        for (CardTerminal terminal : factory.terminals().list()) {
 
-        if (terminals.isEmpty()) {
-            throw new IllegalStateException("Không tìm thấy đầu đọc thẻ nào");
-        }
+            if (!terminal.isCardPresent()) continue;
 
-        CardException lastEx = null;
-
-        for (CardTerminal terminal : terminals) {
-            System.out.println("[CARD] Found reader: " + terminal.getName());
-
-            if (!terminal.isCardPresent()) {
-                System.out.println("[CARD]   -> Không có thẻ, bỏ qua");
-                continue;
-            }
-
-            System.out.println("[CARD]   -> Có thẻ, thử kết nối...");
-
-            for (String proto : new String[] { "T=1", "T=0", "*" }) {
+            for (String proto : new String[]{"T=1", "T=0", "*"}) {
                 try {
-                    System.out.println("[CARD]   -> Thử protocol " + proto);
                     card = terminal.connect(proto);
                     channel = card.getBasicChannel();
-                    System.out.println("[CARD]   -> Kết nối OK với " + proto);
-
-                    // SELECT applet
                     selectApplet();
-                    System.out.println("[CARD] Connected & SELECT applet OK");
+                    System.out.println("[CARD] Connected with " + proto);
                     return;
-                } catch (CardException e) {
-                    lastEx = e;
-                    System.out.println("[CARD]   -> Kết nối thất bại với " + proto + ": " + e.getMessage());
-                }
+                } catch (Exception ignore) {}
             }
         }
-
-        if (lastEx != null) {
-            throw lastEx;
-        }
-        throw new IllegalStateException("Không tìm thấy reader nào có thẻ kết nối được");
+        throw new IllegalStateException("Không kết nối được thẻ");
     }
 
     public void disconnect() throws Exception {
@@ -94,186 +75,150 @@ private static final byte INS_SIGN_CHALLENGE = (byte)0x41;
             card.disconnect(false);
             card = null;
             channel = null;
-            System.out.println("[CARD] Disconnected");
         }
     }
 
     private void selectApplet() throws Exception {
-        CommandAPDU select = new CommandAPDU(0x00, 0xA4, 0x04, 0x00, APPLET_AID);
-        ResponseAPDU resp = channel.transmit(select);
-        checkStatus(resp, "SELECT APPLET");
+        ResponseAPDU r = channel.transmit(
+            new CommandAPDU(0x00, 0xA4, 0x04, 0x00, APPLET_AID)
+        );
+        checkStatus(r, "SELECT");
     }
 
     private void checkStatus(ResponseAPDU resp, String where) {
-        int sw = resp.getSW();
-        if (sw != 0x9000) {
-            throw new RuntimeException(where + " thất bại, SW=" + Integer.toHexString(sw));
+        if (resp.getSW() != 0x9000) {
+            throw new RuntimeException(where + " failed, SW=" + Integer.toHexString(resp.getSW()));
         }
     }
 
-    // ========= INIT_CARD =========
-public void initCard(String cardId, String userPin, String adminPin) throws Exception {
-    byte[] cardIdBytes = cardId.getBytes("UTF-8");
-    if (cardIdBytes.length > 32) throw new IllegalArgumentException("CardID quá dài");
-    if (userPin == null || !userPin.matches("\\d{6}")) throw new IllegalArgumentException("User PIN phải 6 số");
-    if (adminPin == null || !adminPin.matches("\\d{6}")) throw new IllegalArgumentException("Admin PIN phải 6 số");
+    // ===================================================
+    // INIT / PIN
+    // ===================================================
+    public void initCard(String cardId, String userPin, String adminPin) throws Exception {
+        byte[] cid = cardId.getBytes("UTF-8");
+        byte[] u   = userPin.getBytes("ASCII");
+        byte[] a   = adminPin.getBytes("ASCII");
 
-    byte[] userPinBytes  = userPin.getBytes("ASCII");
-    byte[] adminPinBytes = adminPin.getBytes("ASCII");
+        byte[] data = new byte[1 + cid.length + 6 + 6];
+        int o = 0;
+        data[o++] = (byte) cid.length;
+        System.arraycopy(cid, 0, data, o, cid.length); o += cid.length;
+        System.arraycopy(u, 0, data, o, 6); o += 6;
+        System.arraycopy(a, 0, data, o, 6);
 
-    byte[] data = new byte[1 + cardIdBytes.length + 6 + 6];
-    int off = 0;
-    data[off++] = (byte) cardIdBytes.length;
-    System.arraycopy(cardIdBytes, 0, data, off, cardIdBytes.length);
-    off += cardIdBytes.length;
-    System.arraycopy(userPinBytes, 0, data, off, 6);
-    off += 6;
-    System.arraycopy(adminPinBytes, 0, data, off, 6);
+        transmit(new CommandAPDU(CLA, INS_INIT_CARD, 0, 0, data), "INIT_CARD");
+    }
 
-    ResponseAPDU resp = channel.transmit(new CommandAPDU(CLA, INS_INIT_CARD, 0, 0, data));
-    checkStatus(resp, "INIT_CARD");
-}
-
-
-    // ========= PIN =========
     public void verifyPin(String pin) throws Exception {
-        if (pin == null || pin.length() != 6) {
-            throw new IllegalArgumentException("PIN phải 6 ký tự");
-        }
-        byte[] pinBytes = pin.getBytes("ASCII");
-
-        CommandAPDU cmd = new CommandAPDU(CLA, INS_VERIFY_PIN, 0x00, 0x00, pinBytes);
-        ResponseAPDU resp = channel.transmit(cmd);
-        checkStatus(resp, "VERIFY_PIN");
+        transmit(new CommandAPDU(CLA, INS_VERIFY_PIN, 0, 0, pin.getBytes("ASCII")), "VERIFY_PIN");
     }
 
     public void changePin(String oldPin, String newPin) throws Exception {
-        if (oldPin == null || newPin == null ||
-            oldPin.length() != 6 || newPin.length() != 6) {
-            throw new IllegalArgumentException("PIN phải 6 ký tự");
-        }
-        byte[] oldBytes = oldPin.getBytes("ASCII");
-        byte[] newBytes = newPin.getBytes("ASCII");
-        byte[] data = new byte[12];
-        System.arraycopy(oldBytes, 0, data, 0, 6);
-        System.arraycopy(newBytes, 0, data, 6, 6);
-
-        CommandAPDU cmd = new CommandAPDU(CLA, INS_CHANGE_PIN, 0x00, 0x00, data);
-        ResponseAPDU resp = channel.transmit(cmd);
-        checkStatus(resp, "CHANGE_PIN");
+        byte[] d = new byte[12];
+        System.arraycopy(oldPin.getBytes("ASCII"), 0, d, 0, 6);
+        System.arraycopy(newPin.getBytes("ASCII"), 0, d, 6, 6);
+        transmit(new CommandAPDU(CLA, INS_CHANGE_PIN, 0, 0, d), "CHANGE_PIN");
     }
 
-    public void unlockByAdmin(String adminPass) throws Exception {
-        if (adminPass == null) adminPass = "";
-        byte[] bytes = adminPass.getBytes("ASCII");
-        CommandAPDU cmd = new CommandAPDU(CLA, INS_UNLOCK, 0x00, 0x00, bytes);
-        ResponseAPDU resp = channel.transmit(cmd);
-        checkStatus(resp, "UNLOCK");
-    }
-
-    public void adminSetUserPin(String adminPass, String newPin) throws Exception {
-        if (newPin == null || newPin.length() != 6) {
-            throw new IllegalArgumentException("PIN mới phải 6 ký tự");
-        }
-        if (adminPass == null || adminPass.length() == 0) {
-            throw new IllegalArgumentException("Admin pass không được rỗng");
-        }
-
-        byte[] adminBytes = adminPass.getBytes("ASCII");
-        byte[] pinBytes   = newPin.getBytes("ASCII");
-
-        byte[] data = new byte[adminBytes.length + pinBytes.length];
-        System.arraycopy(adminBytes, 0, data, 0, adminBytes.length);
-        System.arraycopy(pinBytes, 0, data, adminBytes.length, pinBytes.length);
-
-        CommandAPDU cmd = new CommandAPDU(CLA, INS_ADMIN_SET_PIN, 0x00, 0x00, data);
-        ResponseAPDU resp = channel.transmit(cmd);
-        checkStatus(resp, "ADMIN_SET_PIN");
+    public void adminSetUserPin(String adminPin, String newPin) throws Exception {
+        byte[] d = new byte[12];
+        System.arraycopy(adminPin.getBytes("ASCII"), 0, d, 0, 6);
+        System.arraycopy(newPin.getBytes("ASCII"), 0, d, 6, 6);
+        transmit(new CommandAPDU(CLA, INS_ADMIN_SET_PIN, 0, 0, d), "ADMIN_SET_PIN");
     }
 
     public byte getTriesRemaining() throws Exception {
-        byte[] cmdBytes = new byte[] {
-            (byte)0x80,
-            (byte)0x32,
-            (byte)0x00,
-            (byte)0x00,
-            (byte)0x01
-        };
-
-        CommandAPDU cmd = new CommandAPDU(cmdBytes);
-        ResponseAPDU resp = channel.transmit(cmd);
-        checkStatus(resp, "GET_TRIES");
-
-        byte[] data = resp.getData();
-        if (data == null || data.length < 1) {
-            throw new RuntimeException("GET_TRIES: card không trả về byte nào");
-        }
-        return data[0];
+        ResponseAPDU r = channel.transmit(
+            new CommandAPDU(CLA, INS_GET_TRIES, 0, 0, 1)
+        );
+        checkStatus(r, "GET_TRIES");
+        return r.getData()[0];
     }
 
-    // ========= READ / WRITE FIELDS =========
-    public void writeField(byte fieldId, byte[] plainData) throws Exception {
-        if (plainData == null) plainData = new byte[0];
-
-        byte[] data = new byte[1 + plainData.length];
-        data[0] = fieldId;
-        System.arraycopy(plainData, 0, data, 1, plainData.length);
-
-        CommandAPDU cmd = new CommandAPDU(CLA, INS_WRITE_PERSONAL, 0x00, 0x00, data);
-        ResponseAPDU resp = channel.transmit(cmd);
-        checkStatus(resp, "WRITE_PERSONAL");
+    // ===================================================
+    // NORMAL FIELD
+    // ===================================================
+    public void writeField(byte fieldId, byte[] data) throws Exception {
+        if (data == null) data = new byte[0];
+        byte[] d = new byte[1 + data.length];
+        d[0] = fieldId;
+        System.arraycopy(data, 0, d, 1, data.length);
+        transmit(new CommandAPDU(CLA, INS_WRITE_PERSONAL, 0, 0, d), "WRITE_FIELD");
     }
 
     public byte[] readField(byte fieldId) throws Exception {
-        byte[] data = new byte[] { fieldId };
-        CommandAPDU cmd = new CommandAPDU(CLA, INS_READ_PERSONAL, 0x00, 0x00, data);
-        ResponseAPDU resp = channel.transmit(cmd);
-        checkStatus(resp, "READ_PERSONAL");
-        return resp.getData();
+        ResponseAPDU r = channel.transmit(
+            new CommandAPDU(CLA, INS_READ_PERSONAL, 0, 0, new byte[]{fieldId})
+        );
+        checkStatus(r, "READ_FIELD");
+        return r.getData();
     }
 
-    // ========= GET_CARD_PUB (để lưu DB) =========
-    public byte[] getCardPublicKey() throws Exception {
-        int totalLen = 128;  // RSA-1024
-        byte[] result = new byte[totalLen];
-        int offset = 0;
+    // ===================================================
+    // AVATAR (4096 BYTES, CHUNKED)
+    // ===================================================
+public void writeAvatar(byte[] avatarBytes) throws Exception {
+    if (avatarBytes == null) avatarBytes = new byte[0];
+    if (avatarBytes.length > 4094) throw new IllegalArgumentException("Avatar too large");
 
-        while (offset < totalLen) {
-            int chunk = Math.min(64, totalLen - offset);
+    // BEGIN (2 bytes length)
+    byte[] len2 = new byte[] {
+        (byte)((avatarBytes.length >> 8) & 0xFF),
+        (byte)(avatarBytes.length & 0xFF)
+    };
+    ResponseAPDU r0 = channel.transmit(new CommandAPDU(CLA, INS_AVATAR_BEGIN, 0, 0, len2));
+    checkStatus(r0, "AVATAR_BEGIN");
 
-            byte p1 = (byte)((offset >> 8) & 0xFF);
-            byte p2 = (byte)(offset & 0xFF);
+    // CHUNK
+    int off = 0;
+    while (off < avatarBytes.length) {
+        int n = Math.min(AVATAR_CHUNK, avatarBytes.length - off);
+        byte p1 = (byte)((off >> 8) & 0xFF);
+        byte p2 = (byte)(off & 0xFF);
 
-            CommandAPDU cmd = new CommandAPDU(
-                    CLA,
-                    INS_GET_CARD_PUB,
-                    p1,
-                    p2,
-                    chunk
-            );
-            ResponseAPDU resp = channel.transmit(cmd);
-            checkStatus(resp, "GET_CARD_PUB");
-
-            byte[] data = resp.getData();
-            if (data.length == 0) {
-                throw new RuntimeException("GET_CARD_PUB: nhận về chunk rỗng");
-            }
-            System.arraycopy(data, 0, result, offset, data.length);
-            offset += data.length;
-        }
-        return result;
+        byte[] part = Arrays.copyOfRange(avatarBytes, off, off + n);
+        ResponseAPDU rx = channel.transmit(new CommandAPDU(CLA, INS_AVATAR_CHUNK, p1, p2, part));
+        checkStatus(rx, "AVATAR_CHUNK");
+        off += n;
     }
 
-    public void setAppPublicKeyModulus(byte[] appModulus) throws Exception {
-        if (appModulus == null) {
-            throw new IllegalArgumentException("appModulus null");
-        }
-        CommandAPDU cmd = new CommandAPDU(CLA, INS_SIGN_CHALLENGE , 0x00, 0x00, appModulus);
-        ResponseAPDU resp = channel.transmit(cmd);
-        checkStatus(resp, "SET_APP_PUB");
-    }
+    // END (encrypt + finalize)
+    ResponseAPDU r2 = channel.transmit(new CommandAPDU(CLA, INS_AVATAR_END, 0, 0));
+    checkStatus(r2, "AVATAR_END");
+}
 
-    public void writeAvatar(byte[] avatarBytes) throws Exception {
-        writeField(FIELD_AVATAR, avatarBytes);
+public byte[] readAvatar() throws Exception {
+    // đọc 2 byte length nằm ở cuối plaintext, nhưng để tiện: ta đọc header từ cuối:
+    // trong applet mình lưu len ở (4096-2..4096-1)
+    int lenPos = 4096 - 2;
+    byte[] tail = readAvatarChunk(lenPos, 2);
+
+    int len = ((tail[0] & 0xFF) << 8) | (tail[1] & 0xFF);
+    if (len <= 0 || len > 4094) return null;
+
+    byte[] out = new byte[len];
+    int off = 0;
+    while (off < len) {
+        int n = Math.min(AVATAR_CHUNK, len - off);
+        byte[] chunk = readAvatarChunk(off, n);
+        System.arraycopy(chunk, 0, out, off, chunk.length);
+        off += chunk.length;
     }
+    return out;
+}
+
+private byte[] readAvatarChunk(int offset, int le) throws Exception {
+    byte p1 = (byte)((offset >> 8) & 0xFF);
+    byte p2 = (byte)(offset & 0xFF);
+    CommandAPDU cmd = new CommandAPDU(CLA, INS_AVATAR_READ_CHUNK, p1, p2, le);
+    ResponseAPDU resp = channel.transmit(cmd);
+    checkStatus(resp, "AVATAR_READ_CHUNK");
+    return resp.getData();
+}
+
+    private void transmit(CommandAPDU cmd, String tag) throws Exception {
+        ResponseAPDU r = channel.transmit(cmd);
+        checkStatus(r, tag);
+    }
+    public void unlockByAdmin(String adminPass) throws Exception { if (adminPass == null) adminPass = ""; byte[] bytes = adminPass.getBytes("ASCII"); CommandAPDU cmd = new CommandAPDU(CLA, INS_UNLOCK, 0x00, 0x00, bytes); ResponseAPDU resp = channel.transmit(cmd); checkStatus(resp, "UNLOCK"); }
 }

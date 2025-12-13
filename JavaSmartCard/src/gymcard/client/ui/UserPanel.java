@@ -432,35 +432,25 @@ private String hexdumpHead(byte[] data, int n) {
 private void setAvatarToLabel(JLabel avatarLabel, byte[] avatarBytes) {
     try {
         log("[AVATAR] bytes=" + (avatarBytes == null ? "null" : avatarBytes.length));
-        if (avatarBytes == null || avatarBytes.length != 192) {
-            log("[AVATAR] no avatar or wrong size -> default");
+
+        if (avatarBytes == null || avatarBytes.length == 0) {
             avatarLabel.setIcon(null);
             avatarLabel.setText("👤");
             return;
         }
 
-        // nếu thẻ chưa ghi avatar: thường ciphertext = 0... hoặc decrypt ra pattern lặp
-        // bạn có thể coi như "không có" bằng heuristic đơn giản:
-        boolean allSame = true;
-        for (int i = 1; i < avatarBytes.length; i++) {
-            if (avatarBytes[i] != avatarBytes[0]) { allSame = false; break; }
-        }
-        if (allSame) {
-            log("[AVATAR] looks like uninitialized data (all same byte) -> default");
+        BufferedImage img = ImageIO.read(new java.io.ByteArrayInputStream(avatarBytes));
+        if (img == null) {
+            log("[AVATAR] ImageIO.read=null -> bytes not a valid jpg/png");
             avatarLabel.setIcon(null);
             avatarLabel.setText("👤");
             return;
         }
-
-        int w = 16, h = 12;
-        BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
-        img.getRaster().setDataElements(0, 0, w, h, avatarBytes);
 
         Image scaled = img.getScaledInstance(120, 120, Image.SCALE_SMOOTH);
         avatarLabel.setText("");
         avatarLabel.setIcon(new ImageIcon(scaled));
-
-        log("[AVATAR] rendered grayscale 16x12 OK");
+        log("[AVATAR] rendered OK: " + img.getWidth() + "x" + img.getHeight());
     } catch (Exception e) {
         log("[AVATAR] exception: " + e.getMessage());
         avatarLabel.setIcon(null);

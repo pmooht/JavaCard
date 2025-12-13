@@ -15,7 +15,7 @@ public class CardCommunicator {
     private static final int DOB_MAX_LEN     = 16;
     private static final int PHONE_MAX_LEN   = 16;
     private static final int ADDRESS_MAX_LEN = 128;
-    private static final int AVATAR_MAX_LEN  = 192; // khớp AVATAR_LEN trên thẻ
+    private static final int AVATAR_MAX_LEN  = 4096; // khớp AVATAR_LEN trên thẻ
 
     // Trạng thái kết nối & xác thực
     private boolean connected;
@@ -332,11 +332,15 @@ public String initNewCard(String cardId, String userPin) throws Exception {
                 : null;
 
         // Avatar: đã nén sẵn ở UI, ở đây chỉ check size
-        if (avatarBytes != null && avatarBytes.length > AVATAR_MAX_LEN) {
-            throw new Exception("Ảnh đại diện sau khi nén vẫn quá lớn (>"
-                    + AVATAR_MAX_LEN + " bytes)");
-        }
-
+if (avatarBytes != null && avatarBytes.length > AVATAR_MAX_LEN) {
+    throw new Exception("Avatar quá lớn > " + AVATAR_MAX_LEN);
+}
+if (avatarBytes != null) {
+    System.out.println("[CARD][AVATAR] about to write avatar len=" + avatarBytes.length);
+    cardManager.writeAvatar(avatarBytes);   // PHẢI gọi cái này
+    System.out.println("[CARD][AVATAR] write avatar OK");
+    memberInfo.avatarBytes = avatarBytes;
+}
         // Ghi xuống thẻ (thẻ tự AES bên trong)
         if (nameBytes != null) {
             cardManager.writeField(CardManager.FIELD_NAME, nameBytes);
@@ -355,7 +359,7 @@ public String initNewCard(String cardId, String userPin) throws Exception {
             memberInfo.address = address;
         }
         if (avatarBytes != null) {
-            cardManager.writeField(CardManager.FIELD_AVATAR, avatarBytes);
+         //   cardManager.writeField(CardManager.FIELD_AVATAR, avatarBytes);
                 memberInfo.avatarBytes = avatarBytes; // thêm dòng này
             // nếu MemberInfo có field avatarBytes:
             // memberInfo.avatarBytes = avatarBytes;
@@ -391,11 +395,14 @@ public MemberInfo getMemberInfo() throws Exception {
     byte[] dobBytes   = cardManager.readField(CardManager.FIELD_DOB);
     byte[] phoneBytes = cardManager.readField(CardManager.FIELD_PHONE);
     byte[] addrBytes  = cardManager.readField(CardManager.FIELD_ADDRESS);
-
     // ✅ đọc avatar
     byte[] avatarBytes = null;
     try {
-        avatarBytes = cardManager.readField(CardManager.FIELD_AVATAR);
+try {
+    avatarBytes = cardManager.readAvatar();   // ✅ ĐÚNG
+} catch (Exception ignore) {}
+
+        info.avatarBytes = avatarBytes;
         // nếu thẻ chưa có avatar thì thường toàn 0x00 hoặc length=0
         if (avatarBytes != null) {
             boolean allZero = true;
