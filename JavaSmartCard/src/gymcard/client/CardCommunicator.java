@@ -301,73 +301,55 @@ public String initNewCard(String cardId, String userPin) throws Exception {
      *
      * avatarBytes là byte[] đã nén sẵn ở UI (ví dụ JPEG chất lượng thấp + resize).
      */
-    public boolean setMemberInfo(String name,
-                                 String birthDate,
-                                 String phone,
-                                 String address,
-                                 byte[] avatarBytes)
-            throws Exception {
-
-        if (!connected || !authenticated) {
-            throw new Exception("Chưa xác thực PIN");
-        }
-
-        // Validate logic
-        if (name == null || name.trim().isEmpty()) {
-            throw new Exception("Họ và tên không được để trống");
-        }
-        validateBirthDate(birthDate);
-        validatePhone(phone);
-
-        if (address != null && address.trim().isEmpty()) {
-            address = null;
-        }
-
-        // Chuyển UTF-8 + giới hạn độ dài
-        byte[] nameBytes    = toUtf8AndLimit(name.trim(),      NAME_MAX_LEN,    "Họ và tên");
-        byte[] dobBytes     = toUtf8AndLimit(birthDate.trim(), DOB_MAX_LEN,     "Ngày sinh");
-        byte[] phoneBytes   = toUtf8AndLimit(phone.trim(),     PHONE_MAX_LEN,   "Số điện thoại");
-        byte[] addressBytes = (address != null)
-                ? toUtf8AndLimit(address.trim(), ADDRESS_MAX_LEN, "Địa chỉ")
-                : null;
-
-        // Avatar: đã nén sẵn ở UI, ở đây chỉ check size
-if (avatarBytes != null && avatarBytes.length > AVATAR_MAX_LEN) {
-    throw new Exception("Avatar quá lớn > " + AVATAR_MAX_LEN);
+private static String norm(String s) {
+    return s == null ? "" : s.trim();
 }
-if (avatarBytes != null) {
-    System.out.println("[CARD][AVATAR] about to write avatar len=" + avatarBytes.length);
-    cardManager.writeAvatar(avatarBytes);   // PHẢI gọi cái này
-    System.out.println("[CARD][AVATAR] write avatar OK");
-    memberInfo.avatarBytes = avatarBytes;
-}
-        // Ghi xuống thẻ (thẻ tự AES bên trong)
-        if (nameBytes != null) {
-            cardManager.writeField(CardManager.FIELD_NAME, nameBytes);
-            memberInfo.name = name;
-        }
-        if (dobBytes != null) {
-            cardManager.writeField(CardManager.FIELD_DOB, dobBytes);
-            memberInfo.birthDate = birthDate;
-        }
-        if (phoneBytes != null) {
-            cardManager.writeField(CardManager.FIELD_PHONE, phoneBytes);
-            memberInfo.phone = phone;
-        }
-        if (addressBytes != null) {
-            cardManager.writeField(CardManager.FIELD_ADDRESS, addressBytes);
-            memberInfo.address = address;
-        }
-        if (avatarBytes != null) {
-         //   cardManager.writeField(CardManager.FIELD_AVATAR, avatarBytes);
-                memberInfo.avatarBytes = avatarBytes; // thêm dòng này
-            // nếu MemberInfo có field avatarBytes:
-            // memberInfo.avatarBytes = avatarBytes;
-        }
 
-        System.out.println("[CARD] Member info written to card (with avatar)");
-        return true;
+public boolean setMemberInfo(String name, String birthDate, String phone, String address, byte[] avatarBytes)
+        throws Exception {
+
+    if (!connected || !authenticated) throw new Exception("Chưa xác thực PIN");
+
+    name = norm(name);
+    birthDate = norm(birthDate);
+    phone = norm(phone);
+    address = norm(address); // ✅ rỗng vẫn là "" chứ không null
+
+    if (name.isEmpty()) throw new Exception("Họ và tên không được để trống");
+    validateBirthDate(birthDate);
+    validatePhone(phone);
+
+    byte[] nameBytes    = toUtf8AndLimit(name,      NAME_MAX_LEN,    "Họ và tên");
+    byte[] dobBytes     = toUtf8AndLimit(birthDate, DOB_MAX_LEN,     "Ngày sinh");
+    byte[] phoneBytes   = toUtf8AndLimit(phone,     PHONE_MAX_LEN,   "Số điện thoại");
+    byte[] addressBytes = toUtf8AndLimit(address,   ADDRESS_MAX_LEN, "Địa chỉ"); // ✅ có thể length=0
+
+    // ✅ luôn write xuống thẻ kể cả rỗng (clear field)
+    cardManager.writeField(CardManager.FIELD_NAME, nameBytes);
+    cardManager.writeField(CardManager.FIELD_DOB, dobBytes);
+    cardManager.writeField(CardManager.FIELD_PHONE, phoneBytes);
+    cardManager.writeField(CardManager.FIELD_ADDRESS, addressBytes);
+
+    memberInfo.name = name;
+    memberInfo.birthDate = birthDate;
+    memberInfo.phone = phone;
+    memberInfo.address = address;
+
+    // Avatar: null => không đổi, muốn xóa avatar thì truyền byte[0]
+    if (avatarBytes != null) {
+        if (avatarBytes.length > AVATAR_MAX_LEN) throw new Exception("Avatar quá lớn > " + AVATAR_MAX_LEN);
+
+        System.out.println("[CARD][AVATAR] about to write avatar len=" + avatarBytes.length);
+        // ✅ nếu avatarBytes.length==0 -> thẻ sẽ clear avatar (applet bạn đã support)
+        cardManager.writeAvatar(avatarBytes);
+        System.out.println("[CARD][AVATAR] write avatar OK");
+
+        memberInfo.avatarBytes = (avatarBytes.length == 0 ? null : avatarBytes);
     }
+
+    System.out.println("[CARD] Member info written to card");
+    return true;
+}
 
     /**
      * Overload cũ: không truyền avatar -> avatar = null
@@ -384,10 +366,13 @@ if (avatarBytes != null) {
     /**
      * Đọc thông tin hội viên từ thẻ
      */
+private static String safeUtf8(byte[] b) throws Exception {
+    if (b == null || b.length == 0) return "";
+    return new String(b, "UTF-8");
+}
+
 public MemberInfo getMemberInfo() throws Exception {
-    if (!connected || !authenticated) {
-        throw new Exception("Chưa xác thực PIN");
-    }
+    if (!connected || !authenticated) throw new Exception("Chưa xác thực PIN");
 
     MemberInfo info = new MemberInfo();
 
@@ -395,36 +380,24 @@ public MemberInfo getMemberInfo() throws Exception {
     byte[] dobBytes   = cardManager.readField(CardManager.FIELD_DOB);
     byte[] phoneBytes = cardManager.readField(CardManager.FIELD_PHONE);
     byte[] addrBytes  = cardManager.readField(CardManager.FIELD_ADDRESS);
-    // ✅ đọc avatar
+
+    info.name      = safeUtf8(nameBytes);
+    info.birthDate = safeUtf8(dobBytes);
+    info.phone     = safeUtf8(phoneBytes);
+    info.address   = safeUtf8(addrBytes);
+
+    // Avatar:
     byte[] avatarBytes = null;
     try {
-try {
-    avatarBytes = cardManager.readAvatar();   // ✅ ĐÚNG
-} catch (Exception ignore) {}
+        avatarBytes = cardManager.readAvatar(); // phải là hàm đọc kiểu AVATAR của applet
+    } catch (Exception ignore) { }
 
-        info.avatarBytes = avatarBytes;
-        // nếu thẻ chưa có avatar thì thường toàn 0x00 hoặc length=0
-        if (avatarBytes != null) {
-            boolean allZero = true;
-            for (byte b : avatarBytes) {
-                if (b != 0x00) { allZero = false; break; }
-            }
-            if (allZero) avatarBytes = null;
-        }
-    } catch (Exception ignore) {
-        // tùy bạn: nếu applet chưa hỗ trợ/field không có thì bỏ qua
-        avatarBytes = null;
-    }
-
-    info.name      = new String(nameBytes,  "UTF-8");
-    info.birthDate = new String(dobBytes,   "UTF-8");
-    info.phone     = new String(phoneBytes, "UTF-8");
-    info.address   = new String(addrBytes,  "UTF-8");
-    info.avatarBytes = avatarBytes; // ✅ gán
+    info.avatarBytes = (avatarBytes == null || avatarBytes.length == 0) ? null : avatarBytes;
 
     this.memberInfo = info;
     return info;
 }
+
 
 
     // ---------------------------------------------------------------------
