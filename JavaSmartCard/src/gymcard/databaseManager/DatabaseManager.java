@@ -6,6 +6,8 @@ package gymcard.databaseManager;
 
 import java.sql.*;
 import java.util.Base64;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Quản lý kết nối SQLite và tạo các bảng cần thiết.
@@ -21,6 +23,7 @@ public class DatabaseManager {
         // Kết nối SQLite
         connection = DriverManager.getConnection(DB_URL);
         initSchema();
+        insertDefaultData();
     }
 
     public static synchronized DatabaseManager getInstance() throws SQLException {
@@ -42,79 +45,292 @@ public class DatabaseManager {
 
             // Bảng users: map userId <-> cardPublicKey
             st.execute(
-                "CREATE TABLE IF NOT EXISTS users (" +
-                "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "  user_code TEXT UNIQUE NOT NULL," +
-                " card_public_key TEXT NOT NULL," +
-                "  status TEXT NOT NULL DEFAULT 'ACTIVE'," +
-                "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
-                "  updated_at DATETIME" +
-                ");"
-            );
+                    "CREATE TABLE IF NOT EXISTS users (" +
+                            "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                            "  user_code TEXT UNIQUE NOT NULL," +
+                            " card_public_key TEXT NOT NULL," +
+                            "  status TEXT NOT NULL DEFAULT 'ACTIVE'," +
+                            "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                            "  updated_at DATETIME" +
+                            ");");
 
             // Bảng membership_plans: các gói tập
             st.execute(
-                "CREATE TABLE IF NOT EXISTS membership_plans (" +
-                "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "  code TEXT UNIQUE NOT NULL," +
-                "  name TEXT NOT NULL," +
-                "  description TEXT," +
-                "  duration_days INTEGER," +
-                "  session_count INTEGER," +
-                "  price REAL NOT NULL," +
-                "  is_active INTEGER NOT NULL DEFAULT 1," +
-                "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP" +
-                ");"
-            );
+                    "CREATE TABLE IF NOT EXISTS membership_plans (" +
+                            "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                            "  code TEXT UNIQUE NOT NULL," +
+                            "  name TEXT NOT NULL," +
+                            "  description TEXT," +
+                            "  duration_days INTEGER," +
+                            "  session_count INTEGER," +
+                            "  price REAL NOT NULL," +
+                            "  is_active INTEGER NOT NULL DEFAULT 1," +
+                            "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP" +
+                            ");");
+
+            // Bảng services: dịch vụ bổ sung (HLV riêng, nước uống...)
+            st.execute(
+                    "CREATE TABLE IF NOT EXISTS services (" +
+                            "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                            "  code TEXT UNIQUE NOT NULL," +
+                            "  name TEXT NOT NULL," +
+                            "  description TEXT," +
+                            "  price REAL NOT NULL," +
+                            "  is_active INTEGER NOT NULL DEFAULT 1," +
+                            "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP" +
+                            ");");
 
             // Bảng user_memberships: user đang dùng gói nào
             st.execute(
-                "CREATE TABLE IF NOT EXISTS user_memberships (" +
-                "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "  user_id INTEGER NOT NULL," +
-                "  plan_id INTEGER NOT NULL," +
-                "  start_date DATE NOT NULL," +
-                "  end_date DATE," +
-                "  remaining_sessions INTEGER," +
-                "  status TEXT NOT NULL DEFAULT 'ACTIVE'," +
-                "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
-                "  FOREIGN KEY (user_id) REFERENCES users(id)," +
-                "  FOREIGN KEY (plan_id) REFERENCES membership_plans(id)" +
-                ");"
-            );
+                    "CREATE TABLE IF NOT EXISTS user_memberships (" +
+                            "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                            "  user_id INTEGER NOT NULL," +
+                            "  plan_id INTEGER NOT NULL," +
+                            "  start_date DATE NOT NULL," +
+                            "  end_date DATE," +
+                            "  remaining_sessions INTEGER," +
+                            "  status TEXT NOT NULL DEFAULT 'ACTIVE'," +
+                            "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                            "  FOREIGN KEY (user_id) REFERENCES users(id)," +
+                            "  FOREIGN KEY (plan_id) REFERENCES membership_plans(id)" +
+                            ");");
 
             // Bảng checkin_logs: lịch sử vào/ra
             st.execute(
-                "CREATE TABLE IF NOT EXISTS checkin_logs (" +
-                "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "  user_id INTEGER NOT NULL," +
-                "  checkin_time DATETIME NOT NULL," +
-                "  checkout_time DATETIME," +
-                "  device_id TEXT," +
-                "  note TEXT," +
-                "  FOREIGN KEY (user_id) REFERENCES users(id)" +
-                ");"
-            );
+                    "CREATE TABLE IF NOT EXISTS checkin_logs (" +
+                            "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                            "  user_id INTEGER NOT NULL," +
+                            "  checkin_time DATETIME NOT NULL," +
+                            "  checkout_time DATETIME," +
+                            "  device_id TEXT," +
+                            "  note TEXT," +
+                            "  FOREIGN KEY (user_id) REFERENCES users(id)" +
+                            ");");
 
             // Bảng transactions: nạp tiền, mua gói, dịch vụ thêm
             st.execute(
-                "CREATE TABLE IF NOT EXISTS transactions (" +
-                "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "  user_id INTEGER NOT NULL," +
-                "  type TEXT NOT NULL," +
-                "  amount REAL NOT NULL," +
-                "  description TEXT," +
-                "  related_plan_id INTEGER," +
-                "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
-                "  FOREIGN KEY (user_id) REFERENCES users(id)," +
-                "  FOREIGN KEY (related_plan_id) REFERENCES membership_plans(id)" +
-                ");"
-            );
+                    "CREATE TABLE IF NOT EXISTS transactions (" +
+                            "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                            "  user_id INTEGER NOT NULL," +
+                            "  type TEXT NOT NULL," +
+                            "  amount REAL NOT NULL," +
+                            "  description TEXT," +
+                            "  related_plan_id INTEGER," +
+                            "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                            "  FOREIGN KEY (user_id) REFERENCES users(id)," +
+                            "  FOREIGN KEY (related_plan_id) REFERENCES membership_plans(id)" +
+                            ");");
         }
     }
-        public long insertUser(String userCode, String cardPublicKey) throws SQLException {
+
+    /**
+     * Insert dữ liệu mặc định nếu chưa có.
+     */
+    private void insertDefaultData() throws SQLException {
+        // Insert default membership plans
+        String checkPlan = "SELECT COUNT(*) FROM membership_plans";
+        try (Statement st = connection.createStatement();
+                ResultSet rs = st.executeQuery(checkPlan)) {
+            if (rs.next() && rs.getInt(1) == 0) {
+                insertDefaultPlans();
+            }
+        }
+
+        // Insert default services
+        String checkService = "SELECT COUNT(*) FROM services";
+        try (Statement st = connection.createStatement();
+                ResultSet rs = st.executeQuery(checkService)) {
+            if (rs.next() && rs.getInt(1) == 0) {
+                insertDefaultServices();
+            }
+        }
+    }
+
+    /**
+     * Insert các gói tập mặc định.
+     */
+    private void insertDefaultPlans() throws SQLException {
+        String sql = "INSERT INTO membership_plans(code, name, description, duration_days, session_count, price) VALUES(?,?,?,?,?,?)";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            // Gói tháng
+            ps.setString(1, "MONTHLY_1");
+            ps.setString(2, "Gói 1 tháng");
+            ps.setString(3, "Tập không giới hạn trong 30 ngày");
+            ps.setInt(4, 30);
+            ps.setNull(5, Types.INTEGER);
+            ps.setDouble(6, 500000);
+            ps.executeUpdate();
+
+            // Gói 3 tháng
+            ps.setString(1, "MONTHLY_3");
+            ps.setString(2, "Gói 3 tháng");
+            ps.setString(3, "Tập không giới hạn trong 90 ngày, tiết kiệm 10%");
+            ps.setInt(4, 90);
+            ps.setNull(5, Types.INTEGER);
+            ps.setDouble(6, 1350000);
+            ps.executeUpdate();
+
+            // Gói 6 tháng
+            ps.setString(1, "MONTHLY_6");
+            ps.setString(2, "Gói 6 tháng");
+            ps.setString(3, "Tập không giới hạn trong 180 ngày, tiết kiệm 15%");
+            ps.setInt(4, 180);
+            ps.setNull(5, Types.INTEGER);
+            ps.setDouble(6, 2550000);
+            ps.executeUpdate();
+
+            // Gói năm
+            ps.setString(1, "YEARLY");
+            ps.setString(2, "Gói 1 năm");
+            ps.setString(3, "Tập không giới hạn trong 365 ngày, tiết kiệm 20%");
+            ps.setInt(4, 365);
+            ps.setNull(5, Types.INTEGER);
+            ps.setDouble(6, 4800000);
+            ps.executeUpdate();
+
+            // Gói theo buổi
+            ps.setString(1, "SESSION_10");
+            ps.setString(2, "Gói 10 buổi");
+            ps.setString(3, "10 lượt tập, không giới hạn thời gian");
+            ps.setNull(4, Types.INTEGER);
+            ps.setInt(5, 10);
+            ps.setDouble(6, 400000);
+            ps.executeUpdate();
+
+            // Gói theo buổi 30
+            ps.setString(1, "SESSION_30");
+            ps.setString(2, "Gói 30 buổi");
+            ps.setString(3, "30 lượt tập, không giới hạn thời gian");
+            ps.setNull(4, Types.INTEGER);
+            ps.setInt(5, 30);
+            ps.setDouble(6, 1000000);
+            ps.executeUpdate();
+
+            // Gói VIP
+            ps.setString(1, "VIP");
+            ps.setString(2, "Gói VIP");
+            ps.setString(3, "Tập không giới hạn + HLV riêng + Đồ uống miễn phí");
+            ps.setInt(4, 365);
+            ps.setNull(5, Types.INTEGER);
+            ps.setDouble(6, 12000000);
+            ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Insert các dịch vụ mặc định.
+     */
+    private void insertDefaultServices() throws SQLException {
+        String sql = "INSERT INTO services(code, name, description, price) VALUES(?,?,?,?)";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, "PT_SESSION");
+            ps.setString(2, "HLV riêng (1 buổi)");
+            ps.setString(3, "Tập với huấn luyện viên cá nhân trong 1 buổi");
+            ps.setDouble(4, 200000);
+            ps.executeUpdate();
+
+            ps.setString(1, "DRINK");
+            ps.setString(2, "Nước uống");
+            ps.setString(3, "Nước suối/nước tăng lực");
+            ps.setDouble(4, 20000);
+            ps.executeUpdate();
+
+            ps.setString(1, "TOWEL");
+            ps.setString(2, "Khăn tập");
+            ps.setString(3, "Thuê khăn tập");
+            ps.setDouble(4, 10000);
+            ps.executeUpdate();
+
+            ps.setString(1, "PROTEIN_SHAKE");
+            ps.setString(2, "Protein shake");
+            ps.setString(3, "Đồ uống bổ sung protein");
+            ps.setDouble(4, 50000);
+            ps.executeUpdate();
+
+            ps.setString(1, "NUTRITION");
+            ps.setString(2, "Tư vấn dinh dưỡng");
+            ps.setString(3, "Tư vấn chế độ dinh dưỡng với chuyên gia");
+            ps.setDouble(4, 100000);
+            ps.executeUpdate();
+
+            ps.setString(1, "LOCKER");
+            ps.setString(2, "Thuê tủ khóa");
+            ps.setString(3, "Thuê tủ khóa cá nhân 1 tháng");
+            ps.setDouble(4, 50000);
+            ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Lấy danh sách gói tập đang hoạt động.
+     * 
+     * @return List<PlanInfo> với id, code, name, description, durationDays,
+     *         sessionCount, price
+     */
+    public List<PlanInfo> getActivePlans() throws SQLException {
+        List<PlanInfo> plans = new ArrayList<>();
+        String sql = "SELECT id, code, name, description, duration_days, session_count, price FROM membership_plans WHERE is_active = 1 ORDER BY price";
+        try (Statement st = connection.createStatement();
+                ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                PlanInfo plan = new PlanInfo();
+                plan.id = rs.getInt("id");
+                plan.code = rs.getString("code");
+                plan.name = rs.getString("name");
+                plan.description = rs.getString("description");
+                plan.durationDays = rs.getInt("duration_days");
+                plan.sessionCount = rs.getInt("session_count");
+                plan.price = rs.getDouble("price");
+                plans.add(plan);
+            }
+        }
+        return plans;
+    }
+
+    /**
+     * Lấy danh sách dịch vụ đang hoạt động.
+     */
+    public List<ServiceInfo> getActiveServices() throws SQLException {
+        List<ServiceInfo> services = new ArrayList<>();
+        String sql = "SELECT id, code, name, description, price FROM services WHERE is_active = 1 ORDER BY price";
+        try (Statement st = connection.createStatement();
+                ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                ServiceInfo svc = new ServiceInfo();
+                svc.id = rs.getInt("id");
+                svc.code = rs.getString("code");
+                svc.name = rs.getString("name");
+                svc.description = rs.getString("description");
+                svc.price = rs.getDouble("price");
+                services.add(svc);
+            }
+        }
+        return services;
+    }
+
+    // ===== Data classes =====
+    public static class PlanInfo {
+        public int id;
+        public String code;
+        public String name;
+        public String description;
+        public int durationDays;
+        public int sessionCount;
+        public double price;
+    }
+
+    public static class ServiceInfo {
+        public int id;
+        public String code;
+        public String name;
+        public String description;
+        public double price;
+    }
+
+    // ===== User methods =====
+    public long insertUser(String userCode, String cardPublicKey) throws SQLException {
         String sql = "INSERT INTO users(user_code, card_public_key, status, created_at) " +
-                     "VALUES (?, ?, 'ACTIVE', CURRENT_TIMESTAMP)";
+                "VALUES (?, ?, 'ACTIVE', CURRENT_TIMESTAMP)";
 
         try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, userCode);

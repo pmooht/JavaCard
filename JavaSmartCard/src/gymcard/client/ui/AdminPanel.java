@@ -2,7 +2,7 @@ package gymcard.client.ui;
 
 import gymcard.client.*;
 import gymcard.databaseManager.DatabaseManager;
-import com.toedter.calendar.JDateChooser;
+// import com.toedter.calendar.JDateChooser; // Cần thư viện JCalendar
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -27,7 +27,7 @@ public class AdminPanel extends JPanel {
 
     // Member registration components
     private JTextField nameField;
-    private JDateChooser birthDateChooser;
+    private JTextField birthDateField; // Thay JDateChooser (cần thư viện JCalendar)
     private JTextField phoneField;
     private JTextArea addressArea;
     private JPasswordField pinField;
@@ -77,25 +77,6 @@ public class AdminPanel extends JPanel {
         // tabbedPane.addTab("📊 Quản lý thẻ", createCardManagementPanel());
 
         add(tabbedPane, BorderLayout.CENTER);
-
-        // Log area
-        JPanel logPanel = new JPanel(new BorderLayout());
-        logPanel.setBackground(Color.WHITE);
-        logPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(149, 165, 166), 2),
-                "Nhật ký hệ thống",
-                TitledBorder.LEFT,
-                TitledBorder.TOP,
-                new Font("Segoe UI", Font.BOLD, 13)));
-
-        logArea = new JTextArea(6, 50);
-        logArea.setEditable(false);
-        logArea.setFont(new Font("Consolas", Font.PLAIN, 12));
-        logArea.setBackground(new Color(250, 250, 250));
-        JScrollPane logScroll = new JScrollPane(logArea);
-        logPanel.add(logScroll, BorderLayout.CENTER);
-
-        add(logPanel, BorderLayout.SOUTH);
     }
 
     /**
@@ -157,14 +138,13 @@ public class AdminPanel extends JPanel {
         gbc.gridx = 1;
         gbc.weightx = 1.0;
         gbc.anchor = GridBagConstraints.WEST;
-        birthDateChooser = new JDateChooser();
-        birthDateChooser.setDateFormatString("dd/MM/yyyy");
-        birthDateChooser.setDate(new Date());
-        birthDateChooser.setFont(inputFont);
-        birthDateChooser.setPreferredSize(new Dimension(200, 34));
-        birthDateChooser.getCalendarButton().setBackground(new Color(52, 152, 219));
-        birthDateChooser.getCalendarButton().setForeground(Color.WHITE);
-        formPanel.add(birthDateChooser, gbc);
+        birthDateField = new JTextField(15);
+        birthDateField.setFont(inputFont);
+        birthDateField.setText(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
+        birthDateField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
+                BorderFactory.createEmptyBorder(6, 10, 6, 10)));
+        formPanel.add(birthDateField, gbc);
 
         // ===== SỐ ĐIỆN THOẠI =====
         row++;
@@ -804,9 +784,7 @@ public class AdminPanel extends JPanel {
             }
 
             String name = nameField.getText().trim();
-            String birthDate = birthDateChooser.getDate() != null
-                    ? new SimpleDateFormat("dd/MM/yyyy").format(birthDateChooser.getDate())
-                    : "";
+            String birthDate = birthDateField.getText().trim();
             String phone = phoneField.getText().trim();
             String address = addressArea.getText().trim();
             String pin = new String(pinField.getPassword()).trim();
@@ -973,7 +951,7 @@ public class AdminPanel extends JPanel {
      */
     private void clearForm() {
         nameField.setText("");
-        birthDateChooser.setDate(new Date());
+        birthDateField.setText(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
         phoneField.setText("");
         addressArea.setText("");
         pinField.setText("");
@@ -982,11 +960,10 @@ public class AdminPanel extends JPanel {
     }
 
     /**
-     * Log message
+     * Log message ra terminal
      */
     private void log(String message) {
         String timestamp = new SimpleDateFormat("HH:mm:ss").format(new Date());
-        logArea.append(String.format("[%s] %s\n", timestamp, message));
-        logArea.setCaretPosition(logArea.getDocument().getLength());
+        System.out.println(String.format("[%s] %s", timestamp, message));
     }
 }

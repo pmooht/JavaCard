@@ -11,11 +11,11 @@ import gymcard.CardManager.CardManager;
 public class CardCommunicator {
 
     // Giới hạn kích thước field (phải khớp với applet)
-    private static final int NAME_MAX_LEN    = 64;
-    private static final int DOB_MAX_LEN     = 16;
-    private static final int PHONE_MAX_LEN   = 16;
+    private static final int NAME_MAX_LEN = 64;
+    private static final int DOB_MAX_LEN = 16;
+    private static final int PHONE_MAX_LEN = 16;
     private static final int ADDRESS_MAX_LEN = 128;
-    private static final int AVATAR_MAX_LEN  = 4096; // khớp AVATAR_LEN trên thẻ
+    private static final int AVATAR_MAX_LEN = 4096; // khớp AVATAR_LEN trên thẻ
 
     // Trạng thái kết nối & xác thực
     private boolean connected;
@@ -77,7 +77,8 @@ public class CardCommunicator {
      * Kết nối tới đầu đọc + thẻ thật
      */
     public void connect() throws Exception {
-        if (connected) return;
+        if (connected)
+            return;
 
         cardManager = new CardManager();
         cardManager.connect(); // bên trong: TerminalFactory, SELECT applet
@@ -92,7 +93,8 @@ public class CardCommunicator {
      * Ngắt kết nối
      */
     public void disconnect() throws Exception {
-        if (!connected) return;
+        if (!connected)
+            return;
 
         try {
             cardManager.disconnect();
@@ -111,27 +113,30 @@ public class CardCommunicator {
 
     /**
      * Khởi tạo thẻ mới:
-     *  - Sinh CardID tự động (GYM000001, GYM000002, ...)
-     *  - Gửi APDU INIT_CARD(cardId, pin) xuống thẻ
-     *  - Trên thẻ: set PIN mới + sinh masterKey từ PIN
+     * - Sinh CardID tự động (GYM000001, GYM000002, ...)
+     * - Gửi APDU INIT_CARD(cardId, pin) xuống thẻ
+     * - Trên thẻ: set PIN mới + sinh masterKey từ PIN
      *
      * @param pin PIN 6 chữ số do admin nhập
      * @return CardID đã gán cho thẻ (để hiển thị cho admin / lưu DB)
      */
-public String initNewCard(String cardId, String userPin) throws Exception {
-    if (!connected) throw new Exception("Chưa kết nối thẻ");
-    if (cardId == null || cardId.isBlank()) throw new Exception("CardID rỗng");
-    if (!userPin.matches("\\d{6}")) throw new Exception("PIN phải 6 số");
+    public String initNewCard(String cardId, String userPin) throws Exception {
+        if (!connected)
+            throw new Exception("Chưa kết nối thẻ");
+        if (cardId == null || cardId.isBlank())
+            throw new Exception("CardID rỗng");
+        if (!userPin.matches("\\d{6}"))
+            throw new Exception("PIN phải 6 số");
 
-    String adminPin = "123456";
-    cardManager.initCard(cardId, userPin, adminPin);
+        String adminPin = "123456";
+        cardManager.initCard(cardId, userPin, adminPin);
 
-    System.out.println("[CARD] triesAfterInit=" + (cardManager.getTriesRemaining() & 0xFF));
+        System.out.println("[CARD] triesAfterInit=" + (cardManager.getTriesRemaining() & 0xFF));
 
-    authenticated = false;
-    initializeDefaultData();
-    return cardId;
-}
+        authenticated = false;
+        initializeDefaultData();
+        return cardId;
+    }
 
     /**
      * Kiểm tra đã kết nối thẻ chưa
@@ -156,7 +161,7 @@ public String initNewCard(String cardId, String userPin) throws Exception {
         }
 
         try {
-            cardManager.verifyPin(pin);   // nếu sai sẽ ném RuntimeException với SW != 9000
+            cardManager.verifyPin(pin); // nếu sai sẽ ném RuntimeException với SW != 9000
             authenticated = true;
             System.out.println("[CARD] PIN verified OK");
             return true;
@@ -172,8 +177,10 @@ public String initNewCard(String cardId, String userPin) throws Exception {
      * Đổi PIN: old -> new (INS_CHANGE_PIN)
      */
     public boolean changePin(String oldPin, String newPin) throws Exception {
-        if (!connected) throw new Exception("Chưa kết nối thẻ");
-        if (!authenticated) throw new Exception("Chưa xác thực PIN");
+        if (!connected)
+            throw new Exception("Chưa kết nối thẻ");
+        if (!authenticated)
+            throw new Exception("Chưa xác thực PIN");
 
         if (oldPin == null || newPin == null || oldPin.length() != 6 || newPin.length() != 6) {
             throw new Exception("PIN phải 6 ký tự");
@@ -193,7 +200,8 @@ public String initNewCard(String cardId, String userPin) throws Exception {
      * Mở khóa thẻ bằng mật khẩu admin ("ADMIN" theo applet)
      */
     public boolean unlockPin(String adminPass) throws Exception {
-        if (!connected) throw new Exception("Chưa kết nối thẻ");
+        if (!connected)
+            throw new Exception("Chưa kết nối thẻ");
 
         try {
             cardManager.unlockByAdmin(adminPass);
@@ -210,7 +218,8 @@ public String initNewCard(String cardId, String userPin) throws Exception {
      * Số lần nhập PIN còn lại trên thẻ
      */
     public int getPinTries() throws Exception {
-        if (!connected) throw new Exception("Chưa kết nối thẻ");
+        if (!connected)
+            throw new Exception("Chưa kết nối thẻ");
 
         byte tries = cardManager.getTriesRemaining();
         return tries & 0xFF;
@@ -221,7 +230,8 @@ public String initNewCard(String cardId, String userPin) throws Exception {
      * Chỉ cần mật khẩu admin + PIN mới.
      */
     public boolean adminResetMemberPin(String adminPass, String newPin) throws Exception {
-        if (!connected) throw new Exception("Chưa kết nối thẻ");
+        if (!connected)
+            throw new Exception("Chưa kết nối thẻ");
         // KHÔNG yêu cầu authenticated, vì applet tự kiểm tra adminPass
 
         if (newPin == null || newPin.length() != 6) {
@@ -301,64 +311,67 @@ public String initNewCard(String cardId, String userPin) throws Exception {
      *
      * avatarBytes là byte[] đã nén sẵn ở UI (ví dụ JPEG chất lượng thấp + resize).
      */
-private static String norm(String s) {
-    return s == null ? "" : s.trim();
-}
-
-public boolean setMemberInfo(String name, String birthDate, String phone, String address, byte[] avatarBytes)
-        throws Exception {
-
-    if (!connected || !authenticated) throw new Exception("Chưa xác thực PIN");
-
-    name = norm(name);
-    birthDate = norm(birthDate);
-    phone = norm(phone);
-    address = norm(address); // ✅ rỗng vẫn là "" chứ không null
-
-    if (name.isEmpty()) throw new Exception("Họ và tên không được để trống");
-    validateBirthDate(birthDate);
-    validatePhone(phone);
-
-    byte[] nameBytes    = toUtf8AndLimit(name,      NAME_MAX_LEN,    "Họ và tên");
-    byte[] dobBytes     = toUtf8AndLimit(birthDate, DOB_MAX_LEN,     "Ngày sinh");
-    byte[] phoneBytes   = toUtf8AndLimit(phone,     PHONE_MAX_LEN,   "Số điện thoại");
-    byte[] addressBytes = toUtf8AndLimit(address,   ADDRESS_MAX_LEN, "Địa chỉ"); // ✅ có thể length=0
-
-    // ✅ luôn write xuống thẻ kể cả rỗng (clear field)
-    cardManager.writeField(CardManager.FIELD_NAME, nameBytes);
-    cardManager.writeField(CardManager.FIELD_DOB, dobBytes);
-    cardManager.writeField(CardManager.FIELD_PHONE, phoneBytes);
-    cardManager.writeField(CardManager.FIELD_ADDRESS, addressBytes);
-
-    memberInfo.name = name;
-    memberInfo.birthDate = birthDate;
-    memberInfo.phone = phone;
-    memberInfo.address = address;
-
-    // Avatar: null => không đổi, muốn xóa avatar thì truyền byte[0]
-    if (avatarBytes != null) {
-        if (avatarBytes.length > AVATAR_MAX_LEN) throw new Exception("Avatar quá lớn > " + AVATAR_MAX_LEN);
-
-        System.out.println("[CARD][AVATAR] about to write avatar len=" + avatarBytes.length);
-        // ✅ nếu avatarBytes.length==0 -> thẻ sẽ clear avatar (applet bạn đã support)
-        cardManager.writeAvatar(avatarBytes);
-        System.out.println("[CARD][AVATAR] write avatar OK");
-
-        memberInfo.avatarBytes = (avatarBytes.length == 0 ? null : avatarBytes);
+    private static String norm(String s) {
+        return s == null ? "" : s.trim();
     }
 
-    System.out.println("[CARD] Member info written to card");
-    return true;
-}
+    public boolean setMemberInfo(String name, String birthDate, String phone, String address, byte[] avatarBytes)
+            throws Exception {
+
+        if (!connected || !authenticated)
+            throw new Exception("Chưa xác thực PIN");
+
+        name = norm(name);
+        birthDate = norm(birthDate);
+        phone = norm(phone);
+        address = norm(address); // ✅ rỗng vẫn là "" chứ không null
+
+        if (name.isEmpty())
+            throw new Exception("Họ và tên không được để trống");
+        validateBirthDate(birthDate);
+        validatePhone(phone);
+
+        byte[] nameBytes = toUtf8AndLimit(name, NAME_MAX_LEN, "Họ và tên");
+        byte[] dobBytes = toUtf8AndLimit(birthDate, DOB_MAX_LEN, "Ngày sinh");
+        byte[] phoneBytes = toUtf8AndLimit(phone, PHONE_MAX_LEN, "Số điện thoại");
+        byte[] addressBytes = toUtf8AndLimit(address, ADDRESS_MAX_LEN, "Địa chỉ"); // ✅ có thể length=0
+
+        // ✅ luôn write xuống thẻ kể cả rỗng (clear field)
+        cardManager.writeField(CardManager.FIELD_NAME, nameBytes);
+        cardManager.writeField(CardManager.FIELD_DOB, dobBytes);
+        cardManager.writeField(CardManager.FIELD_PHONE, phoneBytes);
+        cardManager.writeField(CardManager.FIELD_ADDRESS, addressBytes);
+
+        memberInfo.name = name;
+        memberInfo.birthDate = birthDate;
+        memberInfo.phone = phone;
+        memberInfo.address = address;
+
+        // Avatar: null => không đổi, muốn xóa avatar thì truyền byte[0]
+        if (avatarBytes != null) {
+            if (avatarBytes.length > AVATAR_MAX_LEN)
+                throw new Exception("Avatar quá lớn > " + AVATAR_MAX_LEN);
+
+            System.out.println("[CARD][AVATAR] about to write avatar len=" + avatarBytes.length);
+            // ✅ nếu avatarBytes.length==0 -> thẻ sẽ clear avatar (applet bạn đã support)
+            cardManager.writeAvatar(avatarBytes);
+            System.out.println("[CARD][AVATAR] write avatar OK");
+
+            memberInfo.avatarBytes = (avatarBytes.length == 0 ? null : avatarBytes);
+        }
+
+        System.out.println("[CARD] Member info written to card");
+        return true;
+    }
 
     /**
      * Overload cũ: không truyền avatar -> avatar = null
      * Để bạn khỏi phải sửa quá nhiều code đang dùng hàm này.
      */
     public boolean setMemberInfo(String name,
-                                 String birthDate,
-                                 String phone,
-                                 String address)
+            String birthDate,
+            String phone,
+            String address)
             throws Exception {
         return setMemberInfo(name, birthDate, phone, address, null);
     }
@@ -366,39 +379,40 @@ public boolean setMemberInfo(String name, String birthDate, String phone, String
     /**
      * Đọc thông tin hội viên từ thẻ
      */
-private static String safeUtf8(byte[] b) throws Exception {
-    if (b == null || b.length == 0) return "";
-    return new String(b, "UTF-8");
-}
+    private static String safeUtf8(byte[] b) throws Exception {
+        if (b == null || b.length == 0)
+            return "";
+        return new String(b, "UTF-8");
+    }
 
-public MemberInfo getMemberInfo() throws Exception {
-    if (!connected || !authenticated) throw new Exception("Chưa xác thực PIN");
+    public MemberInfo getMemberInfo() throws Exception {
+        if (!connected || !authenticated)
+            throw new Exception("Chưa xác thực PIN");
 
-    MemberInfo info = new MemberInfo();
+        MemberInfo info = new MemberInfo();
 
-    byte[] nameBytes  = cardManager.readField(CardManager.FIELD_NAME);
-    byte[] dobBytes   = cardManager.readField(CardManager.FIELD_DOB);
-    byte[] phoneBytes = cardManager.readField(CardManager.FIELD_PHONE);
-    byte[] addrBytes  = cardManager.readField(CardManager.FIELD_ADDRESS);
+        byte[] nameBytes = cardManager.readField(CardManager.FIELD_NAME);
+        byte[] dobBytes = cardManager.readField(CardManager.FIELD_DOB);
+        byte[] phoneBytes = cardManager.readField(CardManager.FIELD_PHONE);
+        byte[] addrBytes = cardManager.readField(CardManager.FIELD_ADDRESS);
 
-    info.name      = safeUtf8(nameBytes);
-    info.birthDate = safeUtf8(dobBytes);
-    info.phone     = safeUtf8(phoneBytes);
-    info.address   = safeUtf8(addrBytes);
+        info.name = safeUtf8(nameBytes);
+        info.birthDate = safeUtf8(dobBytes);
+        info.phone = safeUtf8(phoneBytes);
+        info.address = safeUtf8(addrBytes);
 
-    // Avatar:
-    byte[] avatarBytes = null;
-    try {
-        avatarBytes = cardManager.readAvatar(); // phải là hàm đọc kiểu AVATAR của applet
-    } catch (Exception ignore) { }
+        // Avatar:
+        byte[] avatarBytes = null;
+        try {
+            avatarBytes = cardManager.readAvatar(); // phải là hàm đọc kiểu AVATAR của applet
+        } catch (Exception ignore) {
+        }
 
-    info.avatarBytes = (avatarBytes == null || avatarBytes.length == 0) ? null : avatarBytes;
+        info.avatarBytes = (avatarBytes == null || avatarBytes.length == 0) ? null : avatarBytes;
 
-    this.memberInfo = info;
-    return info;
-}
-
-
+        this.memberInfo = info;
+        return info;
+    }
 
     // ---------------------------------------------------------------------
     // GÓI TẬP – mã hóa đơn giản vào 1 field trên thẻ (FIELD_PACKAGE)
@@ -411,7 +425,7 @@ public MemberInfo getMemberInfo() throws Exception {
      * - sessions: số buổi còn lại (nếu gói theo buổi)
      *
      * Lưu xuống thẻ dạng string ngắn:
-     *   "type|expiry|registration|sessions"
+     * "type|expiry|registration|sessions"
      * rồi writeField(FIELD_PACKAGE, bytes).
      */
     public boolean setPackage(byte type, String expiry, String registration, short sessions)
@@ -478,36 +492,71 @@ public MemberInfo getMemberInfo() throws Exception {
     }
 
     // ---------------------------------------------------------------------
-    // CHECK-IN / CHECK-OUT / BALANCE / TRANSACTION (mock trong RAM)
+    // CHECK-IN / CHECK-OUT / BALANCE - TẠM LƯU TRONG RAM
+    // (TODO: Chuyển sang thẻ thật khi applet hỗ trợ FIELD_CHECKIN/FIELD_BALANCE)
     // ---------------------------------------------------------------------
 
+    /**
+     * Check-in: ghi lên thẻ với FIELD_CHECKIN (plaintext, không mã hóa)
+     * Mỗi ngày chỉ được check-in 1 lần
+     */
     public boolean checkIn(String date, String time) throws Exception {
         if (!connected || !authenticated) {
             throw new Exception("Chưa xác thực PIN");
         }
 
+        // Đọc check-in từ thẻ trước để kiểm tra
+        getLastCheckIn();
+
+        // Kiểm tra nếu đã check-in cùng ngày
+        if (lastCheckIn.date.equals(date) && !lastCheckIn.checkInTime.isEmpty()) {
+            if (lastCheckIn.checkOutTime.isEmpty()) {
+                throw new Exception(
+                        "Bạn đã check-in hôm nay lúc " + lastCheckIn.checkInTime + ". Vui lòng check-out trước!");
+            } else {
+                throw new Exception("Bạn đã tập xong hôm nay (" + lastCheckIn.checkInTime + " - "
+                        + lastCheckIn.checkOutTime + "). Mỗi ngày chỉ tập 1 buổi!");
+            }
+        }
+
         lastCheckIn.date = date;
         lastCheckIn.checkInTime = time;
-        lastCheckIn.checkOutTime = ""; // Clear checkout
-
+        lastCheckIn.checkOutTime = "";
         checkInCount++;
+        lastCheckIn.count = checkInCount;
+
+        // Ghi lên thẻ
+        boolean writtenToCard = writeCheckInToCard();
 
         // Trừ buổi nếu gói theo buổi (type == 2)
         if (packageInfo.type == 2 && packageInfo.remainingSessions > 0) {
             packageInfo.remainingSessions--;
+            try {
+                setPackage(packageInfo.type, packageInfo.expiry, packageInfo.registration,
+                        packageInfo.remainingSessions);
+            } catch (Exception e) {
+                System.out.println("[WARN] Could not update package on card: " + e.getMessage());
+            }
         }
 
-        System.out.println("[MOCK] Checked in at " + time);
+        System.out.println(
+                "[" + (writtenToCard ? "CARD" : "RAM") + "] Checked in at " + time + ", count=" + checkInCount);
         return true;
     }
 
+    /**
+     * Check-out: ghi lên thẻ với FIELD_CHECKIN (plaintext)
+     */
     public boolean checkOut(String time) throws Exception {
         if (!connected || !authenticated) {
             throw new Exception("Chưa xác thực PIN");
         }
-
         lastCheckIn.checkOutTime = time;
-        System.out.println("[MOCK] Checked out at " + time);
+
+        // Ghi lên thẻ
+        boolean writtenToCard = writeCheckInToCard();
+
+        System.out.println("[" + (writtenToCard ? "CARD" : "RAM") + "] Checked out at " + time);
         return true;
     }
 
@@ -522,43 +571,140 @@ public MemberInfo getMemberInfo() throws Exception {
         if (!connected || !authenticated) {
             throw new Exception("Chưa xác thực PIN");
         }
+        // Thử đọc từ thẻ trước
+        try {
+            byte[] data = cardManager.readField(CardManager.FIELD_CHECKIN);
+            if (data != null && data.length > 0) {
+                String str = new String(data, "UTF-8");
+                String[] parts = str.split("\\|");
+                if (parts.length >= 1)
+                    lastCheckIn.date = parts[0];
+                if (parts.length >= 2)
+                    lastCheckIn.checkInTime = parts[1];
+                if (parts.length >= 3)
+                    lastCheckIn.checkOutTime = parts[2];
+                if (parts.length >= 4) {
+                    try {
+                        lastCheckIn.count = Integer.parseInt(parts[3]);
+                    } catch (NumberFormatException e) {
+                        lastCheckIn.count = 0;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("[CARD] Could not read check-in from card: " + e.getMessage());
+        }
         return lastCheckIn;
     }
 
+    /**
+     * Đọc số dư từ thẻ (FIELD_BALANCE có mã hóa AES)
+     */
     public short getBalance() throws Exception {
         if (!connected || !authenticated) {
             throw new Exception("Chưa xác thực PIN");
         }
+        // Thử đọc từ thẻ (applet sẽ tự decrypt nếu field này được mã hóa)
+        try {
+            byte[] data = cardManager.readField(CardManager.FIELD_BALANCE);
+            if (data != null && data.length >= 2) {
+                short cardBalance = (short) (((data[0] & 0xFF) << 8) | (data[1] & 0xFF));
+                // Kiểm tra giá trị hợp lệ (0 <= balance <= 10000 nghìn = 10 triệu VNĐ)
+                if (cardBalance >= 0 && cardBalance <= 10000) {
+                    balance = cardBalance;
+                    System.out.println("[CARD] Read balance from card: " + balance + "k");
+                } else {
+                    System.out.println(
+                            "[CARD] Invalid balance from card: " + cardBalance + "k, using RAM: " + balance + "k");
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("[CARD] Could not read balance from card, using RAM: " + e.getMessage());
+        }
         return balance;
     }
 
+    /**
+     * Nạp tiền - ghi lên thẻ (FIELD_BALANCE có mã hóa AES)
+     */
     public boolean addBalance(short amount) throws Exception {
         if (!connected || !authenticated) {
             throw new Exception("Chưa xác thực PIN");
         }
 
+        // Đọc số dư hiện tại
+        getBalance();
         balance += amount;
-        recordTransaction((byte) 1, amount);
 
-        System.out.println("[MOCK] Add balance: " + amount + "k, new=" + balance);
+        // Ghi lên thẻ
+        boolean writtenToCard = writeBalanceToCard();
+
+        recordTransaction((byte) 1, amount);
+        System.out.println("[" + (writtenToCard ? "CARD" : "RAM") + "] Add balance: " + amount + "k, new=" + balance);
         return true;
     }
 
+    /**
+     * Trừ tiền - ghi lên thẻ (FIELD_BALANCE có mã hóa AES)
+     */
     public boolean deductBalance(short amount) throws Exception {
         if (!connected || !authenticated) {
             throw new Exception("Chưa xác thực PIN");
         }
 
+        // Đọc số dư hiện tại
+        getBalance();
+
         if (balance < amount) {
-            System.out.println("[MOCK] Not enough balance");
+            System.out.println("[CARD] Not enough balance");
             return false;
         }
 
         balance -= amount;
-        recordTransaction((byte) 2, amount);
 
-        System.out.println("[MOCK] Deduct balance: " + amount + "k, new=" + balance);
+        // Ghi lên thẻ
+        boolean writtenToCard = writeBalanceToCard();
+
+        recordTransaction((byte) 2, amount);
+        System.out
+                .println("[" + (writtenToCard ? "CARD" : "RAM") + "] Deduct balance: " + amount + "k, new=" + balance);
         return true;
+    }
+
+    /**
+     * Ghi số dư lên thẻ (2 bytes big-endian, applet sẽ tự mã hóa)
+     */
+    private boolean writeBalanceToCard() {
+        try {
+            byte[] data = new byte[2];
+            data[0] = (byte) ((balance >> 8) & 0xFF);
+            data[1] = (byte) (balance & 0xFF);
+            cardManager.writeField(CardManager.FIELD_BALANCE, data);
+            System.out.println("[CARD] Wrote balance to card: " + balance + "k");
+            return true;
+        } catch (Exception e) {
+            System.out.println("[WARN] Could not write balance to card: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Ghi check-in lên thẻ (plaintext, không mã hóa)
+     */
+    private boolean writeCheckInToCard() {
+        try {
+            String str = (lastCheckIn.date == null ? "" : lastCheckIn.date) + "|" +
+                    (lastCheckIn.checkInTime == null ? "" : lastCheckIn.checkInTime) + "|" +
+                    (lastCheckIn.checkOutTime == null ? "" : lastCheckIn.checkOutTime) + "|" +
+                    lastCheckIn.count;
+            byte[] data = str.getBytes("UTF-8");
+            cardManager.writeField(CardManager.FIELD_CHECKIN, data);
+            System.out.println("[CARD] Wrote check-in to card: " + str);
+            return true;
+        } catch (Exception e) {
+            System.out.println("[WARN] Could not write check-in to card: " + e.getMessage());
+            return false;
+        }
     }
 
     public TransactionInfo getTransaction(byte index) throws Exception {
@@ -566,7 +712,8 @@ public MemberInfo getMemberInfo() throws Exception {
             throw new Exception("Chưa xác thực PIN");
         }
 
-        if (index < 0 || index >= transactionCount) return null;
+        if (index < 0 || index >= transactionCount)
+            return null;
         return transactions[index];
     }
 

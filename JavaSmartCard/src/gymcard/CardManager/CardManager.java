@@ -7,38 +7,40 @@ public class CardManager {
 
     // ================== APPLET ==================
     private static final byte[] APPLET_AID = new byte[] {
-        (byte)0x11, (byte)0x22, (byte)0x33,
-        (byte)0x44, (byte)0x55, (byte)0x00
+            (byte) 0x11, (byte) 0x22, (byte) 0x33,
+            (byte) 0x44, (byte) 0x55, (byte) 0x00
     };
 
-    private static final byte CLA = (byte)0x80;
+    private static final byte CLA = (byte) 0x80;
 
     // ================== INS ==================
-    private static final byte INS_INIT_CARD      = (byte)0x10;
-    private static final byte INS_VERIFY_PIN     = (byte)0x20;
-    private static final byte INS_CHANGE_PIN     = (byte)0x21;
-    private static final byte INS_UNLOCK         = (byte)0x22;
-    private static final byte INS_ADMIN_SET_PIN  = (byte)0x23;
+    private static final byte INS_INIT_CARD = (byte) 0x10;
+    private static final byte INS_VERIFY_PIN = (byte) 0x20;
+    private static final byte INS_CHANGE_PIN = (byte) 0x21;
+    private static final byte INS_UNLOCK = (byte) 0x22;
+    private static final byte INS_ADMIN_SET_PIN = (byte) 0x23;
 
-    private static final byte INS_WRITE_PERSONAL = (byte)0x30;
-    private static final byte INS_READ_PERSONAL  = (byte)0x31;
-    private static final byte INS_GET_TRIES      = (byte)0x32;
+    private static final byte INS_WRITE_PERSONAL = (byte) 0x30;
+    private static final byte INS_READ_PERSONAL = (byte) 0x31;
+    private static final byte INS_GET_TRIES = (byte) 0x32;
 
     // ===== AVATAR CHUNK (T=0 SAFE) =====
-    private static final byte INS_AVATAR_BEGIN = (byte)0x50;
-    private static final byte INS_AVATAR_CHUNK = (byte)0x51;
-    private static final byte INS_AVATAR_END   = (byte)0x52;
-private static final byte INS_AVATAR_READ_CHUNK = (byte)0x53;
+    private static final byte INS_AVATAR_BEGIN = (byte) 0x50;
+    private static final byte INS_AVATAR_CHUNK = (byte) 0x51;
+    private static final byte INS_AVATAR_END = (byte) 0x52;
+    private static final byte INS_AVATAR_READ_CHUNK = (byte) 0x53;
 
-private static final int AVATAR_CHUNK = 220; // an toàn T=0 (<=255)
+    private static final int AVATAR_CHUNK = 220; // an toàn T=0 (<=255)
     // ================== FIELD ==================
-    public static final byte FIELD_NAME    = (byte)0x00;
-    public static final byte FIELD_DOB     = (byte)0x01;
-    public static final byte FIELD_PHONE   = (byte)0x02;
-    public static final byte FIELD_ADDRESS = (byte)0x03;
-    public static final byte FIELD_PACKAGE = (byte)0x04;
-    public static final byte FIELD_CARDID  = (byte)0x05;
-    public static final byte FIELD_AVATAR  = (byte)0x06;
+    public static final byte FIELD_NAME = (byte) 0x00;
+    public static final byte FIELD_DOB = (byte) 0x01;
+    public static final byte FIELD_PHONE = (byte) 0x02;
+    public static final byte FIELD_ADDRESS = (byte) 0x03;
+    public static final byte FIELD_PACKAGE = (byte) 0x04;
+    public static final byte FIELD_CARDID = (byte) 0x05;
+    public static final byte FIELD_AVATAR = (byte) 0x06;
+    public static final byte FIELD_CHECKIN = (byte) 0x07; // Check-in data (không mã hóa trên thẻ)
+    public static final byte FIELD_BALANCE = (byte) 0x08; // Số dư (có mã hóa trên thẻ)
 
     // ================== AVATAR CONFIG ==================
     public static final int AVATAR_STORE_LEN = 4096;
@@ -55,16 +57,18 @@ private static final int AVATAR_CHUNK = 220; // an toàn T=0 (<=255)
         TerminalFactory factory = TerminalFactory.getDefault();
         for (CardTerminal terminal : factory.terminals().list()) {
 
-            if (!terminal.isCardPresent()) continue;
+            if (!terminal.isCardPresent())
+                continue;
 
-            for (String proto : new String[]{"T=1", "T=0", "*"}) {
+            for (String proto : new String[] { "T=1", "T=0", "*" }) {
                 try {
                     card = terminal.connect(proto);
                     channel = card.getBasicChannel();
                     selectApplet();
                     System.out.println("[CARD] Connected with " + proto);
                     return;
-                } catch (Exception ignore) {}
+                } catch (Exception ignore) {
+                }
             }
         }
         throw new IllegalStateException("Không kết nối được thẻ");
@@ -80,8 +84,7 @@ private static final int AVATAR_CHUNK = 220; // an toàn T=0 (<=255)
 
     private void selectApplet() throws Exception {
         ResponseAPDU r = channel.transmit(
-            new CommandAPDU(0x00, 0xA4, 0x04, 0x00, APPLET_AID)
-        );
+                new CommandAPDU(0x00, 0xA4, 0x04, 0x00, APPLET_AID));
         checkStatus(r, "SELECT");
     }
 
@@ -96,14 +99,16 @@ private static final int AVATAR_CHUNK = 220; // an toàn T=0 (<=255)
     // ===================================================
     public void initCard(String cardId, String userPin, String adminPin) throws Exception {
         byte[] cid = cardId.getBytes("UTF-8");
-        byte[] u   = userPin.getBytes("ASCII");
-        byte[] a   = adminPin.getBytes("ASCII");
+        byte[] u = userPin.getBytes("ASCII");
+        byte[] a = adminPin.getBytes("ASCII");
 
         byte[] data = new byte[1 + cid.length + 6 + 6];
         int o = 0;
         data[o++] = (byte) cid.length;
-        System.arraycopy(cid, 0, data, o, cid.length); o += cid.length;
-        System.arraycopy(u, 0, data, o, 6); o += 6;
+        System.arraycopy(cid, 0, data, o, cid.length);
+        o += cid.length;
+        System.arraycopy(u, 0, data, o, 6);
+        o += 6;
         System.arraycopy(a, 0, data, o, 6);
 
         transmit(new CommandAPDU(CLA, INS_INIT_CARD, 0, 0, data), "INIT_CARD");
@@ -129,8 +134,7 @@ private static final int AVATAR_CHUNK = 220; // an toàn T=0 (<=255)
 
     public byte getTriesRemaining() throws Exception {
         ResponseAPDU r = channel.transmit(
-            new CommandAPDU(CLA, INS_GET_TRIES, 0, 0, 1)
-        );
+                new CommandAPDU(CLA, INS_GET_TRIES, 0, 0, 1));
         checkStatus(r, "GET_TRIES");
         return r.getData()[0];
     }
@@ -139,7 +143,8 @@ private static final int AVATAR_CHUNK = 220; // an toàn T=0 (<=255)
     // NORMAL FIELD
     // ===================================================
     public void writeField(byte fieldId, byte[] data) throws Exception {
-        if (data == null) data = new byte[0];
+        if (data == null)
+            data = new byte[0];
         byte[] d = new byte[1 + data.length];
         d[0] = fieldId;
         System.arraycopy(data, 0, d, 1, data.length);
@@ -148,8 +153,7 @@ private static final int AVATAR_CHUNK = 220; // an toàn T=0 (<=255)
 
     public byte[] readField(byte fieldId) throws Exception {
         ResponseAPDU r = channel.transmit(
-            new CommandAPDU(CLA, INS_READ_PERSONAL, 0, 0, new byte[]{fieldId})
-        );
+                new CommandAPDU(CLA, INS_READ_PERSONAL, 0, 0, new byte[] { fieldId }));
         checkStatus(r, "READ_FIELD");
         return r.getData();
     }
@@ -157,68 +161,79 @@ private static final int AVATAR_CHUNK = 220; // an toàn T=0 (<=255)
     // ===================================================
     // AVATAR (4096 BYTES, CHUNKED)
     // ===================================================
-public void writeAvatar(byte[] avatarBytes) throws Exception {
-    if (avatarBytes == null) avatarBytes = new byte[0];
-    if (avatarBytes.length > 4094) throw new IllegalArgumentException("Avatar too large");
+    public void writeAvatar(byte[] avatarBytes) throws Exception {
+        if (avatarBytes == null)
+            avatarBytes = new byte[0];
+        if (avatarBytes.length > 4094)
+            throw new IllegalArgumentException("Avatar too large");
 
-    // BEGIN (2 bytes length)
-    byte[] len2 = new byte[] {
-        (byte)((avatarBytes.length >> 8) & 0xFF),
-        (byte)(avatarBytes.length & 0xFF)
-    };
-    ResponseAPDU r0 = channel.transmit(new CommandAPDU(CLA, INS_AVATAR_BEGIN, 0, 0, len2));
-    checkStatus(r0, "AVATAR_BEGIN");
+        // BEGIN (2 bytes length)
+        byte[] len2 = new byte[] {
+                (byte) ((avatarBytes.length >> 8) & 0xFF),
+                (byte) (avatarBytes.length & 0xFF)
+        };
+        ResponseAPDU r0 = channel.transmit(new CommandAPDU(CLA, INS_AVATAR_BEGIN, 0, 0, len2));
+        checkStatus(r0, "AVATAR_BEGIN");
 
-    // CHUNK
-    int off = 0;
-    while (off < avatarBytes.length) {
-        int n = Math.min(AVATAR_CHUNK, avatarBytes.length - off);
-        byte p1 = (byte)((off >> 8) & 0xFF);
-        byte p2 = (byte)(off & 0xFF);
+        // CHUNK
+        int off = 0;
+        while (off < avatarBytes.length) {
+            int n = Math.min(AVATAR_CHUNK, avatarBytes.length - off);
+            byte p1 = (byte) ((off >> 8) & 0xFF);
+            byte p2 = (byte) (off & 0xFF);
 
-        byte[] part = Arrays.copyOfRange(avatarBytes, off, off + n);
-        ResponseAPDU rx = channel.transmit(new CommandAPDU(CLA, INS_AVATAR_CHUNK, p1, p2, part));
-        checkStatus(rx, "AVATAR_CHUNK");
-        off += n;
+            byte[] part = Arrays.copyOfRange(avatarBytes, off, off + n);
+            ResponseAPDU rx = channel.transmit(new CommandAPDU(CLA, INS_AVATAR_CHUNK, p1, p2, part));
+            checkStatus(rx, "AVATAR_CHUNK");
+            off += n;
+        }
+
+        // END (encrypt + finalize)
+        ResponseAPDU r2 = channel.transmit(new CommandAPDU(CLA, INS_AVATAR_END, 0, 0));
+        checkStatus(r2, "AVATAR_END");
     }
 
-    // END (encrypt + finalize)
-    ResponseAPDU r2 = channel.transmit(new CommandAPDU(CLA, INS_AVATAR_END, 0, 0));
-    checkStatus(r2, "AVATAR_END");
-}
+    public byte[] readAvatar() throws Exception {
+        // đọc 2 byte length nằm ở cuối plaintext, nhưng để tiện: ta đọc header từ cuối:
+        // trong applet mình lưu len ở (4096-2..4096-1)
+        int lenPos = 4096 - 2;
+        byte[] tail = readAvatarChunk(lenPos, 2);
 
-public byte[] readAvatar() throws Exception {
-    // đọc 2 byte length nằm ở cuối plaintext, nhưng để tiện: ta đọc header từ cuối:
-    // trong applet mình lưu len ở (4096-2..4096-1)
-    int lenPos = 4096 - 2;
-    byte[] tail = readAvatarChunk(lenPos, 2);
+        int len = ((tail[0] & 0xFF) << 8) | (tail[1] & 0xFF);
+        if (len <= 0 || len > 4094)
+            return null;
 
-    int len = ((tail[0] & 0xFF) << 8) | (tail[1] & 0xFF);
-    if (len <= 0 || len > 4094) return null;
-
-    byte[] out = new byte[len];
-    int off = 0;
-    while (off < len) {
-        int n = Math.min(AVATAR_CHUNK, len - off);
-        byte[] chunk = readAvatarChunk(off, n);
-        System.arraycopy(chunk, 0, out, off, chunk.length);
-        off += chunk.length;
+        byte[] out = new byte[len];
+        int off = 0;
+        while (off < len) {
+            int n = Math.min(AVATAR_CHUNK, len - off);
+            byte[] chunk = readAvatarChunk(off, n);
+            System.arraycopy(chunk, 0, out, off, chunk.length);
+            off += chunk.length;
+        }
+        return out;
     }
-    return out;
-}
 
-private byte[] readAvatarChunk(int offset, int le) throws Exception {
-    byte p1 = (byte)((offset >> 8) & 0xFF);
-    byte p2 = (byte)(offset & 0xFF);
-    CommandAPDU cmd = new CommandAPDU(CLA, INS_AVATAR_READ_CHUNK, p1, p2, le);
-    ResponseAPDU resp = channel.transmit(cmd);
-    checkStatus(resp, "AVATAR_READ_CHUNK");
-    return resp.getData();
-}
+    private byte[] readAvatarChunk(int offset, int le) throws Exception {
+        byte p1 = (byte) ((offset >> 8) & 0xFF);
+        byte p2 = (byte) (offset & 0xFF);
+        CommandAPDU cmd = new CommandAPDU(CLA, INS_AVATAR_READ_CHUNK, p1, p2, le);
+        ResponseAPDU resp = channel.transmit(cmd);
+        checkStatus(resp, "AVATAR_READ_CHUNK");
+        return resp.getData();
+    }
 
     private void transmit(CommandAPDU cmd, String tag) throws Exception {
         ResponseAPDU r = channel.transmit(cmd);
         checkStatus(r, tag);
     }
-    public void unlockByAdmin(String adminPass) throws Exception { if (adminPass == null) adminPass = ""; byte[] bytes = adminPass.getBytes("ASCII"); CommandAPDU cmd = new CommandAPDU(CLA, INS_UNLOCK, 0x00, 0x00, bytes); ResponseAPDU resp = channel.transmit(cmd); checkStatus(resp, "UNLOCK"); }
+
+    public void unlockByAdmin(String adminPass) throws Exception {
+        if (adminPass == null)
+            adminPass = "";
+        byte[] bytes = adminPass.getBytes("ASCII");
+        CommandAPDU cmd = new CommandAPDU(CLA, INS_UNLOCK, 0x00, 0x00, bytes);
+        ResponseAPDU resp = channel.transmit(cmd);
+        checkStatus(resp, "UNLOCK");
+    }
 }

@@ -1,10 +1,14 @@
 package gymcard.client.ui;
 
 import gymcard.client.*;
+import gymcard.databaseManager.DatabaseManager;
+import gymcard.databaseManager.DatabaseManager.PlanInfo;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.sql.SQLException;
 import javax.swing.*;
 import javax.swing.border.*;
 import com.toedter.calendar.JCalendar;
@@ -31,6 +35,9 @@ public class UserPanel extends JPanel {
     // Components
     private JPanel contentPanel;
     private CardLayout cardLayout;
+
+    // Danh sách dịch vụ đã mua
+    private final java.util.List<String> purchasedServices = new java.util.ArrayList<>();
 
     public UserPanel(CardCommunicator cardComm) {
         this.cardComm = cardComm;
@@ -74,25 +81,6 @@ public class UserPanel extends JPanel {
         contentPanel.add(createMainPanel(), "main");
 
         add(contentPanel, BorderLayout.CENTER);
-
-        // Log area
-        JPanel logPanel = new JPanel(new BorderLayout());
-        logPanel.setBackground(Color.WHITE);
-        logPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(149, 165, 166), 1),
-                "Thông báo",
-                TitledBorder.LEFT,
-                TitledBorder.TOP,
-                new Font("Segoe UI", Font.BOLD, 12)));
-
-        logArea = new JTextArea(3, 50); // 3 dòng thay vì 5
-        logArea.setEditable(false);
-        logArea.setFont(new Font("Consolas", Font.PLAIN, 11));
-        logArea.setBackground(new Color(250, 250, 250));
-        JScrollPane logScroll = new JScrollPane(logArea);
-        logPanel.add(logScroll, BorderLayout.CENTER);
-
-        add(logPanel, BorderLayout.SOUTH);
 
         // Show login panel first
         cardLayout.show(contentPanel, "login");
@@ -271,8 +259,10 @@ public class UserPanel extends JPanel {
         tabbedPane.addTab("Thông tin cá nhân", createInfoTab());
         tabbedPane.addTab("Gói tập", createPackageTab());
         tabbedPane.addTab("Check-in/Check-out", createCheckInTab());
-        tabbedPane.addTab("Thay đổi PIN", createChangePinTab());
-        tabbedPane.addTab("Thanh toán", createPaymentTab());
+        tabbedPane.addTab("Nạp tiền", createTopUpTab());
+        tabbedPane.addTab("Dịch vụ thêm", createServicesTab());
+        tabbedPane.addTab("Thống kê", createStatisticsTab());
+        tabbedPane.addTab("Đổi PIN", createChangePinTab());
 
         tabsCard.add(tabbedPane, BorderLayout.CENTER);
 
@@ -812,14 +802,14 @@ public class UserPanel extends JPanel {
     }
 
     /**
-     * Tab xem các gói tập
+     * Tab xem các gói tập - Load từ Database với UI đẹp
      */
     private JPanel createPackageTab() {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBorder(new EmptyBorder(15, 15, 15, 15));
         panel.setBackground(new Color(248, 249, 250));
 
-        // Current package info card at top (thấp hơn)
+        // Current package info card at top
         JPanel currentPackagePanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -856,33 +846,52 @@ public class UserPanel extends JPanel {
 
         panel.add(currentPackagePanel, BorderLayout.NORTH);
 
-        // Available packages cards
-        JPanel packagesPanel = new JPanel(new GridLayout(1, 3, 15, 0));
+        // Load packages from database
+        JPanel packagesPanel = new JPanel();
+        packagesPanel.setLayout(new BoxLayout(packagesPanel, BoxLayout.Y_AXIS));
         packagesPanel.setBackground(new Color(248, 249, 250));
 
-        String[][] packages = {
-                { "Gói Tháng", "300", "30 ngày", "1" },
-                { "Gói Buổi", "500", "20 buổi", "2" },
-                { "Gói VIP", "2000", "90 ngày", "3" }
-        };
+        // Wrap in ScrollPane
+        JScrollPane scrollPane = new JScrollPane(packagesPanel);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setBackground(new Color(248, 249, 250));
 
-        Color[] colors = {
-                new Color(46, 204, 113),
-                new Color(52, 152, 219),
-                new Color(155, 89, 182)
-        };
+        // Load gói tập từ DB
+        try {
+            DatabaseManager db = DatabaseManager.getInstance();
+            List<PlanInfo> plans = db.getActivePlans();
 
-        for (int i = 0; i < packages.length; i++) {
-            packagesPanel.add(createPackageCard(
-                    packages[i][0],
-                    packages[i][1],
-                    packages[i][2],
-                    packages[i][3],
-                    colors[i],
-                    currentPackageLabel));
+            // Icons và colors cho từng loại gói
+            String[] icons = { "[1M]", "[3M]", "[6M]", "[1Y]", "[10B]", "[30B]", "[VIP]" };
+            Color[] colors = {
+                    new Color(46, 204, 113), // Xanh lá
+                    new Color(52, 152, 219), // Xanh dương
+                    new Color(155, 89, 182), // Tím
+                    new Color(230, 126, 34), // Cam
+                    new Color(241, 196, 15), // Vàng
+                    new Color(231, 76, 60), // Đỏ
+                    new Color(142, 68, 173) // Tím đậm (VIP)
+            };
+
+            for (int i = 0; i < plans.size(); i++) {
+                PlanInfo plan = plans.get(i);
+                Color color = colors[i % colors.length];
+                String icon = icons[i % icons.length];
+
+                JPanel card = createDBPackageCard(plan, icon, color, currentPackageLabel);
+                card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+                packagesPanel.add(card);
+                packagesPanel.add(Box.createVerticalStrut(10));
+            }
+
+        } catch (SQLException ex) {
+            JLabel errorLabel = new JLabel("Không thể load gói tập từ database: " + ex.getMessage());
+            errorLabel.setForeground(Color.RED);
+            packagesPanel.add(errorLabel);
         }
 
-        panel.add(packagesPanel, BorderLayout.CENTER);
+        panel.add(scrollPane, BorderLayout.CENTER);
 
         // Load current package button
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
@@ -913,6 +922,498 @@ public class UserPanel extends JPanel {
         panel.add(buttonPanel, BorderLayout.SOUTH);
 
         return panel;
+    }
+
+    /**
+     * Tạo card gói tập từ database với popup thanh toán
+     */
+    private JPanel createDBPackageCard(PlanInfo plan, String icon, Color color, JLabel currentPackageLabel) {
+        JPanel card = new JPanel(new BorderLayout(10, 5));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(color, 2, true),
+                new EmptyBorder(15, 15, 15, 15)));
+
+        // Left: Icon
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        iconLabel.setForeground(color);
+        iconLabel.setPreferredSize(new Dimension(80, 60));
+        iconLabel.setMinimumSize(new Dimension(80, 60));
+        iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        card.add(iconLabel, BorderLayout.WEST);
+
+        // Center: Info
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setBackground(Color.WHITE);
+
+        JLabel nameLabel = new JLabel(plan.name);
+        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        nameLabel.setForeground(color);
+        infoPanel.add(nameLabel);
+
+        JLabel descLabel = new JLabel(plan.description);
+        descLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        descLabel.setForeground(Color.GRAY);
+        infoPanel.add(descLabel);
+
+        String duration = "";
+        if (plan.durationDays > 0) {
+            duration = plan.durationDays + " ngày";
+        } else if (plan.sessionCount > 0) {
+            duration = plan.sessionCount + " buổi";
+        }
+        JLabel durationLabel = new JLabel("Thời hạn: " + duration);
+        durationLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        durationLabel.setForeground(new Color(100, 100, 100));
+        infoPanel.add(durationLabel);
+
+        card.add(infoPanel, BorderLayout.CENTER);
+
+        // Right: Price + Buy button
+        JPanel rightPanel = new JPanel();
+        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+        rightPanel.setBackground(Color.WHITE);
+
+        JLabel priceLabel = new JLabel(String.format("%,.0f VNĐ", plan.price));
+        priceLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        priceLabel.setForeground(color);
+        priceLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        rightPanel.add(priceLabel);
+
+        rightPanel.add(Box.createVerticalStrut(5));
+
+        JButton buyBtn = new JButton("Mua ngay");
+        buyBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        buyBtn.setBackground(color);
+        buyBtn.setForeground(Color.WHITE);
+        buyBtn.setFocusPainted(false);
+        buyBtn.setBorderPainted(false);
+        buyBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        buyBtn.setAlignmentX(Component.RIGHT_ALIGNMENT);
+
+        buyBtn.addActionListener(e -> showPurchaseDialog(plan, color, currentPackageLabel));
+
+        rightPanel.add(buyBtn);
+        card.add(rightPanel, BorderLayout.EAST);
+
+        return card;
+    }
+
+    /**
+     * Hiện popup thanh toán với giảm giá 50% nếu đã có gói
+     */
+    private void showPurchaseDialog(PlanInfo plan, Color color, JLabel currentPackageLabel) {
+        // Kiểm tra gói hiện tại
+        PackageInfo currentPkg = null;
+        boolean hasExistingPackage = false;
+        try {
+            currentPkg = cardComm.getPackage();
+            if (currentPkg != null && currentPkg.type > 0) {
+                hasExistingPackage = true;
+            }
+        } catch (Exception ex) {
+            // Không có gói
+        }
+
+        double originalPrice = plan.price;
+        double finalPrice = originalPrice;
+        String discountInfo = "";
+
+        if (hasExistingPackage) {
+            finalPrice = originalPrice * 0.5; // Giảm 50%
+            discountInfo = "GIẢM 50% khi nâng cấp!";
+        }
+
+        // Tạo dialog - kích thước lớn hơn để chứa tất cả field
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Xác nhận mua gói", true);
+        dialog.setSize(500, 450);
+        dialog.setLocationRelativeTo(this);
+
+        JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
+        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        mainPanel.setBackground(Color.WHITE);
+
+        // Header
+        JPanel headerPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gp = new GradientPaint(0, 0, color, getWidth(), 0, color.darker());
+                g2d.setPaint(gp);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+            }
+        };
+        headerPanel.setPreferredSize(new Dimension(0, 60));
+        headerPanel.setLayout(new BorderLayout());
+        JLabel titleLabel = new JLabel(plan.name, SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        titleLabel.setForeground(Color.WHITE);
+        headerPanel.add(titleLabel, BorderLayout.CENTER);
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+
+        // Content
+        JPanel contentPanel = new JPanel(new GridBagLayout());
+        contentPanel.setBackground(Color.WHITE);
+        GridBagConstraints gbcContent = new GridBagConstraints();
+        gbcContent.insets = new Insets(8, 10, 8, 10);
+        gbcContent.anchor = GridBagConstraints.WEST;
+
+        int row = 0;
+
+        gbcContent.gridx = 0;
+        gbcContent.gridy = row;
+        contentPanel.add(new JLabel("Mô tả:"), gbcContent);
+        gbcContent.gridx = 1;
+        JLabel descValueLabel = new JLabel(plan.description);
+        descValueLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        contentPanel.add(descValueLabel, gbcContent);
+
+        row++;
+        gbcContent.gridx = 0;
+        gbcContent.gridy = row;
+        contentPanel.add(new JLabel("Giá gốc:"), gbcContent);
+        gbcContent.gridx = 1;
+        JLabel origPriceLabel = new JLabel(String.format("%,.0f VNĐ", originalPrice));
+        if (hasExistingPackage) {
+            origPriceLabel.setText("<html><s>" + String.format("%,.0f VNĐ", originalPrice) + "</s></html>");
+            origPriceLabel.setForeground(Color.GRAY);
+        }
+        contentPanel.add(origPriceLabel, gbcContent);
+
+        if (hasExistingPackage) {
+            row++;
+            gbcContent.gridx = 0;
+            gbcContent.gridy = row;
+            JLabel discountLabel = new JLabel(discountInfo);
+            discountLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            discountLabel.setForeground(new Color(231, 76, 60));
+            gbcContent.gridwidth = 2;
+            contentPanel.add(discountLabel, gbcContent);
+            gbcContent.gridwidth = 1;
+
+            row++;
+            gbcContent.gridx = 0;
+            gbcContent.gridy = row;
+            contentPanel.add(new JLabel("Thanh toán:"), gbcContent);
+            gbcContent.gridx = 1;
+            JLabel finalPriceLabel = new JLabel(String.format("%,.0f VNĐ", finalPrice));
+            finalPriceLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            finalPriceLabel.setForeground(new Color(46, 204, 113));
+            contentPanel.add(finalPriceLabel, gbcContent);
+        }
+
+        row++;
+        gbcContent.gridx = 0;
+        gbcContent.gridy = row;
+        contentPanel.add(new JLabel("Số dư hiện tại:"), gbcContent);
+        gbcContent.gridx = 1;
+        short currentBalance = 0;
+        try {
+            currentBalance = cardComm.getBalance();
+        } catch (Exception ex) {
+            // ignore
+        }
+        JLabel balanceLabel = new JLabel(String.format("%,d VNĐ", currentBalance * 1000));
+        balanceLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        contentPanel.add(balanceLabel, gbcContent);
+
+        // PIN field - yêu cầu nhập lại mã PIN để xác thực
+        row++;
+        gbcContent.gridx = 0;
+        gbcContent.gridy = row;
+        JLabel pinLabel = new JLabel("Nhập mã PIN:");
+        pinLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        pinLabel.setForeground(new Color(231, 76, 60));
+        contentPanel.add(pinLabel, gbcContent);
+        gbcContent.gridx = 1;
+        JPasswordField pinField = new JPasswordField(10);
+        pinField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        pinField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(231, 76, 60), 2),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+        contentPanel.add(pinField, gbcContent);
+
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        buttonPanel.setBackground(Color.WHITE);
+
+        double priceToDeduct = finalPrice;
+        short priceInK = (short) (priceToDeduct / 1000);
+        final short finalBalance = currentBalance;
+
+        JButton confirmBtn = new JButton("Xác nhận thanh toán");
+        confirmBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        confirmBtn.setBackground(color);
+        confirmBtn.setForeground(Color.WHITE);
+        confirmBtn.setFocusPainted(false);
+        confirmBtn.addActionListener(ev -> {
+            try {
+                // Xác thực PIN trước
+                String enteredPin = new String(pinField.getPassword()).trim();
+                if (enteredPin.isEmpty()) {
+                    JOptionPane.showMessageDialog(dialog,
+                            "Vui lòng nhập mã PIN để xác thực!",
+                            "Thiếu mã PIN", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                if (!enteredPin.matches("\\d{6}")) {
+                    JOptionPane.showMessageDialog(dialog,
+                            "Mã PIN phải gồm 6 chữ số!",
+                            "PIN không hợp lệ", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // Verify PIN với thẻ
+                boolean pinValid = cardComm.verifyPin(enteredPin);
+                if (!pinValid) {
+                    JOptionPane.showMessageDialog(dialog,
+                            "Mã PIN không chính xác!",
+                            "Sai PIN", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Kiểm tra đủ tiền
+                if (finalBalance < priceInK) {
+                    JOptionPane.showMessageDialog(dialog,
+                            "Số dư không đủ! Vui lòng nạp thêm tiền.",
+                            "Không đủ tiền", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // Trừ tiền
+                if (cardComm.deductBalance(priceInK)) {
+                    // Cập nhật gói tập
+                    byte packageType = 1; // Mặc định là gói tháng
+                    if (plan.code.startsWith("SESSION")) {
+                        packageType = 2; // Gói theo buổi
+                    } else if (plan.code.equals("VIP")) {
+                        packageType = 3; // Gói VIP
+                    }
+
+                    String today = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
+                    Calendar cal = Calendar.getInstance();
+                    if (plan.durationDays > 0) {
+                        cal.add(Calendar.DAY_OF_MONTH, plan.durationDays);
+                    } else {
+                        cal.add(Calendar.YEAR, 1); // Gói buổi: 1 năm hết hạn
+                    }
+                    String expiry = new SimpleDateFormat("dd/MM/yyyy").format(cal.getTime());
+                    short sessions = (short) plan.sessionCount;
+
+                    cardComm.setPackage(packageType, expiry, today, sessions);
+
+                    // Cập nhật UI gói tập
+                    String pkgInfo = String.format("%s | Đăng ký: %s | Hết hạn: %s",
+                            plan.name, today, expiry);
+                    if (packageType == 2) {
+                        pkgInfo += " | Còn: " + sessions + " buổi";
+                    }
+                    currentPackageLabel.setText(pkgInfo);
+
+                    // Cập nhật số dư hiển thị
+                    short newBalance = cardComm.getBalance();
+                    balanceLabel.setText(String.format("%,d VNĐ", newBalance * 1000));
+
+                    log("Đã mua thành công: " + plan.name + " - " + String.format("%,.0f", priceToDeduct) + " VNĐ");
+                    JOptionPane.showMessageDialog(dialog,
+                            "Mua gói thành công!\n" + plan.name + "\nSố dư còn lại: "
+                                    + String.format("%,d VNĐ", newBalance * 1000),
+                            "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    dialog.dispose();
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog,
+                        "Lỗi: " + ex.getMessage(),
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        JButton cancelBtn = new JButton("Hủy");
+        cancelBtn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        cancelBtn.addActionListener(ev -> dialog.dispose());
+
+        buttonPanel.add(confirmBtn);
+        buttonPanel.add(cancelBtn);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.setContentPane(mainPanel);
+        dialog.setVisible(true);
+    }
+
+    /**
+     * Tab Thống kê - Giao diện cải tiến với grid 2x2 và dịch vụ đã mua
+     */
+    private JPanel createStatisticsTab() {
+        JPanel panel = new JPanel(new BorderLayout(15, 15));
+        panel.setBorder(new EmptyBorder(15, 15, 15, 15));
+        panel.setBackground(new Color(248, 249, 250));
+
+        // Header
+        JLabel headerLabel = new JLabel("THỐNG KÊ HOẠT ĐỘNG");
+        headerLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        headerLabel.setForeground(new Color(52, 73, 94));
+        panel.add(headerLabel, BorderLayout.NORTH);
+
+        // Main grid 2x2
+        JPanel gridPanel = new JPanel(new GridLayout(2, 2, 15, 15));
+        gridPanel.setBackground(new Color(248, 249, 250));
+
+        // ===== Card 1: Gói tập hiện tại =====
+        JPanel packageCard = createStatCard("GÓI TẬP HIỆN TẠI", new Color(52, 152, 219));
+        JLabel packageTypeLabel = new JLabel("Chưa có gói tập");
+        packageTypeLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        JLabel packageExpiryLabel = new JLabel("Hạn: --");
+        packageExpiryLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        JLabel sessionsLabel = new JLabel("");
+        sessionsLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+
+        JPanel packageContent = (JPanel) packageCard.getComponent(1);
+        packageContent.add(packageTypeLabel);
+        packageContent.add(Box.createVerticalStrut(5));
+        packageContent.add(packageExpiryLabel);
+        packageContent.add(sessionsLabel);
+        gridPanel.add(packageCard);
+
+        // ===== Card 2: Số dư tài khoản =====
+        JPanel balanceCard = createStatCard("SỐ DƯ TÀI KHOẢN", new Color(46, 204, 113));
+        JLabel balanceValueLabel = new JLabel("0 VNĐ");
+        balanceValueLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        balanceValueLabel.setForeground(new Color(46, 204, 113));
+
+        JPanel balanceContent = (JPanel) balanceCard.getComponent(1);
+        balanceContent.add(balanceValueLabel);
+        gridPanel.add(balanceCard);
+
+        // ===== Card 3: Hoạt động tập luyện =====
+        JPanel activityCard = createStatCard("HOẠT ĐỘNG TẬP LUYỆN", new Color(155, 89, 182));
+        JLabel checkInCountLabel = new JLabel("Số buổi tập: 0");
+        checkInCountLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        JLabel lastCheckInLabel = new JLabel("Lần tập gần nhất: --");
+        lastCheckInLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+
+        JPanel activityContent = (JPanel) activityCard.getComponent(1);
+        activityContent.add(checkInCountLabel);
+        activityContent.add(Box.createVerticalStrut(5));
+        activityContent.add(lastCheckInLabel);
+        gridPanel.add(activityCard);
+
+        // ===== Card 4: Dịch vụ đã mua =====
+        JPanel servicesCard = createStatCard("DỊCH VỤ ĐÃ MUA", new Color(231, 76, 60));
+        DefaultListModel<String> servicesModel = new DefaultListModel<>();
+        JList<String> servicesList = new JList<>(servicesModel);
+        servicesList.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        servicesList.setBackground(new Color(250, 250, 250));
+        servicesList.setFixedCellHeight(24);
+        JScrollPane servicesScroll = new JScrollPane(servicesList);
+        servicesScroll.setPreferredSize(new Dimension(0, 100));
+        servicesScroll.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1));
+
+        JPanel servicesContent = (JPanel) servicesCard.getComponent(1);
+        servicesContent.setLayout(new BorderLayout(5, 5));
+        JLabel countLabel = new JLabel("Tổng: 0 dịch vụ");
+        countLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        servicesContent.add(countLabel, BorderLayout.NORTH);
+        servicesContent.add(servicesScroll, BorderLayout.CENTER);
+        gridPanel.add(servicesCard);
+
+        panel.add(gridPanel, BorderLayout.CENTER);
+
+        // Nút tải lại
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        buttonPanel.setBackground(new Color(248, 249, 250));
+        JButton refreshBtn = createModernButton("Tải lại thống kê", new Color(52, 152, 219), 14);
+        refreshBtn.setPreferredSize(new Dimension(180, 40));
+        refreshBtn.addActionListener(e -> {
+            try {
+                // Load gói tập
+                PackageInfo pkg = cardComm.getPackage();
+                packageTypeLabel.setText(pkg.getPackageTypeName());
+                packageExpiryLabel.setText("Hạn: " + (pkg.expiry.isEmpty() ? "--" : pkg.expiry));
+                if (pkg.type == 2 && pkg.remainingSessions > 0) {
+                    sessionsLabel.setText("Còn: " + pkg.remainingSessions + " buổi");
+                } else {
+                    sessionsLabel.setText("");
+                }
+
+                // Load số dư
+                short balance = cardComm.getBalance();
+                balanceValueLabel.setText(String.format("%,d VNĐ", balance * 1000));
+
+                // Load check-in
+                int checkInCount = cardComm.getCheckInCount();
+                checkInCountLabel.setText("Số buổi tập: " + checkInCount);
+                CheckInInfo lastCheckIn = cardComm.getLastCheckIn();
+                if (lastCheckIn != null && !lastCheckIn.date.isEmpty()) {
+                    lastCheckInLabel.setText("Gần nhất: " + lastCheckIn.date + " " + lastCheckIn.checkInTime);
+                } else {
+                    lastCheckInLabel.setText("Lần tập gần nhất: --");
+                }
+
+                // Load dịch vụ đã mua
+                servicesModel.clear();
+                for (String svc : purchasedServices) {
+                    servicesModel.addElement(svc);
+                }
+                countLabel.setText("Tổng: " + purchasedServices.size() + " dịch vụ");
+
+            } catch (Exception ex) {
+                javax.swing.JOptionPane.showMessageDialog(panel,
+                        "Lỗi tải thống kê: " + ex.getMessage(),
+                        "Lỗi", javax.swing.JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        buttonPanel.add(refreshBtn);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    /**
+     * Tạo card thống kê với header gradient
+     */
+    private JPanel createStatCard(String title, Color color) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(color, 2, true),
+                new EmptyBorder(0, 0, 0, 0)));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
+
+        // Header
+        JPanel header = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gp = new GradientPaint(0, 0, color, getWidth(), 0, color.darker());
+                g2d.setPaint(gp);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                g2d.dispose();
+            }
+        };
+        header.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        header.setPreferredSize(new Dimension(0, 40));
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        titleLabel.setForeground(Color.WHITE);
+        header.add(titleLabel);
+        card.add(header, BorderLayout.NORTH);
+
+        // Content
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBackground(Color.WHITE);
+        content.setBorder(new EmptyBorder(15, 15, 15, 15));
+        card.add(content, BorderLayout.CENTER);
+
+        return card;
     }
 
     /**
@@ -1515,6 +2016,251 @@ public class UserPanel extends JPanel {
     }
 
     /**
+     * Tab Nạp tiền - Chỉ chứa phần nạp tiền
+     */
+    private JPanel createTopUpTab() {
+        JPanel panel = new JPanel(new BorderLayout(15, 15));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        panel.setBackground(new Color(248, 249, 250));
+
+        // Header: Số dư hiện tại
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(new Color(46, 204, 113));
+        headerPanel.setBorder(new EmptyBorder(15, 20, 15, 20));
+
+        JLabel titleLabel = new JLabel("SỐ DƯ TÀI KHOẢN");
+        titleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        titleLabel.setForeground(new Color(255, 255, 255, 200));
+
+        JLabel balanceLabel = new JLabel("0 VNĐ");
+        balanceLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        balanceLabel.setForeground(Color.WHITE);
+
+        JPanel balancePanel = new JPanel();
+        balancePanel.setOpaque(false);
+        balancePanel.setLayout(new BoxLayout(balancePanel, BoxLayout.Y_AXIS));
+        balancePanel.add(titleLabel);
+        balancePanel.add(balanceLabel);
+
+        headerPanel.add(balancePanel, BorderLayout.WEST);
+
+        JButton refreshBtn = new JButton("Tải lại");
+        refreshBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        refreshBtn.setForeground(Color.WHITE);
+        refreshBtn.setBackground(new Color(39, 174, 96));
+        refreshBtn.setFocusPainted(false);
+        refreshBtn.addActionListener(e -> {
+            try {
+                short balance = cardComm.getBalance();
+                balanceLabel.setText(String.format("%,d VNĐ", balance * 1000));
+                log("Số dư: " + balance + " nghìn VNĐ");
+            } catch (Exception ex) {
+                log("LỖI: " + ex.getMessage());
+            }
+        });
+        headerPanel.add(refreshBtn, BorderLayout.EAST);
+        panel.add(headerPanel, BorderLayout.NORTH);
+
+        // Content: Nạp tiền
+        JPanel content = new JPanel(new GridBagLayout());
+        content.setBackground(Color.WHITE);
+        content.setBorder(new EmptyBorder(30, 30, 30, 30));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Quick amounts
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 4;
+        JLabel quickLabel = new JLabel("Chọn mức nạp nhanh:");
+        quickLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        content.add(quickLabel, gbc);
+
+        JSpinner amountSpinner = new JSpinner(new SpinnerNumberModel(100, 10, 10000, 10));
+        amountSpinner.setFont(new Font("Segoe UI", Font.BOLD, 18));
+
+        String[] quickAmounts = { "50k", "100k", "200k", "500k" };
+        int[] quickValues = { 50, 100, 200, 500 };
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        gbc.weightx = 1.0;
+        for (int i = 0; i < quickAmounts.length; i++) {
+            gbc.gridx = i;
+            final int val = quickValues[i];
+            JButton qBtn = createModernButton(quickAmounts[i], new Color(46, 204, 113), 14);
+            qBtn.setPreferredSize(new Dimension(80, 40));
+            qBtn.addActionListener(e -> amountSpinner.setValue(val));
+            content.add(qBtn, gbc);
+        }
+
+        // Input
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 4;
+        JLabel inputLabel = new JLabel("Hoặc nhập số tiền (nghìn VNĐ):");
+        inputLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        content.add(inputLabel, gbc);
+
+        gbc.gridy = 3;
+        content.add(amountSpinner, gbc);
+
+        // Nút nạp
+        gbc.gridy = 4;
+        gbc.insets = new Insets(25, 10, 10, 10);
+        JButton topUpBtn = createModernButton("NẠP TIỀN", new Color(46, 204, 113), 16);
+        topUpBtn.setPreferredSize(new Dimension(0, 50));
+        topUpBtn.addActionListener(e -> {
+            // Tạo dialog với JPasswordField
+            JPasswordField passField = new JPasswordField(10);
+            JPanel passPanel = new JPanel(new BorderLayout(5, 5));
+            passPanel.add(new JLabel("Nhập mật khẩu Admin:"), BorderLayout.NORTH);
+            passPanel.add(passField, BorderLayout.CENTER);
+
+            int result = javax.swing.JOptionPane.showConfirmDialog(panel, passPanel,
+                    "Xác thực Admin", javax.swing.JOptionPane.OK_CANCEL_OPTION, javax.swing.JOptionPane.PLAIN_MESSAGE);
+
+            if (result != javax.swing.JOptionPane.OK_OPTION)
+                return;
+
+            String adminPass = new String(passField.getPassword()).trim();
+            if (adminPass.isEmpty()) {
+                javax.swing.JOptionPane.showMessageDialog(panel, "Vui lòng nhập mật khẩu!", "Lỗi",
+                        javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (!adminPass.equals("123456")) {
+                javax.swing.JOptionPane.showMessageDialog(panel, "Mật khẩu Admin không chính xác!", "Sai mật khẩu",
+                        javax.swing.JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            try {
+                short amount = ((Number) amountSpinner.getValue()).shortValue();
+                if (cardComm.addBalance(amount)) {
+                    short newBalance = cardComm.getBalance();
+                    balanceLabel.setText(String.format("%,d VNĐ", newBalance * 1000));
+                    javax.swing.JOptionPane.showMessageDialog(panel,
+                            "Nạp tiền thành công!\n\nSố tiền: " + String.format("%,d", amount * 1000)
+                                    + " VNĐ\nSố dư mới: " + String.format("%,d", newBalance * 1000) + " VNĐ",
+                            "Thành công", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    javax.swing.JOptionPane.showMessageDialog(panel, "Nạp tiền thất bại!", "Lỗi",
+                            javax.swing.JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception ex) {
+                javax.swing.JOptionPane.showMessageDialog(panel, "Lỗi: " + ex.getMessage(), "Lỗi",
+                        javax.swing.JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        content.add(topUpBtn, gbc);
+
+        panel.add(content, BorderLayout.CENTER);
+        return panel;
+    }
+
+    /**
+     * Tab Dịch vụ thêm - Mua dịch vụ như PT, đồ uống, khăn...
+     */
+    private JPanel createServicesTab() {
+        JPanel panel = new JPanel(new BorderLayout(15, 15));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        panel.setBackground(new Color(248, 249, 250));
+
+        // Header
+        JLabel headerLabel = new JLabel("DỊCH VỤ THÊM");
+        headerLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        headerLabel.setForeground(new Color(155, 89, 182));
+        panel.add(headerLabel, BorderLayout.NORTH);
+
+        // Services grid
+        JPanel servicesPanel = new JPanel(new GridLayout(2, 3, 15, 15));
+        servicesPanel.setBackground(new Color(248, 249, 250));
+
+        String[][] services = {
+                { "PT 1 buổi", "150", "155, 89, 182" },
+                { "Nước uống", "20", "52, 152, 219" },
+                { "Khăn tập", "10", "46, 204, 113" },
+                { "Tủ đồ tháng", "100", "241, 196, 15" },
+                { "Massage 30p", "200", "231, 76, 60" },
+                { "Bổ sung dinh dưỡng", "50", "26, 188, 156" }
+        };
+
+        for (String[] svc : services) {
+            JPanel svcCard = new JPanel(new BorderLayout(5, 5));
+            svcCard.setBackground(Color.WHITE);
+            svcCard.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(230, 230, 230), 1),
+                    new EmptyBorder(15, 15, 15, 15)));
+
+            JLabel nameLabel = new JLabel(svc[0]);
+            nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+            JLabel priceLabel = new JLabel(svc[1] + "k VNĐ");
+            priceLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            priceLabel.setForeground(Color.GRAY);
+
+            String[] rgb = svc[2].split(", ");
+            Color svcColor = new Color(Integer.parseInt(rgb[0]), Integer.parseInt(rgb[1]), Integer.parseInt(rgb[2]));
+
+            JButton buyBtn = new JButton("Mua");
+            buyBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            buyBtn.setBackground(svcColor);
+            buyBtn.setForeground(Color.WHITE);
+            buyBtn.setFocusPainted(false);
+            buyBtn.setBorderPainted(false);
+            final String svcName = svc[0];
+            final short svcPrice = Short.parseShort(svc[1]);
+            buyBtn.addActionListener(e -> {
+                try {
+                    short currentBalance = cardComm.getBalance();
+                    if (currentBalance < svcPrice) {
+                        javax.swing.JOptionPane.showMessageDialog(panel,
+                                "Không đủ tiền!\n\nSố dư: " + String.format("%,d", currentBalance * 1000)
+                                        + " VNĐ\nCần: " + String.format("%,d", svcPrice * 1000) + " VNĐ",
+                                "Không đủ tiền", javax.swing.JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    if (cardComm.deductBalance(svcPrice)) {
+                        short newBalance = cardComm.getBalance();
+                        String time = new SimpleDateFormat("HH:mm dd/MM").format(new Date());
+                        purchasedServices.add(svcName + " - " + svcPrice + "k (" + time + ")");
+                        javax.swing.JOptionPane.showMessageDialog(panel,
+                                "Mua dịch vụ thành công!\n\nDịch vụ: " + svcName + "\nGiá: "
+                                        + String.format("%,d", svcPrice * 1000) + " VNĐ\nSố dư còn: "
+                                        + String.format("%,d", newBalance * 1000) + " VNĐ",
+                                "Thành công", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        javax.swing.JOptionPane.showMessageDialog(panel, "Mua dịch vụ thất bại!", "Lỗi",
+                                javax.swing.JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    javax.swing.JOptionPane.showMessageDialog(panel, "Lỗi: " + ex.getMessage(), "Lỗi",
+                            javax.swing.JOptionPane.ERROR_MESSAGE);
+                }
+            });
+
+            JPanel infoPanel = new JPanel();
+            infoPanel.setOpaque(false);
+            infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+            infoPanel.add(nameLabel);
+            infoPanel.add(priceLabel);
+
+            svcCard.add(infoPanel, BorderLayout.CENTER);
+            svcCard.add(buyBtn, BorderLayout.EAST);
+
+            servicesPanel.add(svcCard);
+        }
+
+        JScrollPane scroll = new JScrollPane(servicesPanel);
+        scroll.setBorder(null);
+        panel.add(scroll, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    /**
      * Styled Add Balance Card - Thiết kế mới đẹp hơn
      */
     private JPanel createStyledAddBalanceCard(JLabel balanceLabel) {
@@ -1632,7 +2378,46 @@ public class UserPanel extends JPanel {
         JButton addBtn = createModernButton("Nạp tiền ngay", new Color(46, 204, 113), 15);
         addBtn.setPreferredSize(new Dimension(0, 45));
         addBtn.addActionListener(e -> {
+            // Hiện popup yêu cầu mật khẩu admin
+            JPasswordField adminPinField = new JPasswordField(10);
+            JPanel adminPanel = new JPanel(new GridBagLayout());
+            GridBagConstraints adminGbc = new GridBagConstraints();
+            adminGbc.insets = new Insets(5, 5, 5, 5);
+            adminGbc.gridx = 0;
+            adminGbc.gridy = 0;
+            adminPanel.add(new JLabel("Nhập mật khẩu Admin:"), adminGbc);
+            adminGbc.gridy = 1;
+            adminGbc.fill = GridBagConstraints.HORIZONTAL;
+            adminPanel.add(adminPinField, adminGbc);
+            adminGbc.gridy = 2;
+            JLabel hintLabel = new JLabel("<html><i>(Mặc định: ADMIN)</i></html>");
+            hintLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+            hintLabel.setForeground(Color.GRAY);
+            adminPanel.add(hintLabel, adminGbc);
+
+            int result = JOptionPane.showConfirmDialog(card, adminPanel,
+                    "Xác thực Admin để nạp tiền", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+            if (result != JOptionPane.OK_OPTION) {
+                return;
+            }
+
+            String adminPass = new String(adminPinField.getPassword()).trim();
+            if (adminPass.isEmpty()) {
+                JOptionPane.showMessageDialog(card, "Vui lòng nhập mật khẩu Admin!", "Lỗi",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             try {
+                // Xác thực admin: chỉ cần so sánh mật khẩu (không dùng unlockPin vì nó reset
+                // authenticated)
+                if (!adminPass.equals("123456")) {
+                    JOptionPane.showMessageDialog(card, "Mật khẩu Admin không chính xác!", "Sai mật khẩu",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 short amount = ((Number) amountSpinner.getValue()).shortValue();
                 if (cardComm.addBalance(amount)) {
                     log("Nạp tiền thành công: " + amount + " nghìn VNĐ");
@@ -2073,11 +2858,10 @@ public class UserPanel extends JPanel {
     }
 
     /**
-     * Log message
+     * Log message ra terminal
      */
     private void log(String message) {
         String timestamp = new SimpleDateFormat("HH:mm:ss").format(new Date());
-        logArea.append(String.format("[%s] %s\n", timestamp, message));
-        logArea.setCaretPosition(logArea.getDocument().getLength());
+        System.out.println(String.format("[%s] %s", timestamp, message));
     }
 }
