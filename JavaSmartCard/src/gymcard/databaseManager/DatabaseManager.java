@@ -317,6 +317,7 @@ public class DatabaseManager {
         public int durationDays;
         public int sessionCount;
         public double price;
+        public boolean isActive = true;
     }
 
     public static class ServiceInfo {
@@ -325,6 +326,7 @@ public class DatabaseManager {
         public String name;
         public String description;
         public double price;
+        public boolean isActive = true;
     }
 
     // ===== User methods =====
@@ -352,6 +354,197 @@ public class DatabaseManager {
     public long insertUser(String userCode, byte[] cardPublicKeyBytes) throws SQLException {
         String base64Key = Base64.getEncoder().encodeToString(cardPublicKeyBytes);
         return insertUser(userCode, base64Key);
+    }
+
+    // ===== Package Management methods =====
+
+    /**
+     * Lấy tất cả gói tập (bao gồm cả không active).
+     */
+    public List<PlanInfo> getAllPlans() throws SQLException {
+        List<PlanInfo> plans = new ArrayList<>();
+        String sql = "SELECT id, code, name, description, duration_days, session_count, price, is_active FROM membership_plans ORDER BY price";
+        try (Statement st = connection.createStatement();
+                ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                PlanInfo plan = new PlanInfo();
+                plan.id = rs.getInt("id");
+                plan.code = rs.getString("code");
+                plan.name = rs.getString("name");
+                plan.description = rs.getString("description");
+                plan.durationDays = rs.getInt("duration_days");
+                plan.sessionCount = rs.getInt("session_count");
+                plan.price = rs.getDouble("price");
+                plan.isActive = rs.getInt("is_active") == 1;
+                plans.add(plan);
+            }
+        }
+        return plans;
+    }
+
+    /**
+     * Thêm gói tập mới.
+     */
+    public int addPlan(String code, String name, String description, Integer durationDays, Integer sessionCount,
+            double price) throws SQLException {
+        String sql = "INSERT INTO membership_plans(code, name, description, duration_days, session_count, price, is_active) VALUES(?,?,?,?,?,?,1)";
+        try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, code);
+            ps.setString(2, name);
+            ps.setString(3, description);
+            if (durationDays != null) {
+                ps.setInt(4, durationDays);
+            } else {
+                ps.setNull(4, Types.INTEGER);
+            }
+            if (sessionCount != null) {
+                ps.setInt(5, sessionCount);
+            } else {
+                ps.setNull(5, Types.INTEGER);
+            }
+            ps.setDouble(6, price);
+            ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Cập nhật gói tập.
+     */
+    public boolean updatePlan(int id, String code, String name, String description, Integer durationDays,
+            Integer sessionCount, double price) throws SQLException {
+        String sql = "UPDATE membership_plans SET code=?, name=?, description=?, duration_days=?, session_count=?, price=? WHERE id=?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, code);
+            ps.setString(2, name);
+            ps.setString(3, description);
+            if (durationDays != null) {
+                ps.setInt(4, durationDays);
+            } else {
+                ps.setNull(4, Types.INTEGER);
+            }
+            if (sessionCount != null) {
+                ps.setInt(5, sessionCount);
+            } else {
+                ps.setNull(5, Types.INTEGER);
+            }
+            ps.setDouble(6, price);
+            ps.setInt(7, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    /**
+     * Xóa gói tập (xóa vĩnh viễn).
+     */
+    public boolean deletePlan(int id) throws SQLException {
+        String sql = "DELETE FROM membership_plans WHERE id=?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    /**
+     * Bật/tắt trạng thái active của gói tập.
+     */
+    public boolean togglePlanActive(int id, boolean active) throws SQLException {
+        String sql = "UPDATE membership_plans SET is_active=? WHERE id=?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, active ? 1 : 0);
+            ps.setInt(2, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    // ===== Service Management methods =====
+
+    /**
+     * Lấy tất cả dịch vụ (bao gồm cả không active).
+     */
+    public List<ServiceInfo> getAllServices() throws SQLException {
+        List<ServiceInfo> services = new ArrayList<>();
+        String sql = "SELECT id, code, name, description, price, is_active FROM services ORDER BY price";
+        try (Statement st = connection.createStatement();
+                ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                ServiceInfo svc = new ServiceInfo();
+                svc.id = rs.getInt("id");
+                svc.code = rs.getString("code");
+                svc.name = rs.getString("name");
+                svc.description = rs.getString("description");
+                svc.price = rs.getDouble("price");
+                svc.isActive = rs.getInt("is_active") == 1;
+                services.add(svc);
+            }
+        }
+        return services;
+    }
+
+    /**
+     * Thêm dịch vụ mới.
+     */
+    public int addService(String code, String name, String description, double price) throws SQLException {
+        String sql = "INSERT INTO services(code, name, description, price, is_active) VALUES(?,?,?,?,1)";
+        try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, code);
+            ps.setString(2, name);
+            ps.setString(3, description);
+            ps.setDouble(4, price);
+            ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Cập nhật dịch vụ.
+     */
+    public boolean updateService(int id, String code, String name, String description, double price)
+            throws SQLException {
+        String sql = "UPDATE services SET code=?, name=?, description=?, price=? WHERE id=?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, code);
+            ps.setString(2, name);
+            ps.setString(3, description);
+            ps.setDouble(4, price);
+            ps.setInt(5, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    /**
+     * Xóa dịch vụ (xóa vĩnh viễn).
+     */
+    public boolean deleteService(int id) throws SQLException {
+        String sql = "DELETE FROM services WHERE id=?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    /**
+     * Bật/tắt trạng thái active của dịch vụ.
+     */
+    public boolean toggleServiceActive(int id, boolean active) throws SQLException {
+        String sql = "UPDATE services SET is_active=? WHERE id=?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, active ? 1 : 0);
+            ps.setInt(2, id);
+            return ps.executeUpdate() > 0;
+        }
     }
 
 }
