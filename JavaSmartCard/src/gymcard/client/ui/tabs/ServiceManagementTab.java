@@ -5,21 +5,31 @@ import gymcard.client.ui.BaseTabPanel;
 import gymcard.databaseManager.DatabaseManager;
 import gymcard.databaseManager.DatabaseManager.ServiceInfo;
 import java.awt.*;
+import java.awt.geom.RoundRectangle2D;
 import java.sql.SQLException;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
+import javax.swing.table.*;
 
 /**
- * Tab quản lý dịch vụ (Admin) - Thêm, sửa, xóa dịch vụ trong database
+ * Tab quản lý dịch vụ (Admin) - Dark theme design
  */
 public class ServiceManagementTab extends BaseTabPanel {
 
     private JTable serviceTable;
     private DefaultTableModel tableModel;
     private DatabaseManager db;
+
+    // Colors
+    private static final Color BG_DARK = new Color(30, 35, 50);
+    private static final Color CARD_BG = new Color(40, 45, 65);
+    private static final Color TEXT_WHITE = new Color(230, 230, 240);
+    private static final Color TEXT_GRAY = new Color(140, 145, 165);
+    private static final Color ACCENT_GREEN = new Color(46, 204, 113);
+    private static final Color ACCENT_BLUE = new Color(52, 152, 219);
+    private static final Color ACCENT_YELLOW = new Color(241, 196, 15);
+    private static final Color ACCENT_RED = new Color(231, 76, 60);
 
     public ServiceManagementTab(CardCommunicator cardComm) {
         super(cardComm);
@@ -33,39 +43,113 @@ public class ServiceManagementTab extends BaseTabPanel {
     }
 
     private void initUI() {
-        setLayout(new BorderLayout(10, 10));
-        setBorder(new EmptyBorder(15, 15, 15, 15));
-        setBackground(new Color(248, 249, 250));
+        setLayout(new BorderLayout());
+        setBackground(BG_DARK);
+
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBackground(BG_DARK);
+        mainPanel.setBorder(new EmptyBorder(20, 25, 20, 25));
 
         // Header
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(new Color(248, 249, 250));
+        JPanel header = createHeader();
+        header.setAlignmentX(Component.LEFT_ALIGNMENT);
+        mainPanel.add(header);
 
-        JLabel titleLabel = new JLabel("QUẢN LÝ DỊCH VỤ");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        titleLabel.setForeground(new Color(155, 89, 182));
-        headerPanel.add(titleLabel, BorderLayout.WEST);
-
-        // Button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        buttonPanel.setBackground(new Color(248, 249, 250));
-
-        JButton addBtn = createModernButton("+ Thêm dịch vụ", new Color(155, 89, 182), 13);
-        addBtn.setPreferredSize(new Dimension(150, 35));
-        addBtn.addActionListener(e -> showAddEditDialog(null));
-
-        JButton refreshBtn = createModernButton("Tải lại", new Color(52, 152, 219), 13);
-        refreshBtn.setPreferredSize(new Dimension(100, 35));
-        refreshBtn.addActionListener(e -> loadServices());
-
-        buttonPanel.add(addBtn);
-        buttonPanel.add(refreshBtn);
-        headerPanel.add(buttonPanel, BorderLayout.EAST);
-
-        add(headerPanel, BorderLayout.NORTH);
+        mainPanel.add(Box.createVerticalStrut(25));
 
         // Table
-        String[] columns = { "ID", "Mã", "Tên dịch vụ", "Mô tả", "Giá (VNĐ)", "Trạng thái", "Hành động" };
+        JPanel tablePanel = createTablePanel();
+        tablePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        mainPanel.add(tablePanel);
+
+        mainPanel.add(Box.createVerticalStrut(15));
+
+        // Footer
+        JLabel footerLabel = new JLabel("⚡ Dịch vụ được lưu trong database. Thay đổi sẽ được cập nhật ngay đến User.");
+        footerLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        footerLabel.setForeground(TEXT_GRAY);
+        footerLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        mainPanel.add(footerLabel);
+
+        JScrollPane scrollPane = new JScrollPane(mainPanel);
+        scrollPane.setBorder(null);
+        scrollPane.setBackground(BG_DARK);
+        scrollPane.getViewport().setBackground(BG_DARK);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        add(scrollPane, BorderLayout.CENTER);
+    }
+
+    private JPanel createHeader() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+        header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+
+        JPanel leftPanel = new JPanel();
+        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
+        leftPanel.setOpaque(false);
+
+        JLabel titleLabel = new JLabel("Quản lý Dịch vụ");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        titleLabel.setForeground(TEXT_WHITE);
+        leftPanel.add(titleLabel);
+
+        leftPanel.add(Box.createVerticalStrut(5));
+
+        JLabel subtitleLabel = new JLabel(
+                "Quản lý danh sách các gói dịch vụ, định giá và trạng thái hoạt động trong hệ thống.");
+        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        subtitleLabel.setForeground(TEXT_GRAY);
+        leftPanel.add(subtitleLabel);
+
+        header.add(leftPanel, BorderLayout.WEST);
+
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        buttonPanel.setOpaque(false);
+
+        JButton refreshBtn = createDarkButton("Tải lại", new Color(60, 65, 85));
+        refreshBtn.addActionListener(e -> loadServices());
+        buttonPanel.add(refreshBtn);
+
+        JButton addBtn = createDarkButton("+ Thêm dịch vụ", ACCENT_GREEN);
+        addBtn.addActionListener(e -> showAddEditDialog(null));
+        buttonPanel.add(addBtn);
+
+        header.add(buttonPanel, BorderLayout.EAST);
+
+        return header;
+    }
+
+    private JButton createDarkButton(String text, Color bgColor) {
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(getModel().isRollover() ? bgColor.brighter() : bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2d.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btn.setForeground(Color.WHITE);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setPreferredSize(new Dimension(130, 35));
+        return btn;
+    }
+
+    private JPanel createTablePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+
+        String[] columns = { "ID", "ID DỊCH VỤ", "TÊN DỊCH VỤ", "MÔ TẢ CHI TIẾT", "GIÁ (VND)", "TRẠNG THÁI",
+                "HÀNH ĐỘNG" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -75,10 +159,20 @@ public class ServiceManagementTab extends BaseTabPanel {
 
         serviceTable = new JTable(tableModel);
         serviceTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        serviceTable.setRowHeight(40);
-        serviceTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        serviceTable.getTableHeader().setBackground(new Color(155, 89, 182));
-        serviceTable.getTableHeader().setForeground(Color.WHITE);
+        serviceTable.setRowHeight(50);
+        serviceTable.setBackground(CARD_BG);
+        serviceTable.setForeground(TEXT_WHITE);
+        serviceTable.setGridColor(new Color(60, 65, 85));
+        serviceTable.setSelectionBackground(new Color(60, 65, 95));
+        serviceTable.setSelectionForeground(TEXT_WHITE);
+        serviceTable.setShowGrid(true);
+
+        // Header styling
+        JTableHeader header = serviceTable.getTableHeader();
+        header.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        header.setBackground(new Color(35, 40, 55));
+        header.setForeground(TEXT_GRAY);
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 65, 85)));
 
         // Hide ID column
         serviceTable.getColumnModel().getColumn(0).setMinWidth(0);
@@ -86,29 +180,52 @@ public class ServiceManagementTab extends BaseTabPanel {
         serviceTable.getColumnModel().getColumn(0).setPreferredWidth(0);
 
         // Set column widths
-        serviceTable.getColumnModel().getColumn(1).setPreferredWidth(80);
-        serviceTable.getColumnModel().getColumn(2).setPreferredWidth(150);
-        serviceTable.getColumnModel().getColumn(3).setPreferredWidth(250);
-        serviceTable.getColumnModel().getColumn(4).setPreferredWidth(100);
+        serviceTable.getColumnModel().getColumn(1).setPreferredWidth(100);
+        serviceTable.getColumnModel().getColumn(2).setPreferredWidth(120);
+        serviceTable.getColumnModel().getColumn(3).setPreferredWidth(220);
+        serviceTable.getColumnModel().getColumn(4).setPreferredWidth(80);
         serviceTable.getColumnModel().getColumn(5).setPreferredWidth(80);
         serviceTable.getColumnModel().getColumn(6).setPreferredWidth(150);
 
-        // Action buttons column
-        serviceTable.getColumn("Hành động").setCellRenderer(new ActionButtonRenderer());
-        serviceTable.getColumn("Hành động").setCellEditor(new ActionButtonEditor());
+        // Custom renderers
+        serviceTable.setDefaultRenderer(Object.class, new DarkTableCellRenderer());
+        serviceTable.getColumn("HÀNH ĐỘNG").setCellRenderer(new ActionButtonRenderer());
+        serviceTable.getColumn("HÀNH ĐỘNG").setCellEditor(new ActionButtonEditor());
 
         JScrollPane scrollPane = new JScrollPane(serviceTable);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1));
-        add(scrollPane, BorderLayout.CENTER);
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(50, 55, 75), 1));
+        scrollPane.getViewport().setBackground(CARD_BG);
 
-        // Footer info
-        JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        footerPanel.setBackground(new Color(248, 249, 250));
-        JLabel infoLabel = new JLabel("💡 Dịch vụ được lưu trong database. Thay đổi sẽ được cập nhật ngay đến User.");
-        infoLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        infoLabel.setForeground(new Color(127, 140, 141));
-        footerPanel.add(infoLabel);
-        add(footerPanel, BorderLayout.SOUTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private class DarkTableCellRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            setBackground(isSelected ? new Color(60, 65, 95) : CARD_BG);
+            setForeground(TEXT_WHITE);
+            setBorder(new EmptyBorder(5, 10, 5, 10));
+
+            // ID column - with badge style
+            if (column == 1 && value != null) {
+                setText("<html><span style='background:#3498db;color:white;padding:2px 6px;border-radius:4px;'>" + value
+                        + "</span></html>");
+            }
+
+            // Status column styling
+            if (column == 5 && value != null) {
+                String status = value.toString();
+                if (status.contains("Active")) {
+                    setForeground(ACCENT_GREEN);
+                } else {
+                    setForeground(ACCENT_RED);
+                }
+            }
+            return this;
+        }
     }
 
     private void loadServices() {
@@ -122,17 +239,14 @@ public class ServiceManagementTab extends BaseTabPanel {
                         svc.name,
                         svc.description,
                         String.format("%,.0f", svc.price),
-                        svc.isActive ? "✅ Active" : "❌ Ẩn",
+                        svc.isActive ? "Active" : "Inactive",
                         "actions"
                 };
                 tableModel.addRow(row);
             }
-            log("Đã tải " + services.size() + " dịch vụ");
+            log("Da tai " + services.size() + " dich vu");
         } catch (SQLException e) {
-            log("LỖI tải dịch vụ: " + e.getMessage());
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi tải danh sách dịch vụ: " + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            log("LOI tai dich vu: " + e.getMessage());
         }
     }
 
@@ -141,34 +255,31 @@ public class ServiceManagementTab extends BaseTabPanel {
         String title = isEdit ? "Sửa dịch vụ" : "Thêm dịch vụ mới";
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), title, true);
-        dialog.setSize(400, 320);
+        dialog.setSize(450, 350);
         dialog.setLocationRelativeTo(this);
 
         JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
         mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        mainPanel.setBackground(Color.WHITE);
+        mainPanel.setBackground(CARD_BG);
 
-        // Form
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBackground(Color.WHITE);
+        formPanel.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(8, 8, 8, 8);
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.WEST;
 
         int row = 0;
-        Font labelFont = new Font("Segoe UI", Font.PLAIN, 13);
 
         // Code
         gbc.gridx = 0;
         gbc.gridy = row;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Mã dịch vụ:"), gbc);
+        JLabel codeLbl = new JLabel("Mã dịch vụ:");
+        codeLbl.setForeground(TEXT_WHITE);
+        formPanel.add(codeLbl, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1.0;
-        JTextField codeField = new JTextField(20);
-        codeField.setFont(labelFont);
-        codeField.setBorder(fieldBorder());
+        JTextField codeField = createDarkTextField();
         if (isEdit)
             codeField.setText(existing.code);
         formPanel.add(codeField, gbc);
@@ -178,12 +289,12 @@ public class ServiceManagementTab extends BaseTabPanel {
         gbc.gridx = 0;
         gbc.gridy = row;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Tên dịch vụ:"), gbc);
+        JLabel nameLbl = new JLabel("Tên dịch vụ:");
+        nameLbl.setForeground(TEXT_WHITE);
+        formPanel.add(nameLbl, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1.0;
-        JTextField nameField = new JTextField(20);
-        nameField.setFont(labelFont);
-        nameField.setBorder(fieldBorder());
+        JTextField nameField = createDarkTextField();
         if (isEdit)
             nameField.setText(existing.name);
         formPanel.add(nameField, gbc);
@@ -193,12 +304,12 @@ public class ServiceManagementTab extends BaseTabPanel {
         gbc.gridx = 0;
         gbc.gridy = row;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Mô tả:"), gbc);
+        JLabel descLbl = new JLabel("Mô tả:");
+        descLbl.setForeground(TEXT_WHITE);
+        formPanel.add(descLbl, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1.0;
-        JTextField descField = new JTextField(20);
-        descField.setFont(labelFont);
-        descField.setBorder(fieldBorder());
+        JTextField descField = createDarkTextField();
         if (isEdit)
             descField.setText(existing.description);
         formPanel.add(descField, gbc);
@@ -208,11 +319,12 @@ public class ServiceManagementTab extends BaseTabPanel {
         gbc.gridx = 0;
         gbc.gridy = row;
         gbc.weightx = 0;
-        formPanel.add(new JLabel("Giá (VNĐ):"), gbc);
+        JLabel priceLbl = new JLabel("Giá (VNĐ):");
+        priceLbl.setForeground(TEXT_WHITE);
+        formPanel.add(priceLbl, gbc);
         gbc.gridx = 1;
         gbc.weightx = 1.0;
         JSpinner priceSpinner = new JSpinner(new SpinnerNumberModel(10000.0, 1000.0, 10000000.0, 1000.0));
-        priceSpinner.setFont(labelFont);
         if (isEdit)
             priceSpinner.setValue(existing.price);
         formPanel.add(priceSpinner, gbc);
@@ -221,10 +333,9 @@ public class ServiceManagementTab extends BaseTabPanel {
 
         // Buttons
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
-        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setOpaque(false);
 
-        JButton saveBtn = createModernButton(isEdit ? "Lưu thay đổi" : "Thêm dịch vụ", new Color(155, 89, 182), 14);
-        saveBtn.setPreferredSize(new Dimension(130, 38));
+        JButton saveBtn = createDarkButton(isEdit ? "Lưu" : "Thêm", ACCENT_GREEN);
         saveBtn.addActionListener(e -> {
             try {
                 String code = codeField.getText().trim();
@@ -232,132 +343,114 @@ public class ServiceManagementTab extends BaseTabPanel {
                 String desc = descField.getText().trim();
                 double price = ((Number) priceSpinner.getValue()).doubleValue();
 
-                if (code.isEmpty() || name.isEmpty()) {
-                    JOptionPane.showMessageDialog(dialog, "Vui lòng nhập mã và tên dịch vụ!", "Thiếu thông tin",
-                            JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-                if (price < 1000) {
-                    JOptionPane.showMessageDialog(dialog, "Giá phải từ 1000 VNĐ trở lên!", "Lỗi",
+                if (code.isEmpty() || name.isEmpty() || price < 1000) {
+                    JOptionPane.showMessageDialog(dialog, "Vui lòng điền đủ thông tin!", "Lỗi",
                             JOptionPane.WARNING_MESSAGE);
                     return;
                 }
 
                 if (isEdit) {
                     db.updateService(existing.id, code, name, desc, price);
-                    log("Đã cập nhật dịch vụ: " + name);
                 } else {
                     db.addService(code, name, desc, price);
-                    log("Đã thêm dịch vụ mới: " + name);
                 }
-
                 dialog.dispose();
                 loadServices();
-                JOptionPane.showMessageDialog(this,
-                        (isEdit ? "Cập nhật" : "Thêm") + " dịch vụ thành công!\nThay đổi đã được áp dụng.",
-                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
-
             } catch (SQLException ex) {
-                log("LỖI: " + ex.getMessage());
-                JOptionPane.showMessageDialog(dialog,
-                        "Lỗi lưu dịch vụ: " + ex.getMessage(),
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         });
-
-        JButton cancelBtn = new JButton("Hủy");
-        cancelBtn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        cancelBtn.addActionListener(e -> dialog.dispose());
-
         buttonPanel.add(saveBtn);
+
+        JButton cancelBtn = createDarkButton("Hủy", new Color(100, 100, 120));
+        cancelBtn.addActionListener(e -> dialog.dispose());
         buttonPanel.add(cancelBtn);
+
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         dialog.setContentPane(mainPanel);
         dialog.setVisible(true);
     }
 
-    // Custom renderer for action buttons
+    private JTextField createDarkTextField() {
+        JTextField field = new JTextField(20);
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        field.setBackground(new Color(50, 55, 75));
+        field.setForeground(TEXT_WHITE);
+        field.setCaretColor(TEXT_WHITE);
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(70, 75, 95), 1),
+                new EmptyBorder(8, 10, 8, 10)));
+        return field;
+    }
+
+    private JButton createSmallButton(String text, Color bgColor) {
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(bgColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+                g2d.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        btn.setForeground(Color.WHITE);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setPreferredSize(new Dimension(60, 30));
+        btn.setFocusPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return btn;
+    }
+
     private class ActionButtonRenderer extends JPanel implements TableCellRenderer {
         public ActionButtonRenderer() {
-            setLayout(new FlowLayout(FlowLayout.CENTER, 5, 2));
-            setOpaque(true);
+            setLayout(new FlowLayout(FlowLayout.CENTER, 5, 8));
+            setOpaque(false);
         }
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
             removeAll();
-            setBackground(isSelected ? table.getSelectionBackground() : Color.WHITE);
+            setBackground(isSelected ? new Color(60, 65, 95) : CARD_BG);
 
-            JButton editBtn = new JButton("Sửa");
-            editBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            editBtn.setBackground(new Color(241, 196, 15));
-            editBtn.setForeground(Color.WHITE);
-            editBtn.setFocusPainted(false);
-            editBtn.setBorderPainted(false);
-
-            JButton toggleBtn = new JButton("Ẩn/Hiện");
-            toggleBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            toggleBtn.setBackground(new Color(52, 152, 219));
-            toggleBtn.setForeground(Color.WHITE);
-            toggleBtn.setFocusPainted(false);
-            toggleBtn.setBorderPainted(false);
-
-            JButton deleteBtn = new JButton("Xóa");
-            deleteBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            deleteBtn.setBackground(new Color(231, 76, 60));
-            deleteBtn.setForeground(Color.WHITE);
-            deleteBtn.setFocusPainted(false);
-            deleteBtn.setBorderPainted(false);
+            JButton editBtn = createSmallButton("Sửa", ACCENT_YELLOW);
+            JButton toggleBtn = createSmallButton("Ẩn", ACCENT_BLUE);
+            JButton deleteBtn = createSmallButton("Xóa", ACCENT_RED);
 
             add(editBtn);
             add(toggleBtn);
             add(deleteBtn);
-
             return this;
         }
     }
 
-    // Custom editor for action buttons
     private class ActionButtonEditor extends DefaultCellEditor {
         private JPanel panel;
-        private JButton editBtn, toggleBtn, deleteBtn;
         private int currentRow;
 
         public ActionButtonEditor() {
             super(new JCheckBox());
-            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 2));
-            panel.setBackground(Color.WHITE);
+            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 8));
+            panel.setBackground(CARD_BG);
 
-            editBtn = new JButton("Sửa");
-            editBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            editBtn.setBackground(new Color(241, 196, 15));
-            editBtn.setForeground(Color.WHITE);
-            editBtn.setFocusPainted(false);
-            editBtn.setBorderPainted(false);
+            JButton editBtn = createSmallButton("Sửa", ACCENT_YELLOW);
             editBtn.addActionListener(e -> {
                 fireEditingStopped();
                 editService(currentRow);
             });
 
-            toggleBtn = new JButton("Ẩn/Hiện");
-            toggleBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            toggleBtn.setBackground(new Color(52, 152, 219));
-            toggleBtn.setForeground(Color.WHITE);
-            toggleBtn.setFocusPainted(false);
-            toggleBtn.setBorderPainted(false);
+            JButton toggleBtn = createSmallButton("Ẩn", ACCENT_BLUE);
             toggleBtn.addActionListener(e -> {
                 fireEditingStopped();
                 toggleService(currentRow);
             });
 
-            deleteBtn = new JButton("Xóa");
-            deleteBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            deleteBtn.setBackground(new Color(231, 76, 60));
-            deleteBtn.setForeground(Color.WHITE);
-            deleteBtn.setFocusPainted(false);
-            deleteBtn.setBorderPainted(false);
+            JButton deleteBtn = createSmallButton("Xóa", ACCENT_RED);
             deleteBtn.addActionListener(e -> {
                 fireEditingStopped();
                 deleteService(currentRow);
@@ -369,8 +462,8 @@ public class ServiceManagementTab extends BaseTabPanel {
         }
 
         @Override
-        public Component getTableCellEditorComponent(JTable table, Object value,
-                boolean isSelected, int row, int column) {
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row,
+                int column) {
             currentRow = row;
             return panel;
         }
@@ -392,7 +485,6 @@ public class ServiceManagementTab extends BaseTabPanel {
                 }
             }
         } catch (SQLException e) {
-            log("LỖI: " + e.getMessage());
         }
     }
 
@@ -400,35 +492,21 @@ public class ServiceManagementTab extends BaseTabPanel {
         try {
             int id = (Integer) tableModel.getValueAt(row, 0);
             String status = (String) tableModel.getValueAt(row, 5);
-            boolean currentActive = status.contains("Active");
-            boolean newActive = !currentActive;
-
-            db.toggleServiceActive(id, newActive);
-            log("Đã " + (newActive ? "hiện" : "ẩn") + " dịch vụ ID=" + id);
+            db.toggleServiceActive(id, !status.contains("Active"));
             loadServices();
         } catch (SQLException e) {
-            log("LỖI: " + e.getMessage());
-            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void deleteService(int row) {
         int id = (Integer) tableModel.getValueAt(row, 0);
         String name = (String) tableModel.getValueAt(row, 2);
-
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Bạn có chắc muốn XÓA VĨNH VIỄN dịch vụ:\n" + name + "?",
-                "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-
-        if (confirm == JOptionPane.YES_OPTION) {
+        if (JOptionPane.showConfirmDialog(this, "Xóa dịch vụ: " + name + "?", "Xác nhận",
+                JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try {
                 db.deleteService(id);
-                log("Đã xóa dịch vụ: " + name);
                 loadServices();
-                JOptionPane.showMessageDialog(this, "Đã xóa dịch vụ!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
             } catch (SQLException e) {
-                log("LỖI: " + e.getMessage());
-                JOptionPane.showMessageDialog(this, "Lỗi xóa: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

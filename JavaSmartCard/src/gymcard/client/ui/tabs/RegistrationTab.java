@@ -3,6 +3,7 @@ package gymcard.client.ui.tabs;
 import gymcard.client.CardCommunicator;
 import gymcard.client.ui.BaseTabPanel;
 import java.awt.*;
+import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -18,7 +19,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
- * Tab đăng ký hội viên mới (khởi tạo thẻ + lưu thông tin cơ bản)
+ * Tab đăng ký hội viên mới - Dark theme design
  */
 public class RegistrationTab extends BaseTabPanel {
 
@@ -26,10 +27,19 @@ public class RegistrationTab extends BaseTabPanel {
     private JTextField birthDateField;
     private JTextField phoneField;
     private JTextArea addressArea;
-    private JPasswordField pinField;
-    private JPasswordField confirmPinField;
+    private JPasswordField[] pinFields = new JPasswordField[6];
+    private JPasswordField[] confirmPinFields = new JPasswordField[6];
     private JLabel avatarLabel;
     private String avatarPath;
+
+    // Colors
+    private static final Color BG_DARK = new Color(30, 35, 50);
+    private static final Color CARD_BG = new Color(40, 45, 65);
+    private static final Color INPUT_BG = new Color(50, 55, 75);
+    private static final Color TEXT_WHITE = new Color(230, 230, 240);
+    private static final Color TEXT_GRAY = new Color(140, 145, 165);
+    private static final Color ACCENT_RED = new Color(231, 76, 60);
+    private static final Color ACCENT_GRAY = new Color(100, 105, 125);
 
     public RegistrationTab(CardCommunicator cardComm) {
         super(cardComm);
@@ -37,285 +47,450 @@ public class RegistrationTab extends BaseTabPanel {
     }
 
     private void initUI() {
-        setLayout(new BorderLayout(10, 10));
-        setBorder(new EmptyBorder(10, 10, 10, 10));
-        setBackground(new Color(248, 249, 250));
+        setLayout(new BorderLayout());
+        setBackground(BG_DARK);
 
-        // MAIN CONTENT
-        JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
-        contentPanel.setBackground(new Color(248, 249, 250));
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBackground(BG_DARK);
+        mainPanel.setBorder(new EmptyBorder(15, 30, 15, 30));
 
-        // Form
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBackground(Color.WHITE);
-        formPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
-                new EmptyBorder(15, 15, 15, 15)));
+        // Header
+        JLabel titleLabel = new JLabel("Đăng ký hội viên");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        titleLabel.setForeground(TEXT_WHITE);
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        mainPanel.add(titleLabel);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 8, 6, 8);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        mainPanel.add(Box.createVerticalStrut(5));
 
-        int row = 0;
-        Font labelFont = new Font("Segoe UI", Font.PLAIN, 13);
-        Font inputFont = new Font("Segoe UI", Font.PLAIN, 13);
+        JLabel subtitleLabel = new JLabel("Điền thông tin chi tiết để khởi tạo thẻ thành viên mới.");
+        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        subtitleLabel.setForeground(TEXT_GRAY);
+        subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        mainPanel.add(subtitleLabel);
 
-        // HỌ TÊN
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        gbc.weightx = 0;
-        gbc.anchor = GridBagConstraints.EAST;
-        JLabel nameLabel = new JLabel("Họ và tên: *");
-        nameLabel.setFont(labelFont);
-        formPanel.add(nameLabel, gbc);
+        mainPanel.add(Box.createVerticalStrut(15));
 
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        gbc.anchor = GridBagConstraints.WEST;
-        nameField = new JTextField(25);
-        nameField.setFont(inputFont);
-        nameField.setBorder(fieldBorder());
-        formPanel.add(nameField, gbc);
+        // Form card
+        JPanel formCard = createFormCard();
+        formCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+        mainPanel.add(formCard);
 
-        // NGÀY SINH
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        gbc.weightx = 0;
-        gbc.anchor = GridBagConstraints.EAST;
-        JLabel birthLabel = new JLabel("Ngày sinh: *");
-        birthLabel.setFont(labelFont);
-        formPanel.add(birthLabel, gbc);
+        mainPanel.add(Box.createVerticalStrut(15));
 
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        gbc.anchor = GridBagConstraints.WEST;
-        birthDateField = new JTextField(15);
-        birthDateField.setFont(inputFont);
+        // Buttons
+        JPanel buttonPanel = createButtonPanel();
+        buttonPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        mainPanel.add(buttonPanel);
+
+        JScrollPane scrollPane = new JScrollPane(mainPanel);
+        scrollPane.setBorder(null);
+        scrollPane.setBackground(BG_DARK);
+        scrollPane.getViewport().setBackground(BG_DARK);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        add(scrollPane, BorderLayout.CENTER);
+    }
+
+    private JPanel createFormCard() {
+        JPanel card = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(CARD_BG);
+                g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 15, 15));
+            }
+        };
+        card.setOpaque(false);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(new EmptyBorder(30, 35, 30, 35));
+
+        // Row 1: Name, Birth, Phone
+        JPanel row1 = new JPanel(new GridLayout(1, 3, 25, 0));
+        row1.setOpaque(false);
+        row1.setMaximumSize(new Dimension(Integer.MAX_VALUE, 75));
+        row1.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        row1.add(createDarkFieldPanel("Họ và tên:", true, nameField = createDarkTextField("Nguyễn Văn A")));
+        row1.add(createDarkFieldPanel("Ngày sinh:", true, birthDateField = createDarkTextField("")));
+        row1.add(createDarkFieldPanel("Số điện thoại:", true, phoneField = createDarkTextField("")));
+
         birthDateField.setText(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
-        birthDateField.setBorder(fieldBorder());
-        formPanel.add(birthDateField, gbc);
 
-        // SỐ ĐIỆN THOẠI
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        gbc.weightx = 0;
-        gbc.anchor = GridBagConstraints.EAST;
-        JLabel phoneLabel = new JLabel("Số điện thoại: *");
-        phoneLabel.setFont(labelFont);
-        formPanel.add(phoneLabel, gbc);
+        card.add(row1);
+        card.add(Box.createVerticalStrut(25));
 
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        gbc.anchor = GridBagConstraints.WEST;
-        phoneField = new JTextField(25);
-        phoneField.setFont(inputFont);
-        phoneField.setBorder(fieldBorder());
-        formPanel.add(phoneField, gbc);
+        // Row 2: Address
+        JPanel addressPanel = new JPanel(new BorderLayout(0, 8));
+        addressPanel.setOpaque(false);
+        addressPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        addressPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
 
-        // ĐỊA CHỈ
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        gbc.weightx = 0;
-        gbc.anchor = GridBagConstraints.NORTHEAST;
         JLabel addressLabel = new JLabel("Địa chỉ:");
-        addressLabel.setFont(labelFont);
-        formPanel.add(addressLabel, gbc);
+        addressLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        addressLabel.setForeground(TEXT_GRAY);
+        addressPanel.add(addressLabel, BorderLayout.NORTH);
 
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        gbc.anchor = GridBagConstraints.WEST;
-        addressArea = new JTextArea(2, 25);
-        addressArea.setFont(inputFont);
+        addressArea = new JTextArea(2, 30);
+        addressArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        addressArea.setBackground(INPUT_BG);
+        addressArea.setForeground(TEXT_WHITE);
+        addressArea.setCaretColor(TEXT_WHITE);
         addressArea.setLineWrap(true);
         addressArea.setWrapStyleWord(true);
-        addressArea.setBorder(fieldBorder());
+        addressArea.setBorder(new EmptyBorder(12, 15, 12, 15));
         JScrollPane addressScroll = new JScrollPane(addressArea);
-        addressScroll.setBorder(null);
-        formPanel.add(addressScroll, gbc);
+        addressScroll.setBorder(BorderFactory.createLineBorder(new Color(70, 75, 95), 1));
+        addressPanel.add(addressScroll, BorderLayout.CENTER);
 
-        // PIN
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        gbc.weightx = 0;
-        gbc.anchor = GridBagConstraints.EAST;
-        JLabel pinLabel = new JLabel("Mã PIN (6 chữ số): *");
-        pinLabel.setFont(labelFont);
-        formPanel.add(pinLabel, gbc);
+        card.add(addressPanel);
+        card.add(Box.createVerticalStrut(30));
 
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        gbc.anchor = GridBagConstraints.WEST;
-        pinField = new JPasswordField(25);
-        pinField.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        pinField.setBorder(fieldBorder());
-        formPanel.add(pinField, gbc);
+        // Row 3: PIN and Avatar side by side
+        JPanel row3 = new JPanel(new GridLayout(1, 2, 50, 0));
+        row3.setOpaque(false);
+        row3.setMaximumSize(new Dimension(Integer.MAX_VALUE, 180));
+        row3.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // XÁC NHẬN PIN
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        gbc.weightx = 0;
-        gbc.anchor = GridBagConstraints.EAST;
-        JLabel confirmPinLabel = new JLabel("Xác nhận PIN: *");
-        confirmPinLabel.setFont(labelFont);
-        formPanel.add(confirmPinLabel, gbc);
+        // Left: PIN boxes
+        JPanel pinSection = new JPanel();
+        pinSection.setLayout(new BoxLayout(pinSection, BoxLayout.Y_AXIS));
+        pinSection.setOpaque(false);
 
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        gbc.anchor = GridBagConstraints.WEST;
-        confirmPinField = new JPasswordField(25);
-        confirmPinField.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        confirmPinField.setBorder(fieldBorder());
-        formPanel.add(confirmPinField, gbc);
+        pinSection.add(createPinBoxesPanel("Mã PIN (6 chữ số):", pinFields));
+        pinSection.add(Box.createVerticalStrut(20));
+        pinSection.add(createPinBoxesPanel("Xác nhận PIN:", confirmPinFields));
 
-        // AVATAR
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        gbc.weightx = 0;
-        gbc.anchor = GridBagConstraints.NORTHEAST;
-        JLabel avatarTitle = new JLabel("Ảnh đại diện (tùy chọn):");
-        avatarTitle.setFont(labelFont);
-        formPanel.add(avatarTitle, gbc);
+        row3.add(pinSection);
 
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        gbc.anchor = GridBagConstraints.WEST;
+        // Right: Avatar
+        JPanel avatarSection = createAvatarPanel();
+        row3.add(avatarSection);
 
-        JPanel avatarPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        avatarPanel.setBackground(Color.WHITE);
+        card.add(row3);
+        card.add(Box.createVerticalStrut(25));
 
-        avatarLabel = new JLabel("Chưa chọn ảnh");
-        avatarLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        avatarLabel.setForeground(new Color(127, 140, 141));
-        avatarLabel.setPreferredSize(new Dimension(90, 90));
+        // Notes
+        JPanel notePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 40, 0));
+        notePanel.setOpaque(false);
+        notePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        notePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel note1 = new JLabel("ℹ  Ghi chú: Mã PIN được bảo vệ giới hạn số lần thử.");
+        note1.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        note1.setForeground(TEXT_GRAY);
+        notePanel.add(note1);
+
+        JLabel note2 = new JLabel("🔒  Dữ liệu cá nhân trên thẻ được mã hóa AES-128.");
+        note2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        note2.setForeground(TEXT_GRAY);
+        notePanel.add(note2);
+
+        card.add(notePanel);
+
+        return card;
+    }
+
+    private JPanel createDarkFieldPanel(String labelText, boolean required, JTextField field) {
+        JPanel panel = new JPanel(new BorderLayout(0, 8));
+        panel.setOpaque(false);
+
+        JLabel label = new JLabel(labelText + (required ? " *" : ""));
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        label.setForeground(TEXT_GRAY);
+        panel.add(label, BorderLayout.NORTH);
+        panel.add(field, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private JTextField createDarkTextField(String placeholder) {
+        JTextField field = new JTextField() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(INPUT_BG);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                super.paintComponent(g);
+            }
+        };
+        field.setOpaque(false);
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setForeground(TEXT_WHITE);
+        field.setCaretColor(TEXT_WHITE);
+        field.setBorder(new EmptyBorder(12, 15, 12, 15));
+        if (!placeholder.isEmpty()) {
+            field.setText(placeholder);
+            field.setForeground(new Color(100, 105, 125));
+            field.addFocusListener(new java.awt.event.FocusAdapter() {
+                public void focusGained(java.awt.event.FocusEvent e) {
+                    if (field.getText().equals(placeholder)) {
+                        field.setText("");
+                        field.setForeground(TEXT_WHITE);
+                    }
+                }
+
+                public void focusLost(java.awt.event.FocusEvent e) {
+                    if (field.getText().isEmpty()) {
+                        field.setText(placeholder);
+                        field.setForeground(new Color(100, 105, 125));
+                    }
+                }
+            });
+        }
+        return field;
+    }
+
+    private JPanel createPinBoxesPanel(String labelText, JPasswordField[] fields) {
+        JPanel panel = new JPanel(new BorderLayout(0, 8));
+        panel.setOpaque(false);
+
+        JLabel label = new JLabel(labelText + " *");
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        label.setForeground(TEXT_GRAY);
+        panel.add(label, BorderLayout.NORTH);
+
+        JPanel boxesPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        boxesPanel.setOpaque(false);
+
+        for (int i = 0; i < 6; i++) {
+            final int index = i;
+            fields[i] = new JPasswordField() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2d = (Graphics2D) g;
+                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2d.setColor(INPUT_BG);
+                    g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                    super.paintComponent(g);
+                }
+            };
+            fields[i].setOpaque(false);
+            fields[i].setFont(new Font("Segoe UI", Font.BOLD, 24));
+            fields[i].setForeground(TEXT_WHITE);
+            fields[i].setCaretColor(TEXT_WHITE);
+            fields[i].setHorizontalAlignment(JTextField.CENTER);
+            fields[i].setBorder(new EmptyBorder(12, 12, 12, 12));
+            fields[i].setPreferredSize(new Dimension(55, 55));
+            fields[i].setMinimumSize(new Dimension(55, 55));
+            fields[i].setMaximumSize(new Dimension(55, 55));
+            fields[i].setEchoChar('●');
+
+            // Auto-move to next field
+            fields[i].addKeyListener(new java.awt.event.KeyAdapter() {
+                public void keyTyped(java.awt.event.KeyEvent e) {
+                    char c = e.getKeyChar();
+                    if (!Character.isDigit(c)) {
+                        e.consume();
+                        return;
+                    }
+                    if (new String(fields[index].getPassword()).length() >= 1) {
+                        e.consume();
+                        if (index < 5) {
+                            fields[index + 1].requestFocus();
+                        }
+                    }
+                }
+
+                public void keyReleased(java.awt.event.KeyEvent e) {
+                    if (new String(fields[index].getPassword()).length() == 1 && index < 5) {
+                        fields[index + 1].requestFocus();
+                    }
+                }
+            });
+            boxesPanel.add(fields[i]);
+        }
+
+        panel.add(boxesPanel, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel createAvatarPanel() {
+        JPanel panel = new JPanel(new BorderLayout(0, 10));
+        panel.setOpaque(false);
+
+        JLabel label = new JLabel("Chọn Avatar:");
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        label.setForeground(TEXT_GRAY);
+        panel.add(label, BorderLayout.NORTH);
+
+        JPanel content = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
+        content.setOpaque(false);
+
+        // Preview box
+        avatarLabel = new JLabel("PREVIEW") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(INPUT_BG);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                // Dashed border
+                float[] dash = { 5, 5 };
+                g2d.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10, dash, 0));
+                g2d.setColor(new Color(100, 105, 125));
+                g2d.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 8, 8);
+                super.paintComponent(g);
+            }
+        };
+        avatarLabel.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        avatarLabel.setForeground(TEXT_GRAY);
         avatarLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        avatarLabel.setBorder(BorderFactory.createLineBorder(new Color(189, 195, 199)));
+        avatarLabel.setPreferredSize(new Dimension(80, 80));
+        content.add(avatarLabel);
 
-        JButton chooseAvatarBtn = new JButton("Chọn ảnh...");
-        chooseAvatarBtn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        chooseAvatarBtn.addActionListener(e -> chooseAvatarImage());
+        // Buttons panel
+        JPanel btnPanel = new JPanel();
+        btnPanel.setLayout(new BoxLayout(btnPanel, BoxLayout.Y_AXIS));
+        btnPanel.setOpaque(false);
 
-        avatarPanel.add(avatarLabel);
-        avatarPanel.add(chooseAvatarBtn);
+        JButton chooseBtn = new JButton("Chọn ảnh...") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(ACCENT_GRAY);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2d.dispose();
+                super.paintComponent(g);
+            }
+        };
+        chooseBtn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        chooseBtn.setForeground(TEXT_WHITE);
+        chooseBtn.setContentAreaFilled(false);
+        chooseBtn.setBorderPainted(false);
+        chooseBtn.setFocusPainted(false);
+        chooseBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        chooseBtn.setPreferredSize(new Dimension(100, 32));
+        chooseBtn.addActionListener(e -> chooseAvatarImage());
+        btnPanel.add(chooseBtn);
 
-        formPanel.add(avatarPanel, gbc);
+        btnPanel.add(Box.createVerticalStrut(10));
 
-        // GHI CHÚ BẢO MẬT
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        gbc.gridwidth = 2;
-        gbc.weightx = 1.0;
-        gbc.anchor = GridBagConstraints.WEST;
-        JLabel hintLabel = new JLabel(
-                "<html><i>Ghi chú: Mã PIN được bảo vệ giới hạn số lần thử.<br>" +
-                        "Dữ liệu cá nhân trên thẻ được mã hóa AES-128 bằng khóa chủ bọc bởi PIN của bạn.</i></html>");
-        hintLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        hintLabel.setForeground(new Color(127, 140, 141));
-        formPanel.add(hintLabel, gbc);
+        JLabel hint = new JLabel("Hỗ trợ: JPG, PNG (Max 5MB)");
+        hint.setFont(new Font("Segoe UI", Font.ITALIC, 10));
+        hint.setForeground(TEXT_GRAY);
+        btnPanel.add(hint);
 
-        JScrollPane formScroll = new JScrollPane(formPanel);
-        formScroll.setBorder(null);
-        formScroll.getVerticalScrollBar().setUnitIncrement(16);
-        contentPanel.add(formScroll, BorderLayout.CENTER);
+        content.add(btnPanel);
+        panel.add(content, BorderLayout.CENTER);
 
-        add(contentPanel, BorderLayout.CENTER);
+        return panel;
+    }
 
-        // NÚT BÊN DƯỚI
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 8));
-        buttonPanel.setBackground(new Color(248, 249, 250));
+    private JPanel createButtonPanel() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        panel.setOpaque(false);
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
-        JButton registerBtn = createModernButton("Đăng ký hội viên (Init thẻ)", new Color(46, 204, 113), 15);
-        registerBtn.setPreferredSize(new Dimension(240, 42));
-        registerBtn.addActionListener(e -> registerMember());
-
-        JButton clearBtn = createModernButton("Xóa form", new Color(149, 165, 166), 13);
+        // Clear button
+        JButton clearBtn = new JButton("Xóa form") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(ACCENT_GRAY);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2d.dispose();
+                super.paintComponent(g);
+            }
+        };
+        clearBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        clearBtn.setForeground(TEXT_WHITE);
+        clearBtn.setContentAreaFilled(false);
+        clearBtn.setBorderPainted(false);
+        clearBtn.setFocusPainted(false);
+        clearBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         clearBtn.setPreferredSize(new Dimension(130, 42));
         clearBtn.addActionListener(e -> clearForm());
+        panel.add(clearBtn);
 
-        buttonPanel.add(registerBtn);
-        buttonPanel.add(clearBtn);
+        // Register button
+        JButton registerBtn = new JButton("Đăng ký hội viên (Init thẻ)") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isRollover()) {
+                    g2d.setColor(ACCENT_RED.brighter());
+                } else {
+                    g2d.setColor(ACCENT_RED);
+                }
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2d.dispose();
+                super.paintComponent(g);
+            }
+        };
+        registerBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        registerBtn.setForeground(Color.WHITE);
+        registerBtn.setContentAreaFilled(false);
+        registerBtn.setBorderPainted(false);
+        registerBtn.setFocusPainted(false);
+        registerBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        registerBtn.setPreferredSize(new Dimension(240, 42));
+        registerBtn.addActionListener(e -> registerMember());
+        panel.add(registerBtn);
 
-        add(buttonPanel, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private String getPinFromFields(JPasswordField[] fields) {
+        StringBuilder sb = new StringBuilder();
+        for (JPasswordField f : fields) {
+            sb.append(new String(f.getPassword()));
+        }
+        return sb.toString();
     }
 
     private void chooseAvatarImage() {
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Chọn ảnh đại diện");
         chooser.setFileFilter(new FileNameExtensionFilter("Ảnh (JPG, PNG)", "jpg", "jpeg", "png"));
-
-        int result = chooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File file = chooser.getSelectedFile();
             avatarPath = file.getAbsolutePath();
-
             try {
-                BufferedImage img = ImageIO.read(file);
-                if (img == null) {
-                    JOptionPane.showMessageDialog(this,
-                            "Không đọc được ảnh này. Vui lòng chọn file JPG/PNG.",
-                            "Lỗi ảnh", JOptionPane.ERROR_MESSAGE);
-                    avatarPath = null;
-                    return;
-                }
-
-                Image scaled = img.getScaledInstance(90, 90, Image.SCALE_SMOOTH);
+                ImageIcon icon = new ImageIcon(avatarPath);
+                Image scaled = icon.getImage().getScaledInstance(75, 75, Image.SCALE_SMOOTH);
                 avatarLabel.setIcon(new ImageIcon(scaled));
                 avatarLabel.setText("");
-                log("Đã chọn avatar: " + avatarPath);
             } catch (Exception ex) {
-                ex.printStackTrace();
-                JOptionPane.showMessageDialog(this,
-                        "Lỗi đọc ảnh: " + ex.getMessage(),
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-                avatarPath = null;
+                avatarLabel.setIcon(null);
+                avatarLabel.setText("Lỗi");
             }
         }
     }
 
     private byte[] compressAvatarToCardSize(String path, int maxBytes) throws Exception {
-        BufferedImage src = ImageIO.read(new File(path));
-        if (src == null)
-            return null;
-
-        int target = 256;
-        float quality = 0.85f;
-
-        while (true) {
-            BufferedImage scaled = new BufferedImage(target, target, BufferedImage.TYPE_INT_RGB);
-            Graphics2D g = scaled.createGraphics();
-            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            g.drawImage(src, 0, 0, target, target, null);
-            g.dispose();
-
-            byte[] jpg = encodeJpeg(scaled, quality);
-
-            if (jpg.length <= maxBytes)
-                return jpg;
-
-            if (quality > 0.25f) {
-                quality -= 0.10f;
-            } else if (target > 64) {
-                target = (int) (target * 0.80);
-                quality = 0.85f;
-            } else {
-                return null;
-            }
+        BufferedImage original = ImageIO.read(new File(path));
+        int size = Math.min(original.getWidth(), original.getHeight());
+        int x = (original.getWidth() - size) / 2;
+        int y = (original.getHeight() - size) / 2;
+        BufferedImage crop = original.getSubimage(x, y, size, size);
+        int targetSize = 64;
+        BufferedImage resized = new BufferedImage(targetSize, targetSize, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = resized.createGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2d.drawImage(crop, 0, 0, targetSize, targetSize, null);
+        g2d.dispose();
+        float quality = 0.5f;
+        byte[] result = encodeJpeg(resized, quality);
+        while (result.length > maxBytes && quality > 0.1f) {
+            quality -= 0.1f;
+            result = encodeJpeg(resized, quality);
         }
+        return result.length > maxBytes ? null : result;
     }
 
     private byte[] encodeJpeg(BufferedImage img, float quality) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
+        ImageWriter writer = ImageIO.getImageWritersByFormatName("jpeg").next();
         ImageWriteParam param = writer.getDefaultWriteParam();
         param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
         param.setCompressionQuality(quality);
-
         try (ImageOutputStream ios = ImageIO.createImageOutputStream(baos)) {
             writer.setOutput(ios);
             writer.write(null, new IIOImage(img, null, null), param);
@@ -328,179 +503,90 @@ public class RegistrationTab extends BaseTabPanel {
     private void registerMember() {
         try {
             if (!cardComm.isConnected()) {
-                log("Vui lòng kết nối thẻ trước!");
-                JOptionPane.showMessageDialog(this,
-                        "Vui lòng kết nối thẻ trước khi đăng ký!",
-                        "Lỗi", JOptionPane.WARNING_MESSAGE);
+                log("Vui long ket noi the truoc!");
+                JOptionPane.showMessageDialog(this, "Vui lòng kết nối thẻ trước!", "Lỗi", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             String name = nameField.getText().trim();
+            if (name.equals("Nguyễn Văn A"))
+                name = "";
             String birthDate = birthDateField.getText().trim();
             String phone = phoneField.getText().trim();
             String address = addressArea.getText().trim();
-            String pin = new String(pinField.getPassword()).trim();
-            String confirmPin = new String(confirmPinField.getPassword()).trim();
+            String pin = getPinFromFields(pinFields);
+            String confirmPin = getPinFromFields(confirmPinFields);
 
-            if (name.isEmpty() || birthDate.isEmpty() || phone.isEmpty() || pin.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        "Vui lòng điền đầy đủ các trường bắt buộc (*)",
-                        "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            if (name.isEmpty() || birthDate.isEmpty() || phone.isEmpty() || pin.length() != 6) {
+                JOptionPane.showMessageDialog(this, "Vui lòng điền đầy đủ thông tin!", "Thiếu thông tin",
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            // Validate: Cho phep chu cai (Tieng Viet co dau), so va khoang trang
-            // Regex: \p{L} = Unicode letter (bao gom tieng Viet), \s = khoang trang
             if (!name.matches("[\\p{L}0-9\\s]+")) {
-                JOptionPane.showMessageDialog(this,
-                        "Ho ten chi duoc chua chu cai (bao gom tieng Viet), so va khoang trang.\nKhong duoc chua ky tu dac biet!",
-                        "Ho ten khong hop le", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Họ tên không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Validate phone: Chỉ số, 10-11 chữ số
             if (!phone.matches("[0-9]{10,11}")) {
-                JOptionPane.showMessageDialog(this,
-                        "Số điện thoại phải gồm 10-11 chữ số (0-9).\nKhông được chứa ký tự khác!",
-                        "Số điện thoại không hợp lệ", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "SĐT phải gồm 10-11 chữ số!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Validate address: Cho phep chu (tieng Viet), so, khoang trang, dau phay, dau
-            // cham
-            if (!address.isEmpty() && !address.matches("[\\p{L}0-9\\s,./]+")) {
-                JOptionPane.showMessageDialog(this,
-                        "Dia chi chi duoc chua chu cai (bao gom tieng Viet), so, khoang trang va dau (,./)\nKhong duoc chua ky tu dac biet khac!",
-                        "Dia chi khong hop le", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Validate birth date format: D/M/YYYY or DD/MM/YYYY (1 or 2 digits for
-            // day/month)
-            if (!birthDate.matches("\\d{1,2}/\\d{1,2}/\\d{4}")) {
-                JOptionPane.showMessageDialog(this,
-                        "Ngay sinh phai dung dinh dang D/M/YYYY hoac DD/MM/YYYY\nVi du: 7/2/1990 hoac 15/06/1990",
-                        "Ngay sinh khong hop le", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Validate birth date: Parse and check not in future
-            try {
-                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("d/M/yyyy");
-                sdf.setLenient(false); // Strict parsing
-                java.util.Date birthDateParsed = sdf.parse(birthDate);
-                java.util.Date today = new java.util.Date();
-
-                if (birthDateParsed.after(today)) {
-                    JOptionPane.showMessageDialog(this,
-                            "Ngay sinh khong duoc vuot qua ngay hien tai!",
-                            "Ngay sinh khong hop le", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            } catch (java.text.ParseException e) {
-                JOptionPane.showMessageDialog(this,
-                        "Ngay sinh khong hop le!\nVui long nhap dung dinh dang D/M/YYYY\nVi du: 7/2/1990 hoac 15/06/1990",
-                        "Ngay sinh khong hop le", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Validate PIN
-            if (!pin.matches("\\d{6}")) {
-                JOptionPane.showMessageDialog(this,
-                        "Mã PIN phải gồm đúng 6 chữ số (0-9)!",
-                        "PIN không hợp lệ", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
             if (!pin.equals(confirmPin)) {
-                JOptionPane.showMessageDialog(this,
-                        "Mã PIN và xác nhận PIN không khớp!",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Mã PIN không khớp!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Sinh CardID unique (GYM000001, GYM000002, ...)
             String cardId = gymcard.CardManager.CardIdGenerator.nextId();
-            log("Đang khởi tạo thẻ (INIT_CARD) với CardID = " + cardId + " ...");
+            log("Khoi tao the voi CardID = " + cardId);
             cardComm.initNewCard(cardId, pin);
-            log("Khởi tạo thẻ thành công.");
 
-            log("Đang xác thực PIN...");
             if (!cardComm.verifyPin(pin)) {
-                log("Xác thực PIN thất bại sau INIT_CARD!");
-                JOptionPane.showMessageDialog(this,
-                        "PIN không đúng hoặc thẻ chưa sẵn sàng.\nVui lòng thử lại.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Xác thực PIN thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            log("Xác thực PIN OK.");
 
             byte[] avatarBytes = null;
             if (avatarPath != null) {
                 avatarBytes = compressAvatarToCardSize(avatarPath, 4096);
-                if (avatarBytes == null) {
-                    log("Không thể nén avatar xuống <= 4096 bytes, bỏ qua lưu avatar.");
-                } else {
-                    log("Avatar đã nén: " + avatarBytes.length + " bytes.");
-                }
             }
 
-            log("Đang lưu thông tin hội viên (mã hóa AES trên thẻ)...");
             boolean ok = cardComm.setMemberInfo(name, birthDate, phone, address, avatarBytes);
             if (!ok) {
-                log("Lưu thông tin hội viên thất bại");
-                JOptionPane.showMessageDialog(this,
-                        "Không thể lưu thông tin hội viên lên thẻ.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Không thể lưu thông tin!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Lưu card public key vào database để xác thực RSA sau này
-            log("Đang lưu RSA public key của thẻ vào database...");
             try {
-                long userId = cardComm.saveCardPublicKeyToDb(cardId);
-                if (userId > 0) {
-                    log("Đã lưu public key vào DB thành công (userId=" + userId + ")");
-                } else if (userId == 0) {
-                    log("User đã tồn tại trong DB, bỏ qua lưu public key.");
-                } else {
-                    log("Lưu public key thất bại!");
-                }
-            } catch (Exception pubKeyEx) {
-                log("Cảnh báo: Không thể lưu public key vào DB: " + pubKeyEx.getMessage());
-                // Tiếp tục vì đây không phải lỗi nghiêm trọng
+                cardComm.saveCardPublicKeyToDb(cardId);
+            } catch (Exception e) {
+                log("Khong the luu public key: " + e.getMessage());
             }
 
-            log("Đăng ký hội viên & khởi tạo thẻ thành công!");
             JOptionPane.showMessageDialog(this,
-                    "Đăng ký hội viên mới và khởi tạo thẻ thành công!\n\n" +
-                            "Hội viên: " + name + "\n" +
-                            "Mã thẻ (CardID): " + cardId + "\n" +
-                            "Mã PIN: " + pin + "\n\n" +
-                            "• CardID dùng để quản lý trong hệ thống.\n" +
-                            "• PIN dùng để hội viên check-in và bảo vệ dữ liệu trên thẻ.\n" +
-                            "• RSA public key đã được lưu để xác thực thẻ.\n",
+                    "Đăng ký thành công!\n\nHội viên: " + name + "\nMã thẻ: " + cardId + "\nPIN: " + pin,
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
-
             clearForm();
 
         } catch (Exception ex) {
-            log("LỖI: " + ex.getMessage());
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi đăng ký: " + ex.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            log("LOI: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void clearForm() {
-        nameField.setText("");
+        nameField.setText("Nguyễn Văn A");
+        nameField.setForeground(new Color(100, 105, 125));
         birthDateField.setText(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
         phoneField.setText("");
         addressArea.setText("");
-        pinField.setText("");
-        confirmPinField.setText("");
+        for (JTextField f : pinFields)
+            f.setText("");
+        for (JTextField f : confirmPinFields)
+            f.setText("");
         avatarLabel.setIcon(null);
-        avatarLabel.setText("Chưa chọn ảnh");
+        avatarLabel.setText("PREVIEW");
         avatarPath = null;
     }
 }
