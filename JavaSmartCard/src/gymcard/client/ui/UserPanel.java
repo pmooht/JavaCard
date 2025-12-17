@@ -11,216 +11,282 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 /**
- * User Panel - Dành cho hội viên
- * Controller class quản lý và điều phối các tab panels
+ * User Panel - Dành cho hội viên với Sidebar navigation
  */
 public class UserPanel extends JPanel {
 
     private final CardCommunicator cardComm;
+    private final Runnable onBackClick;
+    private CardLayout contentCardLayout;
     private JPanel contentPanel;
-    private CardLayout cardLayout;
+    private SidebarPanel sidebar;
 
-    // Shared data giữa các tabs
+    // Shared data
     private final List<String> purchasedServices = new ArrayList<>();
 
-    // Tab references for cleanup
-    private LoginPanel loginPanel;
+    // Tab panels
     private InfoTab infoTab;
-    private JTabbedPane userTabbedPane;
+    private TopUpTab topUpTab;
+    private CheckInTab checkInTab;
+    private PackageTab packageTab;
+    private ServicesTab servicesTab;
+    private StatisticsTab statisticsTab;
+    private ChangePinTab changePinTab;
 
-    public UserPanel(CardCommunicator cardComm) {
+    public UserPanel(CardCommunicator cardComm, Runnable onBackClick) {
         this.cardComm = cardComm;
+        this.onBackClick = onBackClick;
         initUI();
     }
 
     private void initUI() {
-        setLayout(new BorderLayout(8, 8));
-        setBorder(new EmptyBorder(10, 10, 10, 10));
+        setLayout(new BorderLayout());
         setBackground(new Color(248, 249, 250));
 
-        // Content area with CardLayout
-        cardLayout = new CardLayout();
-        contentPanel = new JPanel(cardLayout);
+        // Header bar
+        JPanel header = createHeader();
+        add(header, BorderLayout.NORTH);
 
-        // Login panel
-        loginPanel = new LoginPanel(cardComm, () -> {
-            cardLayout.show(contentPanel, "main");
-            if (infoTab != null) {
-                infoTab.clearUI();
-            }
-        });
-        contentPanel.add(loginPanel, "login");
+        // Main content area
+        JPanel mainArea = new JPanel(new BorderLayout());
+        mainArea.setBackground(new Color(248, 249, 250));
 
-        // Main panel with tabs
-        contentPanel.add(createMainPanel(), "main");
+        // Sidebar
+        sidebar = new SidebarPanel(new Color(52, 152, 219));
+        sidebar.addItem("🏠", "Trang chủ", () -> showPanel("home"));
+        sidebar.addItem("👤", "Thông tin cá nhân", () -> showPanel("info"));
+        sidebar.addItem("📦", "Gói tập", () -> showPanel("package"));
+        sidebar.addItem("✅", "Check-in/out", () -> showPanel("checkin"));
+        sidebar.addItem("💰", "Nạp tiền", () -> showPanel("topup"));
+        sidebar.addItem("🛒", "Dịch vụ thêm", () -> showPanel("services"));
+        sidebar.addSeparator();
+        sidebar.addItem("📊", "Thống kê", () -> showPanel("statistics"));
+        sidebar.addItem("🔑", "Đổi mã PIN", () -> showPanel("changepin"));
+        mainArea.add(sidebar, BorderLayout.WEST);
 
-        add(contentPanel, BorderLayout.CENTER);
+        // Content panel with CardLayout
+        contentCardLayout = new CardLayout();
+        contentPanel = new JPanel(contentCardLayout);
+        contentPanel.setBackground(new Color(248, 249, 250));
 
-        // Show login panel first
-        cardLayout.show(contentPanel, "login");
+        // Create tab panels
+        infoTab = new InfoTab(cardComm);
+        topUpTab = new TopUpTab(cardComm);
+        checkInTab = new CheckInTab(cardComm);
+        packageTab = new PackageTab(cardComm);
+        servicesTab = new ServicesTab(cardComm, purchasedServices);
+        statisticsTab = new StatisticsTab(cardComm, purchasedServices);
+        changePinTab = new ChangePinTab(cardComm);
+
+        // Add home panel
+        contentPanel.add(createHomePanel(), "home");
+        contentPanel.add(infoTab, "info");
+        contentPanel.add(packageTab, "package");
+        contentPanel.add(checkInTab, "checkin");
+        contentPanel.add(topUpTab, "topup");
+        contentPanel.add(servicesTab, "services");
+        contentPanel.add(statisticsTab, "statistics");
+        contentPanel.add(changePinTab, "changepin");
+
+        // Wrap content in a nice card
+        JPanel contentWrapper = new JPanel(new BorderLayout());
+        contentWrapper.setBackground(new Color(248, 249, 250));
+        contentWrapper.setBorder(new EmptyBorder(15, 15, 15, 15));
+
+        JPanel contentCard = new JPanel(new BorderLayout());
+        contentCard.setBackground(Color.WHITE);
+        contentCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
+                new EmptyBorder(10, 10, 10, 10)));
+        contentCard.add(contentPanel, BorderLayout.CENTER);
+
+        contentWrapper.add(contentCard, BorderLayout.CENTER);
+        mainArea.add(contentWrapper, BorderLayout.CENTER);
+
+        add(mainArea, BorderLayout.CENTER);
     }
 
-    /**
-     * Panel chinh sau khi dang nhap
-     */
-    private JPanel createMainPanel() {
+    private JPanel createHeader() {
+        JPanel header = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gp = new GradientPaint(0, 0, new Color(52, 152, 219),
+                        getWidth(), 0, new Color(41, 128, 185));
+                g2d.setPaint(gp);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        header.setPreferredSize(new Dimension(0, 60));
+        header.setBorder(new EmptyBorder(10, 20, 10, 20));
+
+        // Back button
+        JButton backBtn = createHeaderButton("< Quay lại");
+        backBtn.addActionListener(e -> onBackClick.run());
+        header.add(backBtn, BorderLayout.WEST);
+
+        // Title
+        JLabel titleLabel = new JLabel("HỘI VIÊN - GYM CARD SYSTEM");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        header.add(titleLabel, BorderLayout.CENTER);
+
+        // User info
+        JLabel userLabel = new JLabel("Hội viên");
+        userLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        userLabel.setForeground(Color.WHITE);
+        header.add(userLabel, BorderLayout.EAST);
+
+        return header;
+    }
+
+    private JPanel createHomePanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(248, 249, 250));
+        panel.setBorder(new EmptyBorder(30, 30, 30, 30));
 
-        // Card trang chua tab
-        JPanel tabsCard = new JPanel(new BorderLayout());
-        tabsCard.setBackground(Color.WHITE);
-        tabsCard.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
-                new EmptyBorder(10, 10, 5, 10)));
+        // Welcome message
+        JPanel welcomePanel = new JPanel();
+        welcomePanel.setOpaque(false);
+        welcomePanel.setLayout(new BoxLayout(welcomePanel, BoxLayout.Y_AXIS));
 
-        // Tabbed pane
-        userTabbedPane = new JTabbedPane();
-        userTabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        userTabbedPane.setBackground(new Color(248, 249, 250));
+        JLabel welcomeLabel = new JLabel("Chào mừng Hội viên!");
+        welcomeLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        welcomeLabel.setForeground(new Color(44, 62, 80));
+        welcomeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        welcomePanel.add(welcomeLabel);
 
-        // Add tabs using separated tab classes
-        infoTab = new InfoTab(cardComm);
-        TopUpTab topUpTab = new TopUpTab(cardComm);
-        CheckInTab checkInTab = new CheckInTab(cardComm);
-        PackageTab packageTab = new PackageTab(cardComm);
-        StatisticsTab statisticsTab = new StatisticsTab(cardComm, purchasedServices);
+        welcomePanel.add(Box.createVerticalStrut(10));
 
-        userTabbedPane.addTab("Thong tin ca nhan", infoTab);
-        userTabbedPane.addTab("Goi tap", packageTab);
-        userTabbedPane.addTab("Check-in/Check-out", checkInTab);
-        userTabbedPane.addTab("Nap tien", topUpTab);
-        userTabbedPane.addTab("Dich vu them", new ServicesTab(cardComm, purchasedServices));
-        userTabbedPane.addTab("Thong ke", statisticsTab);
-        userTabbedPane.addTab("Doi PIN", new ChangePinTab(cardComm));
+        String today = new SimpleDateFormat("EEEE, dd/MM/yyyy").format(new Date());
+        JLabel dateLabel = new JLabel("Hôm nay: " + today);
+        dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        dateLabel.setForeground(new Color(127, 140, 141));
+        dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        welcomePanel.add(dateLabel);
 
-        // Auto-load data when tab is selected
-        userTabbedPane.addChangeListener(e -> {
-            int selectedIndex = userTabbedPane.getSelectedIndex();
-            autoLoadTabData(selectedIndex, userTabbedPane);
-        });
+        panel.add(welcomePanel, BorderLayout.NORTH);
 
-        tabsCard.add(userTabbedPane, BorderLayout.CENTER);
+        // Quick action cards
+        JPanel cardsPanel = new JPanel(new GridLayout(2, 3, 20, 20));
+        cardsPanel.setOpaque(false);
+        cardsPanel.setBorder(new EmptyBorder(30, 0, 0, 0));
 
-        // Wrapper de khong dinh sat mep
-        JPanel centerWrapper = new JPanel(new BorderLayout());
-        centerWrapper.setBackground(new Color(248, 249, 250));
-        centerWrapper.setBorder(new EmptyBorder(10, 10, 0, 10));
-        centerWrapper.add(tabsCard, BorderLayout.CENTER);
+        cardsPanel.add(createQuickCard("Check-in", "Ghi nhận vào/ra phòng tập",
+                new Color(46, 204, 113), () -> showPanel("checkin")));
+        cardsPanel.add(createQuickCard("Nạp tiền", "Nạp thêm số dư vào thẻ",
+                new Color(241, 196, 15), () -> showPanel("topup")));
+        cardsPanel.add(createQuickCard("Gói tập", "Xem và đăng ký gói tập",
+                new Color(52, 152, 219), () -> showPanel("package")));
+        cardsPanel.add(createQuickCard("Dịch vụ", "Mua dịch vụ bổ sung",
+                new Color(155, 89, 182), () -> showPanel("services")));
+        cardsPanel.add(createQuickCard("Thống kê", "Xem lịch sử tập luyện",
+                new Color(230, 126, 34), () -> showPanel("statistics")));
+        cardsPanel.add(createQuickCard("Thông tin", "Cập nhật thông tin cá nhân",
+                new Color(149, 165, 166), () -> showPanel("info")));
 
-        panel.add(centerWrapper, BorderLayout.CENTER);
-
-        // Logout button (footer nho gon)
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 8));
-        bottomPanel.setBackground(new Color(248, 249, 250));
-        JButton logoutBtn = createModernButton("Dang xuat", new Color(149, 165, 166), 14);
-        logoutBtn.setPreferredSize(new Dimension(140, 36));
-        logoutBtn.addActionListener(e -> {
-            cardLayout.show(contentPanel, "login");
-            log("Da dang xuat");
-        });
-        bottomPanel.add(logoutBtn);
-
-        panel.add(bottomPanel, BorderLayout.SOUTH);
-
-        // Auto-load first tab data on login
-        SwingUtilities.invokeLater(() -> autoLoadTabData(0, userTabbedPane));
+        panel.add(cardsPanel, BorderLayout.CENTER);
 
         return panel;
     }
 
-    /**
-     * Tu dong load du lieu khi chuyen tab
-     */
-    private void autoLoadTabData(int tabIndex, JTabbedPane tabbedPane) {
-        try {
-            Component comp = tabbedPane.getComponentAt(tabIndex);
+    private JPanel createQuickCard(String title, String desc, Color color, Runnable onClick) {
+        JPanel card = new JPanel(new BorderLayout(10, 10));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(color, 2),
+                new EmptyBorder(25, 20, 25, 20)));
+        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-            // Goi refreshData() cho cac tab ho tro
-            if (comp instanceof TopUpTab) {
-                ((TopUpTab) comp).refreshData();
-            } else if (comp instanceof StatisticsTab) {
-                ((StatisticsTab) comp).refreshData();
-            } else if (comp instanceof CheckInTab) {
-                ((CheckInTab) comp).refreshData();
-            } else if (comp instanceof PackageTab) {
-                ((PackageTab) comp).refreshData();
-            } else if (comp instanceof ServicesTab) {
-                ((ServicesTab) comp).refreshData();
+        JPanel textPanel = new JPanel();
+        textPanel.setOpaque(false);
+        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        titleLabel.setForeground(color);
+        textPanel.add(titleLabel);
+
+        textPanel.add(Box.createVerticalStrut(8));
+
+        JLabel descLabel = new JLabel("<html>" + desc + "</html>");
+        descLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        descLabel.setForeground(new Color(127, 140, 141));
+        textPanel.add(descLabel);
+
+        card.add(textPanel, BorderLayout.CENTER);
+
+        card.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                onClick.run();
             }
 
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                card.setBackground(new Color(248, 249, 250));
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                card.setBackground(Color.WHITE);
+            }
+        });
+
+        return card;
+    }
+
+    private void showPanel(String name) {
+        contentCardLayout.show(contentPanel, name);
+        // Refresh data when showing
+        refreshCurrentPanel(name);
+    }
+
+    private void refreshCurrentPanel(String name) {
+        try {
+            switch (name) {
+                case "info":
+                    infoTab.refreshData();
+                    break;
+                case "topup":
+                    topUpTab.refreshData();
+                    break;
+                case "checkin":
+                    checkInTab.refreshData();
+                    break;
+                case "package":
+                    packageTab.refreshData();
+                    break;
+                case "services":
+                    servicesTab.refreshData();
+                    break;
+                case "statistics":
+                    statisticsTab.refreshData();
+                    break;
+            }
         } catch (Exception ex) {
-            log("LOI auto-load: " + ex.getMessage());
+            System.out.println("[UserPanel] Refresh error: " + ex.getMessage());
         }
     }
 
-    /**
-     * Refresh all tabs - goi khi chuyen tu Admin sang User panel
-     */
-    public void refreshAllTabs() {
-        try {
-            // Lay tab hien tai va refresh
-            if (userTabbedPane != null) {
-                int currentTab = userTabbedPane.getSelectedIndex();
-                if (currentTab >= 0) {
-                    autoLoadTabData(currentTab, userTabbedPane);
-                }
-            }
-            log("Da refresh du lieu cho tab hien tai");
-        } catch (Exception ex) {
-            log("LOI refresh all tabs: " + ex.getMessage());
-        }
-    }
-
-    /**
-     * Create modern rounded button
-     */
-    private JButton createModernButton(String text, Color bgColor, int fontSize) {
-        JButton button = new JButton(text) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                if (getModel().isPressed()) {
-                    g2d.setColor(bgColor.darker());
-                } else if (getModel().isRollover()) {
-                    g2d.setColor(bgColor.brighter());
-                } else {
-                    g2d.setColor(bgColor);
-                }
-
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
-                g2d.dispose();
-                super.paintComponent(g);
-            }
-        };
-        button.setFont(new Font("Segoe UI", Font.BOLD, fontSize));
+    private JButton createHeaderButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
         button.setForeground(Color.WHITE);
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
         button.setContentAreaFilled(false);
-        button.setOpaque(false);
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return button;
     }
 
-    /**
-     * Reset về màn hình login khi ngắt kết nối
-     */
-    public void resetToLogin() {
-        cardLayout.show(contentPanel, "login");
-        if (loginPanel != null) {
-            loginPanel.reset();
-        }
-        log("Đã reset về màn hình đăng nhập");
+    public void onLogin() {
+        showPanel("home");
+        sidebar.selectItem(0);
     }
 
-    /**
-     * Log message ra terminal
-     */
-    private void log(String message) {
-        String timestamp = new SimpleDateFormat("HH:mm:ss").format(new Date());
-        System.out.println(String.format("[%s] %s", timestamp, message));
+    public void refreshAllTabs() {
+        // Refresh current visible panel
+        refreshCurrentPanel("home");
     }
 }

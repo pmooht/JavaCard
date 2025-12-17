@@ -271,7 +271,8 @@ public class InfoTab extends BaseTabPanel {
                 String newDob = dobField.getText().trim();
                 String newPhone = phoneField.getText().trim();
                 String newAddr = addressArea.getText().trim();
-                if (newAddr.isEmpty()) newAddr = "";
+                if (newAddr.isEmpty())
+                    newAddr = "";
 
                 validateName(newName);
                 validateBirthDate(newDob);
@@ -431,6 +432,31 @@ public class InfoTab extends BaseTabPanel {
             log("[AVATAR] exception: " + e.getMessage());
             avatarLabel.setIcon(null);
             avatarLabel.setText("👤");
+        }
+    }
+
+    /**
+     * Public method to refresh member info from card
+     */
+    public void refreshData() {
+        try {
+            MemberInfo member = cardComm.getMemberInfo();
+
+            setAvatarToLabel(avatarLabel, member.avatarBytes);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("━━━━━━━━ THONG TIN CA NHAN ━━━━━━━━\n\n");
+            sb.append(String.format("Ho va ten   : %s\n\n", member.name));
+            sb.append(String.format("Ngay sinh   : %s\n\n", member.birthDate));
+            sb.append(String.format("SDT         : %s\n\n", member.phone));
+            sb.append(String.format("Dia chi     : %s\n", member.address));
+
+            infoArea.setText(sb.toString());
+            infoArea.setCaretPosition(0);
+
+            log("Da tai thong tin ca nhan tu the");
+        } catch (Exception ex) {
+            log("LOI tai thong tin: " + ex.getMessage());
         }
     }
 
