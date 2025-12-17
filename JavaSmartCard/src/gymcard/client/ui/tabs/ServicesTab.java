@@ -182,4 +182,11 @@ public class ServicesTab extends BaseTabPanel {
             servicesPanel.add(errorLabel);
         }
     }
+
+    /**
+     * Public method to refresh services from database on tab change
+     */
+    public void refreshData() {
+        loadServices();
+    }
 }

@@ -717,7 +717,7 @@ public class CardCommunicator {
         lastCheckIn.date = date;
         lastCheckIn.checkInTime = time;
         lastCheckIn.checkOutTime = "";
-        checkInCount++;
+        // So buoi khong tang o day - chi tang khi checkout xong
         lastCheckIn.count = checkInCount;
 
         // Ghi lên thẻ
@@ -740,18 +740,45 @@ public class CardCommunicator {
     }
 
     /**
-     * Check-out: ghi lên thẻ với FIELD_CHECKIN (plaintext)
+     * Check-out: ghi len the voi FIELD_CHECKIN (plaintext)
+     * Chi cho phep checkout neu da check-in va chua checkout trong ngay
      */
     public boolean checkOut(String time) throws Exception {
         if (!connected || !authenticated) {
-            throw new Exception("Chưa xác thực PIN");
+            throw new Exception("Chua xac thuc PIN");
         }
+
+        // Doc check-in tu the de kiem tra
+        getLastCheckIn();
+
+        // Kiem tra da check-in chua
+        if (lastCheckIn.date.isEmpty() || lastCheckIn.checkInTime.isEmpty()) {
+            throw new Exception("Ban chua check-in! Vui long check-in truoc.");
+        }
+
+        // Kiem tra xem co phai hom nay khong
+        String today = new java.text.SimpleDateFormat("dd/MM/yyyy").format(new java.util.Date());
+        if (!lastCheckIn.date.equals(today)) {
+            throw new Exception("Ban chua check-in hom nay! Check-in truoc khi checkout.");
+        }
+
+        // Kiem tra da checkout chua
+        if (!lastCheckIn.checkOutTime.isEmpty()) {
+            throw new Exception(
+                    "Ban da checkout hom nay luc " + lastCheckIn.checkOutTime + ". Moi ngay chi checkout 1 lan!");
+        }
+
         lastCheckIn.checkOutTime = time;
 
-        // Ghi lên thẻ
+        // Tang so buoi tap khi checkout hoan tat
+        checkInCount++;
+        lastCheckIn.count = checkInCount;
+
+        // Ghi len the
         boolean writtenToCard = writeCheckInToCard();
 
-        System.out.println("[" + (writtenToCard ? "CARD" : "RAM") + "] Checked out at " + time);
+        System.out.println("[" + (writtenToCard ? "CARD" : "RAM") + "] Checked out at " + time + ", total sessions = "
+                + checkInCount);
         return true;
     }
 
@@ -781,6 +808,7 @@ public class CardCommunicator {
                 if (parts.length >= 4) {
                     try {
                         lastCheckIn.count = Integer.parseInt(parts[3]);
+                        checkInCount = lastCheckIn.count; // Sync RAM voi the
                     } catch (NumberFormatException e) {
                         lastCheckIn.count = 0;
                     }

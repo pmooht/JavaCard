@@ -448,4 +448,16 @@ public class PackageTab extends BaseTabPanel {
         dialog.setContentPane(mainPanel);
         dialog.setVisible(true);
     }
+
+    /**
+     * Refresh data from database - reload all packages
+     */
+    public void refreshData() {
+        // Remove all components and rebuild UI
+        removeAll();
+        initUI();
+        revalidate();
+        repaint();
+        log("Da reload goi tap tu database");
+    }
 }

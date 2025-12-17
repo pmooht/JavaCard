@@ -26,6 +26,7 @@ public class UserPanel extends JPanel {
     // Tab references for cleanup
     private LoginPanel loginPanel;
     private InfoTab infoTab;
+    private JTabbedPane userTabbedPane;
 
     public UserPanel(CardCommunicator cardComm) {
         this.cardComm = cardComm;
@@ -74,9 +75,9 @@ public class UserPanel extends JPanel {
                 new EmptyBorder(10, 10, 5, 10)));
 
         // Tabbed pane
-        JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        tabbedPane.setBackground(new Color(248, 249, 250));
+        userTabbedPane = new JTabbedPane();
+        userTabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        userTabbedPane.setBackground(new Color(248, 249, 250));
 
         // Add tabs using separated tab classes
         infoTab = new InfoTab(cardComm);
@@ -85,21 +86,21 @@ public class UserPanel extends JPanel {
         PackageTab packageTab = new PackageTab(cardComm);
         StatisticsTab statisticsTab = new StatisticsTab(cardComm, purchasedServices);
 
-        tabbedPane.addTab("Thong tin ca nhan", infoTab);
-        tabbedPane.addTab("Goi tap", packageTab);
-        tabbedPane.addTab("Check-in/Check-out", checkInTab);
-        tabbedPane.addTab("Nap tien", topUpTab);
-        tabbedPane.addTab("Dich vu them", new ServicesTab(cardComm, purchasedServices));
-        tabbedPane.addTab("Thong ke", statisticsTab);
-        tabbedPane.addTab("Doi PIN", new ChangePinTab(cardComm));
+        userTabbedPane.addTab("Thong tin ca nhan", infoTab);
+        userTabbedPane.addTab("Goi tap", packageTab);
+        userTabbedPane.addTab("Check-in/Check-out", checkInTab);
+        userTabbedPane.addTab("Nap tien", topUpTab);
+        userTabbedPane.addTab("Dich vu them", new ServicesTab(cardComm, purchasedServices));
+        userTabbedPane.addTab("Thong ke", statisticsTab);
+        userTabbedPane.addTab("Doi PIN", new ChangePinTab(cardComm));
 
         // Auto-load data when tab is selected
-        tabbedPane.addChangeListener(e -> {
-            int selectedIndex = tabbedPane.getSelectedIndex();
-            autoLoadTabData(selectedIndex, tabbedPane);
+        userTabbedPane.addChangeListener(e -> {
+            int selectedIndex = userTabbedPane.getSelectedIndex();
+            autoLoadTabData(selectedIndex, userTabbedPane);
         });
 
-        tabsCard.add(tabbedPane, BorderLayout.CENTER);
+        tabsCard.add(userTabbedPane, BorderLayout.CENTER);
 
         // Wrapper de khong dinh sat mep
         JPanel centerWrapper = new JPanel(new BorderLayout());
@@ -123,7 +124,7 @@ public class UserPanel extends JPanel {
         panel.add(bottomPanel, BorderLayout.SOUTH);
 
         // Auto-load first tab data on login
-        SwingUtilities.invokeLater(() -> autoLoadTabData(0, tabbedPane));
+        SwingUtilities.invokeLater(() -> autoLoadTabData(0, userTabbedPane));
 
         return panel;
     }
@@ -142,10 +143,32 @@ public class UserPanel extends JPanel {
                 ((StatisticsTab) comp).refreshData();
             } else if (comp instanceof CheckInTab) {
                 ((CheckInTab) comp).refreshData();
+            } else if (comp instanceof PackageTab) {
+                ((PackageTab) comp).refreshData();
+            } else if (comp instanceof ServicesTab) {
+                ((ServicesTab) comp).refreshData();
             }
 
         } catch (Exception ex) {
             log("LOI auto-load: " + ex.getMessage());
+        }
+    }
+
+    /**
+     * Refresh all tabs - goi khi chuyen tu Admin sang User panel
+     */
+    public void refreshAllTabs() {
+        try {
+            // Lay tab hien tai va refresh
+            if (userTabbedPane != null) {
+                int currentTab = userTabbedPane.getSelectedIndex();
+                if (currentTab >= 0) {
+                    autoLoadTabData(currentTab, userTabbedPane);
+                }
+            }
+            log("Da refresh du lieu cho tab hien tai");
+        } catch (Exception ex) {
+            log("LOI refresh all tabs: " + ex.getMessage());
         }
     }
 

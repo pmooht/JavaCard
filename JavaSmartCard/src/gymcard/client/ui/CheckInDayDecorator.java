@@ -17,11 +17,11 @@ public class CheckInDayDecorator {
     private final Map<String, Boolean> checkInDates; // date -> hasCheckedOut
     private final SimpleDateFormat dateFormat;
 
-    // Colors
-    private static final Color COLOR_CHECKING_IN = new Color(233, 213, 255); // Light purple
-    private static final Color BORDER_CHECKING_IN = new Color(155, 89, 182); // Purple
-    private static final Color COLOR_COMPLETED = new Color(200, 230, 201); // Light green
-    private static final Color BORDER_COMPLETED = new Color(76, 175, 80); // Green
+    // Colors - XANH LA: dang trong phong tap, TIM: hoan thanh buoi tap
+    private static final Color COLOR_CHECKING_IN = new Color(200, 230, 201); // Light green - dang check-in
+    private static final Color BORDER_CHECKING_IN = new Color(76, 175, 80); // Green
+    private static final Color COLOR_COMPLETED = new Color(233, 213, 255); // Light purple - da checkout
+    private static final Color BORDER_COMPLETED = new Color(155, 89, 182); // Purple
 
     public CheckInDayDecorator(JCalendar calendar) {
         this.calendar = calendar;

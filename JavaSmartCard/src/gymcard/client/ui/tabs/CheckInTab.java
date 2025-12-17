@@ -121,12 +121,12 @@ public class CheckInTab extends BaseTabPanel {
                     CheckInInfo info = cardComm.getLastCheckIn();
                     int count = cardComm.getCheckInCount();
 
-                    countLabel.setText("So ngay da tap: " + count + " ngay");
+                    countLabel.setText("So buoi da tap: " + count + " buoi");
                     lastLabel.setText(String.format(
                             "<html>Lan tap gan nhat:<br>%s<br>Vao: %s | Ra: %s</html>",
                             info.date, info.checkInTime, info.checkOutTime));
 
-                    decorator.addCheckInDate(date); // Purple - chua checkout
+                    decorator.addCheckInDate(date); // Green - dang trong phong tap
                     currentCheckInDate = date; // Luu lai de biet khi checkout
 
                     JOptionPane.showMessageDialog(this,
@@ -158,11 +158,15 @@ public class CheckInTab extends BaseTabPanel {
                             "<html>Lan tap gan nhat:<br>%s<br>Vao: %s | Ra: %s</html>",
                             info.date, info.checkInTime, info.checkOutTime));
 
-                    // Chuyen sang mau xanh khi checkout xong
+                    // Chuyen sang mau tim khi checkout xong (hoan thanh buoi tap)
                     if (currentCheckInDate != null) {
                         decorator.markDateCheckedOut(currentCheckInDate);
                         currentCheckInDate = null;
                     }
+
+                    // Cap nhat so buoi tap
+                    int count = cardComm.getCheckInCount();
+                    countLabel.setText("So buoi da tap: " + count + " buoi");
 
                     JOptionPane.showMessageDialog(this,
                             "Check-out thanh cong!\nHen gap lai!",
@@ -196,7 +200,7 @@ public class CheckInTab extends BaseTabPanel {
     public void refreshData() {
         try {
             int count = cardComm.getCheckInCount();
-            countLabel.setText("So ngay da tap: " + count + " ngay");
+            countLabel.setText("So buoi da tap: " + count + " buoi");
 
             CheckInInfo info = cardComm.getLastCheckIn();
             if (info != null && !info.date.isEmpty()) {
