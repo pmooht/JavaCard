@@ -132,19 +132,55 @@ public class LoginPanel extends BaseTabPanel {
                 return;
             }
 
-            if (cardComm.verifyPin(pin)) {
+            // Sử dụng xác thực kết hợp PIN + RSA
+            CardCommunicator.AuthResult authResult = cardComm.verifyPinWithCardAuth(pin);
+
+            if (!authResult.pinVerified) {
+                // PIN sai
+                tries = cardComm.getPinTries();
+                triesLabel.setText("Sai PIN! Còn " + tries + " lần thử");
+                pinField.setText("");
+                return;
+            }
+
+            // PIN đúng, kiểm tra RSA
+            if (authResult.rsaVerified) {
+                // Xác thực đầy đủ: PIN + RSA đều OK
+                System.out.println("[LOGIN] [OK] Full authentication: PIN + RSA verified for " + authResult.cardId);
+                pinField.setText("");
+                triesLabel.setText(" ");
+                if (onLoginSuccess != null) {
+                    onLoginSuccess.run();
+                }
+            } else if (authResult.rsaSkipped) {
+                // RSA bị bỏ qua (thẻ chưa đăng ký trong DB hoặc chưa có CardID)
+                System.out.println("[LOGIN] PIN OK, RSA skipped (card not registered in DB)");
                 pinField.setText("");
                 triesLabel.setText(" ");
                 if (onLoginSuccess != null) {
                     onLoginSuccess.run();
                 }
             } else {
-                tries = cardComm.getPinTries();
-                triesLabel.setText("Sai PIN! Còn " + tries + " lần thử");
+                // PIN đúng nhưng RSA thất bại - KHÔNG CHO ĐĂNG NHẬP!
+                System.out.println("[LOGIN] [BLOCKED] PIN OK but RSA FAILED! CardID: " + authResult.cardId);
+
                 pinField.setText("");
+                triesLabel.setText("Xác thực thẻ thất bại!");
+
+                JOptionPane.showMessageDialog(this,
+                        "XÁC THỰC THẺ THẤT BẠI!\n\n" +
+                                "Mã PIN đúng, nhưng thẻ không vượt qua xác thực RSA.\n\n" +
+                                "Nguyên nhân có thể:\n" +
+                                "• Thẻ bị sao chép (clone)\n" +
+                                "• Thẻ không hợp lệ\n" +
+                                "• Thẻ bị thay đổi trái phép\n\n" +
+                                "Vui lòng liên hệ quản trị viên để được hỗ trợ.",
+                        "Xác thực thẻ thất bại",
+                        JOptionPane.ERROR_MESSAGE);
             }
 
         } catch (Exception ex) {
+            ex.printStackTrace();
             JOptionPane.showMessageDialog(this,
                     "Lỗi xác thực: " + ex.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);

@@ -60,13 +60,13 @@ public class UserPanel extends JPanel {
     }
 
     /**
-     * Panel chính sau khi đăng nhập
+     * Panel chinh sau khi dang nhap
      */
     private JPanel createMainPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(248, 249, 250));
 
-        // Card trắng chứa tab
+        // Card trang chua tab
         JPanel tabsCard = new JPanel(new BorderLayout());
         tabsCard.setBackground(Color.WHITE);
         tabsCard.setBorder(BorderFactory.createCompoundBorder(
@@ -80,17 +80,28 @@ public class UserPanel extends JPanel {
 
         // Add tabs using separated tab classes
         infoTab = new InfoTab(cardComm);
-        tabbedPane.addTab("Thông tin cá nhân", infoTab);
-        tabbedPane.addTab("Gói tập", new PackageTab(cardComm));
-        tabbedPane.addTab("Check-in/Check-out", new CheckInTab(cardComm));
-        tabbedPane.addTab("Nạp tiền", new TopUpTab(cardComm));
-        tabbedPane.addTab("Dịch vụ thêm", new ServicesTab(cardComm, purchasedServices));
-        tabbedPane.addTab("Thống kê", new StatisticsTab(cardComm, purchasedServices));
-        tabbedPane.addTab("Đổi PIN", new ChangePinTab(cardComm));
+        TopUpTab topUpTab = new TopUpTab(cardComm);
+        CheckInTab checkInTab = new CheckInTab(cardComm);
+        PackageTab packageTab = new PackageTab(cardComm);
+        StatisticsTab statisticsTab = new StatisticsTab(cardComm, purchasedServices);
+
+        tabbedPane.addTab("Thong tin ca nhan", infoTab);
+        tabbedPane.addTab("Goi tap", packageTab);
+        tabbedPane.addTab("Check-in/Check-out", checkInTab);
+        tabbedPane.addTab("Nap tien", topUpTab);
+        tabbedPane.addTab("Dich vu them", new ServicesTab(cardComm, purchasedServices));
+        tabbedPane.addTab("Thong ke", statisticsTab);
+        tabbedPane.addTab("Doi PIN", new ChangePinTab(cardComm));
+
+        // Auto-load data when tab is selected
+        tabbedPane.addChangeListener(e -> {
+            int selectedIndex = tabbedPane.getSelectedIndex();
+            autoLoadTabData(selectedIndex, tabbedPane);
+        });
 
         tabsCard.add(tabbedPane, BorderLayout.CENTER);
 
-        // Wrapper để không dính sát mép
+        // Wrapper de khong dinh sat mep
         JPanel centerWrapper = new JPanel(new BorderLayout());
         centerWrapper.setBackground(new Color(248, 249, 250));
         centerWrapper.setBorder(new EmptyBorder(10, 10, 0, 10));
@@ -98,20 +109,44 @@ public class UserPanel extends JPanel {
 
         panel.add(centerWrapper, BorderLayout.CENTER);
 
-        // Logout button (footer nhỏ gọn)
+        // Logout button (footer nho gon)
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 8));
         bottomPanel.setBackground(new Color(248, 249, 250));
-        JButton logoutBtn = createModernButton("Đăng xuất", new Color(149, 165, 166), 14);
+        JButton logoutBtn = createModernButton("Dang xuat", new Color(149, 165, 166), 14);
         logoutBtn.setPreferredSize(new Dimension(140, 36));
         logoutBtn.addActionListener(e -> {
             cardLayout.show(contentPanel, "login");
-            log("Đã đăng xuất");
+            log("Da dang xuat");
         });
         bottomPanel.add(logoutBtn);
 
         panel.add(bottomPanel, BorderLayout.SOUTH);
 
+        // Auto-load first tab data on login
+        SwingUtilities.invokeLater(() -> autoLoadTabData(0, tabbedPane));
+
         return panel;
+    }
+
+    /**
+     * Tu dong load du lieu khi chuyen tab
+     */
+    private void autoLoadTabData(int tabIndex, JTabbedPane tabbedPane) {
+        try {
+            Component comp = tabbedPane.getComponentAt(tabIndex);
+
+            // Goi refreshData() cho cac tab ho tro
+            if (comp instanceof TopUpTab) {
+                ((TopUpTab) comp).refreshData();
+            } else if (comp instanceof StatisticsTab) {
+                ((StatisticsTab) comp).refreshData();
+            } else if (comp instanceof CheckInTab) {
+                ((CheckInTab) comp).refreshData();
+            }
+
+        } catch (Exception ex) {
+            log("LOI auto-load: " + ex.getMessage());
+        }
     }
 
     /**

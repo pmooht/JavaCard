@@ -117,28 +117,29 @@ public class ServicesTab extends BaseTabPanel {
                 buyBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
                 final String svcName = svc.name;
-                final short svcPrice = (short) priceK;
+                final long svcPrice = (long) svc.price; // VND
 
                 buyBtn.addActionListener(e -> {
                     try {
-                        short currentBalance = cardComm.getBalance();
+                        long currentBalance = cardComm.getBalance();
                         if (currentBalance < svcPrice) {
                             JOptionPane.showMessageDialog(this,
-                                    "Không đủ tiền!\n\nSố dư: " + String.format("%,d", currentBalance * 1000)
-                                            + " VNĐ\nCần: " + String.format("%,d", svcPrice * 1000) + " VNĐ",
-                                    "Không đủ tiền", JOptionPane.WARNING_MESSAGE);
+                                    "Khong du tien!\n\nSo du: " + String.format("%,d", currentBalance)
+                                            + " VND\nCan: " + String.format("%,d", svcPrice) + " VND",
+                                    "Khong du tien", JOptionPane.WARNING_MESSAGE);
                             return;
                         }
                         if (cardComm.deductBalance(svcPrice)) {
-                            short newBalance = cardComm.getBalance();
+                            long newBalance = cardComm.getBalance();
                             String time = new SimpleDateFormat("HH:mm dd/MM").format(new Date());
-                            purchasedServices.add(svcName + " - " + svcPrice + "k (" + time + ")");
-                            log("Đã mua dịch vụ: " + svcName + " - " + svcPrice + "k");
+                            purchasedServices
+                                    .add(svcName + " - " + String.format("%,d", svcPrice) + " VND (" + time + ")");
+                            log("Da mua dich vu: " + svcName + " - " + String.format("%,d", svcPrice) + " VND");
                             JOptionPane.showMessageDialog(this,
-                                    "Mua dịch vụ thành công!\n\nDịch vụ: " + svcName + "\nGiá: "
-                                            + String.format("%,d", svcPrice * 1000) + " VNĐ\nSố dư còn: "
-                                            + String.format("%,d", newBalance * 1000) + " VNĐ",
-                                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                                    "Mua dich vu thanh cong!\n\nDich vu: " + svcName + "\nGia: "
+                                            + String.format("%,d", svcPrice) + " VND\nSo du con: "
+                                            + String.format("%,d", newBalance) + " VND",
+                                    "Thanh cong", JOptionPane.INFORMATION_MESSAGE);
                         } else {
                             JOptionPane.showMessageDialog(this, "Mua dịch vụ thất bại!", "Lỗi",
                                     JOptionPane.ERROR_MESSAGE);

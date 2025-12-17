@@ -2,6 +2,12 @@ package gymcard.client;
 
 import gymcard.CardManager.CardIdGenerator;
 import gymcard.CardManager.CardManager;
+import gymcard.Crypto.RSAKeyUtils;
+import gymcard.databaseManager.DatabaseManager;
+
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.interfaces.RSAPublicKey;
 
 /**
  * Card Communicator - Nói chuyện với thẻ JavaCard thật
@@ -10,12 +16,15 @@ import gymcard.CardManager.CardManager;
  */
 public class CardCommunicator {
 
-    // Giới hạn kích thước field (phải khớp với applet)
+    // Gioi han kich thuoc field (phai khop voi applet)
     private static final int NAME_MAX_LEN = 64;
     private static final int DOB_MAX_LEN = 16;
     private static final int PHONE_MAX_LEN = 16;
     private static final int ADDRESS_MAX_LEN = 128;
-    private static final int AVATAR_MAX_LEN = 4096; // khớp AVATAR_LEN trên thẻ
+    private static final int AVATAR_MAX_LEN = 4096; // khop AVATAR_LEN tren the
+
+    // Gioi han so du toi da (8 bytes long) - 999,999,999 VND (khoang 1 ty)
+    public static final long MAX_BALANCE = 999_999_999_999L; // 999 ty dong
 
     // Trạng thái kết nối & xác thực
     private boolean connected;
@@ -28,7 +37,7 @@ public class CardCommunicator {
     private MemberInfo memberInfo;
     private PackageInfo packageInfo;
     private CheckInInfo lastCheckIn;
-    private short balance;
+    private long balance;
     private int checkInCount;
     private final TransactionInfo[] transactions;
     private int transactionCount;
@@ -37,7 +46,7 @@ public class CardCommunicator {
         connected = false;
         authenticated = false;
 
-        balance = 0;
+        balance = 0L;
         checkInCount = 0;
         transactions = new TransactionInfo[10];
         transactionCount = 0;
@@ -174,6 +183,77 @@ public class CardCommunicator {
     }
 
     /**
+     * Verify PIN + Xác thực thẻ bằng RSA (nếu có public key trong DB).
+     * 
+     * Luồng:
+     * 1. Verify PIN với thẻ
+     * 2. Nếu PIN đúng, đọc CardID từ thẻ (không dùng phone vì có thể thay đổi)
+     * 3. Thực hiện RSA challenge-response để xác thực thẻ
+     * 
+     * @param pin Mã PIN 6 chữ số
+     * @return AuthResult chứa kết quả PIN và RSA
+     */
+    public AuthResult verifyPinWithCardAuth(String pin) throws Exception {
+        AuthResult result = new AuthResult();
+
+        // Bước 1: Verify PIN
+        result.pinVerified = verifyPin(pin);
+        if (!result.pinVerified) {
+            return result;
+        }
+
+        // Bước 2: Đọc CardID từ thẻ để tra cứu public key
+        // Sử dụng FIELD_CARDID thay vì FIELD_PHONE vì CardID không thể thay đổi
+        try {
+            byte[] cardIdBytes = cardManager.readField(CardManager.FIELD_CARDID);
+            if (cardIdBytes != null && cardIdBytes.length > 0) {
+                result.cardId = new String(cardIdBytes, "UTF-8").trim();
+            }
+        } catch (Exception e) {
+            System.out.println("[AUTH] Could not read CardID from card: " + e.getMessage());
+        }
+
+        // Nếu không có cardId, skip RSA auth
+        if (result.cardId == null || result.cardId.isEmpty()) {
+            System.out.println("[AUTH] No CardID found, skipping RSA authentication");
+            result.rsaSkipped = true;
+            return result;
+        }
+
+        // Bước 3: Xác thực RSA
+        try {
+            result.rsaVerified = authenticateCard(result.cardId);
+        } catch (Exception e) {
+            System.out.println("[AUTH] RSA authentication error: " + e.getMessage());
+            result.rsaError = e.getMessage();
+            result.rsaVerified = false;
+        }
+
+        return result;
+    }
+
+    /**
+     * Kết quả xác thực kết hợp PIN + RSA
+     */
+    public static class AuthResult {
+        public boolean pinVerified = false;
+        public boolean rsaVerified = false;
+        public boolean rsaSkipped = false;
+        public String cardId = null;
+        public String rsaError = null;
+
+        public boolean isFullyAuthenticated() {
+            return pinVerified && (rsaVerified || rsaSkipped);
+        }
+
+        @Override
+        public String toString() {
+            return "AuthResult{pin=" + pinVerified + ", rsa=" + rsaVerified +
+                    ", skipped=" + rsaSkipped + ", cardId=" + cardId + "}";
+        }
+    }
+
+    /**
      * Đổi PIN: old -> new (INS_CHANGE_PIN)
      */
     public boolean changePin(String oldPin, String newPin) throws Exception {
@@ -249,6 +329,121 @@ public class CardCommunicator {
             return true;
         } catch (RuntimeException ex) {
             System.out.println("[CARD] Admin reset member PIN FAIL: " + ex.getMessage());
+            return false;
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // RSA CARD AUTHENTICATION
+    // ---------------------------------------------------------------------
+
+    /**
+     * Lấy RSA public key của thẻ (dạng RSAPublicKey object).
+     */
+    public RSAPublicKey getCardPublicKey() throws Exception {
+        if (!connected)
+            throw new Exception("Chưa kết nối thẻ");
+
+        byte[] modulus = cardManager.getCardPublicKeyModulus();
+        System.out.println("[CARD] Got card public key modulus: " + modulus.length + " bytes");
+
+        return RSAKeyUtils.importFromModulus(modulus);
+    }
+
+    /**
+     * Lấy RSA public key modulus dạng byte[] (để lưu vào DB).
+     */
+    public byte[] getCardPublicKeyModulus() throws Exception {
+        if (!connected)
+            throw new Exception("Chưa kết nối thẻ");
+
+        return cardManager.getCardPublicKeyModulus();
+    }
+
+    /**
+     * Lưu card public key vào database.
+     * 
+     * @param userCode Mã người dùng (thường là số điện thoại hoặc CardID)
+     * @return ID của user trong DB, hoặc -1 nếu thất bại
+     */
+    public long saveCardPublicKeyToDb(String userCode) throws Exception {
+        if (!connected)
+            throw new Exception("Chưa kết nối thẻ");
+
+        byte[] modulus = cardManager.getCardPublicKeyModulus();
+
+        DatabaseManager db = DatabaseManager.getInstance();
+
+        // Kiểm tra user đã tồn tại chưa
+        if (db.userExists(userCode)) {
+            System.out.println("[CARD] User " + userCode + " already exists in DB, skipping insert");
+            return 0; // Already exists
+        }
+
+        long userId = db.insertUser(userCode, modulus);
+        System.out.println("[CARD] Saved card public key to DB for user: " + userCode + ", userId=" + userId);
+        return userId;
+    }
+
+    /**
+     * Xác thực thẻ bằng challenge-response RSA.
+     * 
+     * Luồng:
+     * 1. Lấy stored public key từ DB theo userCode
+     * 2. Sinh challenge ngẫu nhiên
+     * 3. Gửi challenge xuống thẻ để ký
+     * 4. Verify signature bằng stored public key
+     * 
+     * @param userCode Mã người dùng để tra cứu public key trong DB
+     * @return true nếu thẻ authentic, false nếu thẻ giả hoặc không khớp
+     */
+    public boolean authenticateCard(String userCode) throws Exception {
+        if (!connected)
+            throw new Exception("Chưa kết nối thẻ");
+
+        // 1. Lấy stored public key từ DB
+        DatabaseManager db = DatabaseManager.getInstance();
+        byte[] storedModulus = db.getCardPublicKeyBytes(userCode);
+
+        if (storedModulus == null) {
+            System.out.println("[AUTH] No stored public key found for user: " + userCode);
+            return false;
+        }
+
+        RSAPublicKey storedPubKey = RSAKeyUtils.importFromModulus(storedModulus);
+        System.out.println("[AUTH] Loaded stored public key for user: " + userCode);
+
+        // 2. Sinh challenge ngẫu nhiên (32 bytes)
+        byte[] challenge = new byte[32];
+        new SecureRandom().nextBytes(challenge);
+        System.out.println("[AUTH] Generated challenge: " + challenge.length + " bytes");
+
+        // 3. Gửi challenge xuống thẻ để ký
+        byte[] signature;
+        try {
+            signature = cardManager.signChallenge(challenge);
+            System.out.println("[AUTH] Received signature: " + signature.length + " bytes");
+        } catch (Exception e) {
+            System.out.println("[AUTH] Card failed to sign challenge: " + e.getMessage());
+            return false;
+        }
+
+        // 4. Verify signature bằng stored public key
+        try {
+            Signature sig = Signature.getInstance("SHA1withRSA");
+            sig.initVerify(storedPubKey);
+            sig.update(challenge);
+            boolean valid = sig.verify(signature);
+
+            if (valid) {
+                System.out.println("[AUTH] [OK] Card authenticated successfully!");
+            } else {
+                System.out.println("[AUTH] [FAIL] Signature verification failed - card may be fake!");
+            }
+
+            return valid;
+        } catch (Exception e) {
+            System.out.println("[AUTH] Error verifying signature: " + e.getMessage());
             return false;
         }
     }
@@ -598,24 +793,27 @@ public class CardCommunicator {
     }
 
     /**
-     * Đọc số dư từ thẻ (FIELD_BALANCE có mã hóa AES)
+     * Doc so du tu the (FIELD_BALANCE: 8 bytes long, ma hoa AES)
      */
-    public short getBalance() throws Exception {
+    public long getBalance() throws Exception {
         if (!connected || !authenticated) {
-            throw new Exception("Chưa xác thực PIN");
+            throw new Exception("Chua xac thuc PIN");
         }
-        // Thử đọc từ thẻ (applet sẽ tự decrypt nếu field này được mã hóa)
+        // Thu doc tu the (applet se tu decrypt)
         try {
             byte[] data = cardManager.readField(CardManager.FIELD_BALANCE);
-            if (data != null && data.length >= 2) {
-                short cardBalance = (short) (((data[0] & 0xFF) << 8) | (data[1] & 0xFF));
-                // Kiểm tra giá trị hợp lệ (0 <= balance <= 10000 nghìn = 10 triệu VNĐ)
-                if (cardBalance >= 0 && cardBalance <= 10000) {
+            if (data != null && data.length >= 8) {
+                // Doc 8 bytes big-endian thanh long
+                long cardBalance = 0;
+                for (int i = 0; i < 8; i++) {
+                    cardBalance = (cardBalance << 8) | (data[i] & 0xFF);
+                }
+                // Kiem tra gia tri hop le
+                if (cardBalance >= 0 && cardBalance <= MAX_BALANCE) {
                     balance = cardBalance;
-                    System.out.println("[CARD] Read balance from card: " + balance + "k");
+                    System.out.println("[CARD] Read balance from card: " + balance + " VND");
                 } else {
-                    System.out.println(
-                            "[CARD] Invalid balance from card: " + cardBalance + "k, using RAM: " + balance + "k");
+                    System.out.println("[CARD] Invalid balance from card: " + cardBalance + ", using RAM: " + balance);
                 }
             }
         } catch (Exception e) {
@@ -625,62 +823,93 @@ public class CardCommunicator {
     }
 
     /**
-     * Nạp tiền - ghi lên thẻ (FIELD_BALANCE có mã hóa AES)
+     * Nap tien - ghi len the (FIELD_BALANCE: 8 bytes long, ma hoa AES)
+     * 
+     * @param amount So tien nap (VND)
+     * @return true neu thanh cong, false neu that bai (vuot qua max)
      */
-    public boolean addBalance(short amount) throws Exception {
+    public boolean addBalance(long amount) throws Exception {
         if (!connected || !authenticated) {
-            throw new Exception("Chưa xác thực PIN");
+            throw new Exception("Chua xac thuc PIN");
+        }
+        if (amount <= 0) {
+            throw new Exception("So tien nap phai lon hon 0");
         }
 
-        // Đọc số dư hiện tại
+        // Doc so du hien tai
         getBalance();
-        balance += amount;
 
-        // Ghi lên thẻ
+        // Kiem tra neu tong so tien vuot qua MAX_BALANCE
+        long newBalance = balance + amount;
+        if (newBalance > MAX_BALANCE) {
+            System.out.println(
+                    "[CARD] Balance overflow! current=" + balance + ", add=" + amount + ", max=" + MAX_BALANCE);
+            throw new Exception("So tien nap qua lon! Tong so du se vuot qua gioi han " + MAX_BALANCE + " VND");
+        }
+
+        balance = newBalance;
+
+        // Ghi len the
         boolean writtenToCard = writeBalanceToCard();
 
-        recordTransaction((byte) 1, amount);
-        System.out.println("[" + (writtenToCard ? "CARD" : "RAM") + "] Add balance: " + amount + "k, new=" + balance);
+        recordTransaction((byte) 1, (short) (amount / 1000)); // log theo don vi 1000 VND
+        System.out
+                .println("[" + (writtenToCard ? "CARD" : "RAM") + "] Add balance: " + amount + " VND, new=" + balance);
         return true;
     }
 
     /**
-     * Trừ tiền - ghi lên thẻ (FIELD_BALANCE có mã hóa AES)
+     * Tru tien - ghi len the (FIELD_BALANCE: 8 bytes long, ma hoa AES)
+     * 
+     * @param amount So tien tru (VND)
+     * @return true neu thanh cong, false neu khong du so du
      */
-    public boolean deductBalance(short amount) throws Exception {
+    public boolean deductBalance(long amount) throws Exception {
         if (!connected || !authenticated) {
-            throw new Exception("Chưa xác thực PIN");
+            throw new Exception("Chua xac thuc PIN");
+        }
+        if (amount <= 0) {
+            throw new Exception("So tien tru phai lon hon 0");
         }
 
-        // Đọc số dư hiện tại
+        // Doc so du hien tai
         getBalance();
 
         if (balance < amount) {
-            System.out.println("[CARD] Not enough balance");
+            System.out.println("[CARD] Not enough balance: " + balance + " < " + amount);
             return false;
         }
 
         balance -= amount;
 
-        // Ghi lên thẻ
+        // Ghi len the
         boolean writtenToCard = writeBalanceToCard();
 
-        recordTransaction((byte) 2, amount);
-        System.out
-                .println("[" + (writtenToCard ? "CARD" : "RAM") + "] Deduct balance: " + amount + "k, new=" + balance);
+        recordTransaction((byte) 2, (short) (amount / 1000)); // log theo don vi 1000 VND
+        System.out.println(
+                "[" + (writtenToCard ? "CARD" : "RAM") + "] Deduct balance: " + amount + " VND, new=" + balance);
         return true;
     }
 
     /**
-     * Ghi số dư lên thẻ (2 bytes big-endian, applet sẽ tự mã hóa)
+     * Ghi so du len the (8 bytes big-endian, applet se tu ma hoa)
      */
     private boolean writeBalanceToCard() {
         try {
-            byte[] data = new byte[2];
-            data[0] = (byte) ((balance >> 8) & 0xFF);
-            data[1] = (byte) (balance & 0xFF);
+            byte[] data = new byte[8];
+            // Chuyen long thanh 8 bytes big-endian
+            for (int i = 7; i >= 0; i--) {
+                data[i] = (byte) (balance & 0xFF);
+                balance >>= 8;
+            }
+            // Khoi phuc balance (vi da shift)
+            balance = 0;
+            for (int i = 0; i < 8; i++) {
+                balance = (balance << 8) | (data[i] & 0xFF);
+            }
+
             cardManager.writeField(CardManager.FIELD_BALANCE, data);
-            System.out.println("[CARD] Wrote balance to card: " + balance + "k");
+            System.out.println("[CARD] Wrote balance to card: " + balance + " VND");
             return true;
         } catch (Exception e) {
             System.out.println("[WARN] Could not write balance to card: " + e.getMessage());

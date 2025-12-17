@@ -348,6 +348,63 @@ public class RegistrationTab extends BaseTabPanel {
                         "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
                 return;
             }
+
+            // Validate: Cho phep chu cai (Tieng Viet co dau), so va khoang trang
+            // Regex: \p{L} = Unicode letter (bao gom tieng Viet), \s = khoang trang
+            if (!name.matches("[\\p{L}0-9\\s]+")) {
+                JOptionPane.showMessageDialog(this,
+                        "Ho ten chi duoc chua chu cai (bao gom tieng Viet), so va khoang trang.\nKhong duoc chua ky tu dac biet!",
+                        "Ho ten khong hop le", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validate phone: Chỉ số, 10-11 chữ số
+            if (!phone.matches("[0-9]{10,11}")) {
+                JOptionPane.showMessageDialog(this,
+                        "Số điện thoại phải gồm 10-11 chữ số (0-9).\nKhông được chứa ký tự khác!",
+                        "Số điện thoại không hợp lệ", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validate address: Cho phep chu (tieng Viet), so, khoang trang, dau phay, dau
+            // cham
+            if (!address.isEmpty() && !address.matches("[\\p{L}0-9\\s,./]+")) {
+                JOptionPane.showMessageDialog(this,
+                        "Dia chi chi duoc chua chu cai (bao gom tieng Viet), so, khoang trang va dau (,./)\nKhong duoc chua ky tu dac biet khac!",
+                        "Dia chi khong hop le", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validate birth date format: D/M/YYYY or DD/MM/YYYY (1 or 2 digits for
+            // day/month)
+            if (!birthDate.matches("\\d{1,2}/\\d{1,2}/\\d{4}")) {
+                JOptionPane.showMessageDialog(this,
+                        "Ngay sinh phai dung dinh dang D/M/YYYY hoac DD/MM/YYYY\nVi du: 7/2/1990 hoac 15/06/1990",
+                        "Ngay sinh khong hop le", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validate birth date: Parse and check not in future
+            try {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("d/M/yyyy");
+                sdf.setLenient(false); // Strict parsing
+                java.util.Date birthDateParsed = sdf.parse(birthDate);
+                java.util.Date today = new java.util.Date();
+
+                if (birthDateParsed.after(today)) {
+                    JOptionPane.showMessageDialog(this,
+                            "Ngay sinh khong duoc vuot qua ngay hien tai!",
+                            "Ngay sinh khong hop le", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } catch (java.text.ParseException e) {
+                JOptionPane.showMessageDialog(this,
+                        "Ngay sinh khong hop le!\nVui long nhap dung dinh dang D/M/YYYY\nVi du: 7/2/1990 hoac 15/06/1990",
+                        "Ngay sinh khong hop le", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validate PIN
             if (!pin.matches("\\d{6}")) {
                 JOptionPane.showMessageDialog(this,
                         "Mã PIN phải gồm đúng 6 chữ số (0-9)!",
@@ -361,7 +418,8 @@ public class RegistrationTab extends BaseTabPanel {
                 return;
             }
 
-            String cardId = phone;
+            // Sinh CardID unique (GYM000001, GYM000002, ...)
+            String cardId = gymcard.CardManager.CardIdGenerator.nextId();
             log("Đang khởi tạo thẻ (INIT_CARD) với CardID = " + cardId + " ...");
             cardComm.initNewCard(cardId, pin);
             log("Khởi tạo thẻ thành công.");
@@ -396,6 +454,22 @@ public class RegistrationTab extends BaseTabPanel {
                 return;
             }
 
+            // Lưu card public key vào database để xác thực RSA sau này
+            log("Đang lưu RSA public key của thẻ vào database...");
+            try {
+                long userId = cardComm.saveCardPublicKeyToDb(cardId);
+                if (userId > 0) {
+                    log("Đã lưu public key vào DB thành công (userId=" + userId + ")");
+                } else if (userId == 0) {
+                    log("User đã tồn tại trong DB, bỏ qua lưu public key.");
+                } else {
+                    log("Lưu public key thất bại!");
+                }
+            } catch (Exception pubKeyEx) {
+                log("Cảnh báo: Không thể lưu public key vào DB: " + pubKeyEx.getMessage());
+                // Tiếp tục vì đây không phải lỗi nghiêm trọng
+            }
+
             log("Đăng ký hội viên & khởi tạo thẻ thành công!");
             JOptionPane.showMessageDialog(this,
                     "Đăng ký hội viên mới và khởi tạo thẻ thành công!\n\n" +
@@ -403,7 +477,8 @@ public class RegistrationTab extends BaseTabPanel {
                             "Mã thẻ (CardID): " + cardId + "\n" +
                             "Mã PIN: " + pin + "\n\n" +
                             "• CardID dùng để quản lý trong hệ thống.\n" +
-                            "• PIN dùng để hội viên check-in và bảo vệ dữ liệu trên thẻ.\n",
+                            "• PIN dùng để hội viên check-in và bảo vệ dữ liệu trên thẻ.\n" +
+                            "• RSA public key đã được lưu để xác thực thẻ.\n",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
             clearForm();

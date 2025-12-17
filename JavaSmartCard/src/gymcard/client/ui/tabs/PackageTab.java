@@ -320,14 +320,14 @@ public class PackageTab extends BaseTabPanel {
         row++;
         gbcContent.gridx = 0;
         gbcContent.gridy = row;
-        contentPanel.add(new JLabel("Số dư hiện tại:"), gbcContent);
+        contentPanel.add(new JLabel("So du hien tai:"), gbcContent);
         gbcContent.gridx = 1;
-        short currentBalance = 0;
+        long currentBalance = 0;
         try {
             currentBalance = cardComm.getBalance();
         } catch (Exception ex) {
         }
-        JLabel balanceLabel = new JLabel(String.format("%,d VNĐ", currentBalance * 1000));
+        JLabel balanceLabel = new JLabel(String.format("%,d VND", currentBalance));
         balanceLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         contentPanel.add(balanceLabel, gbcContent);
 
@@ -354,8 +354,8 @@ public class PackageTab extends BaseTabPanel {
         buttonPanel.setBackground(Color.WHITE);
 
         double priceToDeduct = finalPrice;
-        short priceInK = (short) (priceToDeduct / 1000);
-        final short finalBalance = currentBalance;
+        long priceInVND = (long) priceToDeduct;
+        final long finalBalance = currentBalance;
 
         JButton confirmBtn = new JButton("Xác nhận thanh toán");
         confirmBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -386,14 +386,14 @@ public class PackageTab extends BaseTabPanel {
                     return;
                 }
 
-                if (finalBalance < priceInK) {
+                if (finalBalance < priceInVND) {
                     JOptionPane.showMessageDialog(dialog,
-                            "Số dư không đủ! Vui lòng nạp thêm tiền.",
-                            "Không đủ tiền", JOptionPane.WARNING_MESSAGE);
+                            "So du khong du! Vui long nap them tien.",
+                            "Khong du tien", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
 
-                if (cardComm.deductBalance(priceInK)) {
+                if (cardComm.deductBalance(priceInVND)) {
                     byte packageType = 1;
                     if (plan.code.startsWith("SESSION")) {
                         packageType = 2;
@@ -420,14 +420,14 @@ public class PackageTab extends BaseTabPanel {
                     }
                     currentPackageLabel.setText(pkgInfo);
 
-                    short newBalance = cardComm.getBalance();
-                    balanceLabel.setText(String.format("%,d VNĐ", newBalance * 1000));
+                    long newBalance = cardComm.getBalance();
+                    balanceLabel.setText(String.format("%,d VND", newBalance));
 
-                    log("Đã mua thành công: " + plan.name + " - " + String.format("%,.0f", priceToDeduct) + " VNĐ");
+                    log("Da mua thanh cong: " + plan.name + " - " + String.format("%,.0f", priceToDeduct) + " VND");
                     JOptionPane.showMessageDialog(dialog,
-                            "Mua gói thành công!\n" + plan.name + "\nSố dư còn lại: "
-                                    + String.format("%,d VNĐ", newBalance * 1000),
-                            "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                            "Mua goi thanh cong!\n" + plan.name + "\nSo du con lai: "
+                                    + String.format("%,d VND", newBalance),
+                            "Thanh cong", JOptionPane.INFORMATION_MESSAGE);
                     dialog.dispose();
                 }
             } catch (Exception ex) {

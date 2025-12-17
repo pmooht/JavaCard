@@ -14,9 +14,15 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 /**
- * Tab check-in/check-out với lịch
+ * Tab check-in/check-out voi lich
  */
 public class CheckInTab extends BaseTabPanel {
+
+    // Fields for labels that need to be updated
+    private JLabel countLabel;
+    private JLabel lastLabel;
+    private CheckInDayDecorator decorator;
+    private String currentCheckInDate; // Track today's check-in
 
     public CheckInTab(CardCommunicator cardComm) {
         super(cardComm);
@@ -28,7 +34,7 @@ public class CheckInTab extends BaseTabPanel {
         setBorder(new EmptyBorder(10, 10, 10, 10));
         setBackground(new Color(248, 249, 250));
 
-        JLabel titleLabel = new JLabel("LỊCH TẬP GYM & CHECK-IN");
+        JLabel titleLabel = new JLabel("LICH TAP GYM & CHECK-IN");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLabel.setForeground(new Color(52, 73, 94));
         titleLabel.setHorizontalAlignment(SwingConstants.LEFT);
@@ -55,21 +61,8 @@ public class CheckInTab extends BaseTabPanel {
 
         leftPanel.add(calendar, BorderLayout.CENTER);
 
-        // Decorator & demo data
-        CheckInDayDecorator decorator = new CheckInDayDecorator(calendar);
-        Map<String, String[]> checkInTimes = new HashMap<>();
-        checkInTimes.put("02/11/2025", new String[] { "08:00:00", "10:30:00" });
-        checkInTimes.put("04/11/2025", new String[] { "07:45:00", "09:15:00" });
-        checkInTimes.put("06/11/2025", new String[] { "18:30:00", "20:00:00" });
-        checkInTimes.put("09/11/2025", new String[] { "08:15:00", "10:45:00" });
-        checkInTimes.put("11/11/2025", new String[] { "19:00:00", "21:00:00" });
-        checkInTimes.put("16/11/2025", new String[] { "08:30:00", "10:00:00" });
-        checkInTimes.put("18/11/2025", new String[] { "07:30:00", "09:30:00" });
-        checkInTimes.put("23/11/2025", new String[] { "17:45:00", "19:45:00" });
-        checkInTimes.put("25/11/2025", new String[] { "08:00:00", "10:15:00" });
-        checkInTimes.put("28/11/2025", new String[] { "18:00:00", "20:30:00" });
-
-        decorator.addCheckInDates(checkInTimes.keySet());
+        // Decorator
+        decorator = new CheckInDayDecorator(calendar);
         decorator.install();
 
         mainPanel.add(leftPanel, BorderLayout.CENTER);
@@ -85,16 +78,16 @@ public class CheckInTab extends BaseTabPanel {
                 BorderFactory.createLineBorder(new Color(52, 152, 219), 2, true),
                 new EmptyBorder(15, 15, 15, 15)));
 
-        JLabel statsTitle = new JLabel("THỐNG KÊ");
+        JLabel statsTitle = new JLabel("THONG KE");
         statsTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
         statsTitle.setForeground(new Color(52, 73, 94));
         statsPanel.add(statsTitle);
 
-        JLabel countLabel = new JLabel("Số ngày đã tập: 10 ngày");
+        countLabel = new JLabel("So ngay da tap: 0 ngay");
         countLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         statsPanel.add(countLabel);
 
-        JLabel lastLabel = new JLabel("<html>Click vào ngày check-in<br>để xem chi tiết giờ vào - ra</html>");
+        lastLabel = new JLabel("<html>Click vao ngay check-in<br>de xem chi tiet gio vao - ra</html>");
         lastLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
         lastLabel.setForeground(new Color(127, 140, 141));
         statsPanel.add(lastLabel);
@@ -102,19 +95,11 @@ public class CheckInTab extends BaseTabPanel {
         calendar.getDayChooser().addPropertyChangeListener("day", evt -> {
             java.util.Calendar selectedCal = calendar.getCalendar();
             String selectedDate = new SimpleDateFormat("dd/MM/yyyy").format(selectedCal.getTime());
-            if (checkInTimes.containsKey(selectedDate)) {
-                String[] times = checkInTimes.get(selectedDate);
-                lastLabel.setText(String.format(
-                        "<html>Ngày: %s<br>Vào: %s | Ra: %s</html>",
-                        selectedDate, times[0], times[1]));
-                lastLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-                lastLabel.setForeground(new Color(52, 73, 94));
-                log("Xem chi tiết: " + selectedDate + " - " + times[0] + " -> " + times[1]);
-            } else {
-                lastLabel.setText("<html>Click vào ngày check-in<br>để xem chi tiết giờ vào - ra</html>");
-                lastLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-                lastLabel.setForeground(new Color(127, 140, 141));
-            }
+            // Hien thi ngay duoc chon
+            lastLabel.setText("<html>Ngay duoc chon:<br>" + selectedDate + "</html>");
+            lastLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            lastLabel.setForeground(new Color(52, 73, 94));
+            log("Chon ngay: " + selectedDate);
         });
 
         rightPanel.add(statsPanel, BorderLayout.NORTH);
@@ -131,30 +116,31 @@ public class CheckInTab extends BaseTabPanel {
                 String time = new SimpleDateFormat("HH:mm:ss").format(new Date());
 
                 if (cardComm.checkIn(date, time)) {
-                    log("Check-in thành công!");
+                    log("Check-in thanh cong!");
 
                     CheckInInfo info = cardComm.getLastCheckIn();
                     int count = cardComm.getCheckInCount();
 
-                    countLabel.setText("Số ngày đã tập: " + count + " ngày");
+                    countLabel.setText("So ngay da tap: " + count + " ngay");
                     lastLabel.setText(String.format(
-                            "<html>Lần tập gần nhất:<br>%s<br>Vào: %s | Ra: %s</html>",
+                            "<html>Lan tap gan nhat:<br>%s<br>Vao: %s | Ra: %s</html>",
                             info.date, info.checkInTime, info.checkOutTime));
 
-                    decorator.addCheckInDate(date);
+                    decorator.addCheckInDate(date); // Purple - chua checkout
+                    currentCheckInDate = date; // Luu lai de biet khi checkout
 
                     JOptionPane.showMessageDialog(this,
-                            "Check-in thành công!\nChúc bạn buổi tập tốt!",
-                            "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                            "Check-in thanh cong!\nChuc ban buoi tap tot!",
+                            "Thanh cong", JOptionPane.INFORMATION_MESSAGE);
                 } else {
-                    log("Check-in thất bại");
+                    log("Check-in that bai");
                 }
 
             } catch (Exception ex) {
-                log("LỖI: " + ex.getMessage());
+                log("LOI: " + ex.getMessage());
                 JOptionPane.showMessageDialog(this,
-                        "Lỗi check-in: " + ex.getMessage(),
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        "Loi check-in: " + ex.getMessage(),
+                        "Loi", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -165,25 +151,31 @@ public class CheckInTab extends BaseTabPanel {
                 String time = new SimpleDateFormat("HH:mm:ss").format(new Date());
 
                 if (cardComm.checkOut(time)) {
-                    log("Check-out thành công!");
+                    log("Check-out thanh cong!");
 
                     CheckInInfo info = cardComm.getLastCheckIn();
                     lastLabel.setText(String.format(
-                            "<html>Lần tập gần nhất:<br>%s<br>Vào: %s | Ra: %s</html>",
+                            "<html>Lan tap gan nhat:<br>%s<br>Vao: %s | Ra: %s</html>",
                             info.date, info.checkInTime, info.checkOutTime));
 
+                    // Chuyen sang mau xanh khi checkout xong
+                    if (currentCheckInDate != null) {
+                        decorator.markDateCheckedOut(currentCheckInDate);
+                        currentCheckInDate = null;
+                    }
+
                     JOptionPane.showMessageDialog(this,
-                            "Check-out thành công!\nHẹn gặp lại!",
-                            "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                            "Check-out thanh cong!\nHen gap lai!",
+                            "Thanh cong", JOptionPane.INFORMATION_MESSAGE);
                 } else {
-                    log("Check-out thất bại");
+                    log("Check-out that bai");
                 }
 
             } catch (Exception ex) {
-                log("LỖI: " + ex.getMessage());
+                log("LOI: " + ex.getMessage());
                 JOptionPane.showMessageDialog(this,
-                        "Lỗi check-out: " + ex.getMessage(),
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        "Loi check-out: " + ex.getMessage(),
+                        "Loi", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -196,5 +188,39 @@ public class CheckInTab extends BaseTabPanel {
         mainPanel.add(rightPanel, BorderLayout.EAST);
 
         add(mainPanel, BorderLayout.CENTER);
+    }
+
+    /**
+     * Public method to refresh check-in data (called by UserPanel on tab change)
+     */
+    public void refreshData() {
+        try {
+            int count = cardComm.getCheckInCount();
+            countLabel.setText("So ngay da tap: " + count + " ngay");
+
+            CheckInInfo info = cardComm.getLastCheckIn();
+            if (info != null && !info.date.isEmpty()) {
+                lastLabel.setText(String.format(
+                        "<html>Lan tap gan nhat:<br>%s<br>Vao: %s | Ra: %s</html>",
+                        info.date, info.checkInTime, info.checkOutTime));
+                lastLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                lastLabel.setForeground(new Color(52, 73, 94));
+
+                // Hien thi mau cho ngay check-in gan nhat
+                if (info.checkOutTime != null && !info.checkOutTime.isEmpty()
+                        && !info.checkOutTime.equals("--:--:--")) {
+                    // Da checkout - xanh
+                    decorator.addCompletedDate(info.date);
+                } else {
+                    // Chua checkout - tim
+                    decorator.addCheckInDate(info.date);
+                    currentCheckInDate = info.date;
+                }
+            }
+            log("Da tai thong tin check-in tu the");
+
+        } catch (Exception ex) {
+            log("LOI tai check-in: " + ex.getMessage());
+        }
     }
 }

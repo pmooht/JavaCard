@@ -356,6 +356,54 @@ public class DatabaseManager {
         return insertUser(userCode, base64Key);
     }
 
+    /**
+     * Lấy card public key (Base64) theo user code.
+     * 
+     * @return Base64 string của public key, hoặc null nếu không tìm thấy
+     */
+    public String getCardPublicKey(String userCode) throws SQLException {
+        String sql = "SELECT card_public_key FROM users WHERE user_code = ? AND status = 'ACTIVE'";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, userCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("card_public_key");
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Lấy card public key dạng byte[] theo user code.
+     * 
+     * @return byte[] của public key (decoded từ Base64), hoặc null nếu không tìm
+     *         thấy
+     */
+    public byte[] getCardPublicKeyBytes(String userCode) throws SQLException {
+        String base64 = getCardPublicKey(userCode);
+        if (base64 == null || base64.isEmpty()) {
+            return null;
+        }
+        return Base64.getDecoder().decode(base64);
+    }
+
+    /**
+     * Kiểm tra user đã tồn tại chưa.
+     */
+    public boolean userExists(String userCode) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM users WHERE user_code = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, userCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+        return false;
+    }
+
     // ===== Package Management methods =====
 
     /**

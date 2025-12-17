@@ -24,6 +24,12 @@ public class CardManager {
     private static final byte INS_READ_PERSONAL = (byte) 0x31;
     private static final byte INS_GET_TRIES = (byte) 0x32;
 
+    // ===== RSA AUTHENTICATION =====
+    private static final byte INS_GET_CARD_PUB = (byte) 0x40;
+    private static final byte INS_SIGN_CHALLENGE = (byte) 0x41;
+    private static final int RSA_MOD_LEN = 128; // 1024-bit RSA modulus
+    private static final int RSA_CHUNK_SIZE = 64; // Chunk size for reading public key
+
     // ===== AVATAR CHUNK (T=0 SAFE) =====
     private static final byte INS_AVATAR_BEGIN = (byte) 0x50;
     private static final byte INS_AVATAR_CHUNK = (byte) 0x51;
@@ -235,5 +241,52 @@ public class CardManager {
         CommandAPDU cmd = new CommandAPDU(CLA, INS_UNLOCK, 0x00, 0x00, bytes);
         ResponseAPDU resp = channel.transmit(cmd);
         checkStatus(resp, "UNLOCK");
+    }
+
+    // ===================================================
+    // RSA AUTHENTICATION
+    // ===================================================
+
+    /**
+     * Get card RSA public key modulus (128 bytes for RSA-1024).
+     * Reads in chunks of 64 bytes each.
+     */
+    public byte[] getCardPublicKeyModulus() throws Exception {
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+
+        for (int offset = 0; offset < RSA_MOD_LEN; offset += RSA_CHUNK_SIZE) {
+            byte p1 = (byte) ((offset >> 8) & 0xFF);
+            byte p2 = (byte) (offset & 0xFF);
+
+            // Request chunk with Le = expected chunk size
+            int remaining = RSA_MOD_LEN - offset;
+            int chunkLen = Math.min(RSA_CHUNK_SIZE, remaining);
+
+            CommandAPDU cmd = new CommandAPDU(CLA, INS_GET_CARD_PUB, p1, p2, chunkLen);
+            ResponseAPDU resp = channel.transmit(cmd);
+            checkStatus(resp, "GET_CARD_PUB");
+
+            baos.write(resp.getData());
+        }
+
+        return baos.toByteArray();
+    }
+
+    /**
+     * Sign a challenge with the card's RSA private key.
+     * 
+     * @param challenge Random bytes to sign (typically 16-32 bytes)
+     * @return Signature (128 bytes for RSA-1024)
+     */
+    public byte[] signChallenge(byte[] challenge) throws Exception {
+        if (challenge == null || challenge.length == 0) {
+            throw new IllegalArgumentException("Challenge cannot be empty");
+        }
+
+        CommandAPDU cmd = new CommandAPDU(CLA, INS_SIGN_CHALLENGE, 0x00, 0x00, challenge);
+        ResponseAPDU resp = channel.transmit(cmd);
+        checkStatus(resp, "SIGN_CHALLENGE");
+
+        return resp.getData();
     }
 }
