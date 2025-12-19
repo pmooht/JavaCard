@@ -102,12 +102,17 @@ public class GymCardApp extends JFrame {
         if (result == JOptionPane.OK_OPTION) {
             String pin = new String(pinField.getPassword());
             try {
-                if (cardComm.verifyPin(pin)) {
-                    mainCardLayout.show(mainContentPanel, "user");
-                    userPanel.onLogin();
-                } else {
-                    // Get remaining tries after failed attempt
+                System.out.println("[LOGIN] === BAT DAU DANG NHAP USER ===");
+                System.out.println("[LOGIN] Dang goi verifyPinWithCardAuth...");
+
+                CardCommunicator.AuthResult authResult = cardComm.verifyPinWithCardAuth(pin);
+
+                System.out.println("[LOGIN] Ket qua: " + authResult);
+
+                if (!authResult.pinVerified) {
+                    // PIN sai
                     int triesLeft = cardComm.getPinTries();
+                    System.out.println("[LOGIN] PIN SAI! Con " + triesLeft + " lan thu");
 
                     if (triesLeft == 0) {
                         JOptionPane.showMessageDialog(this,
@@ -123,8 +128,27 @@ public class GymCardApp extends JFrame {
                                         (triesLeft == 1 ? "CẢNH BÁO: Thẻ sẽ bị khóa nếu nhập sai thêm 1 lần!" : ""),
                                 "Lỗi xác thực", JOptionPane.WARNING_MESSAGE);
                     }
+                } else if (authResult.rsaVerified || authResult.rsaSkipped) {
+                    // PIN dung + RSA OK hoac skip
+                    System.out.println("[LOGIN] THANH CONG! Vao trang User...");
+                    mainCardLayout.show(mainContentPanel, "user");
+                    userPanel.onLogin();
+                } else {
+                    // PIN dung nhung RSA FAIL - THE GIA MAO!
+                    System.out.println("[LOGIN] !!! CANH BAO: RSA THAT BAI - THE CO THE GIA MAO !!!");
+                    JOptionPane.showMessageDialog(this,
+                            "XÁC THỰC THẺ THẤT BẠI!\n\n" +
+                                    "Mã PIN đúng, nhưng thẻ không vượt qua xác thực RSA.\n\n" +
+                                    "Nguyên nhân có thể:\n" +
+                                    "• Thẻ bị sao chép (clone)\n" +
+                                    "• Thẻ không hợp lệ\n" +
+                                    "• Thẻ bị thay đổi trái phép\n\n" +
+                                    "Vui lòng liên hệ quản trị viên để được hỗ trợ.",
+                            "Xác thực thẻ thất bại", JOptionPane.ERROR_MESSAGE);
                 }
             } catch (Exception ex) {
+                System.out.println("[LOGIN] LOI: " + ex.getMessage());
+                ex.printStackTrace();
                 JOptionPane.showMessageDialog(this,
                         "Lỗi xác thực: " + ex.getMessage(),
                         "Lỗi", JOptionPane.ERROR_MESSAGE);

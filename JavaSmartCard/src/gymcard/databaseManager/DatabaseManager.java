@@ -404,6 +404,24 @@ public class DatabaseManager {
         return false;
     }
 
+    /**
+     * Cập nhật public key của user (dùng khi re-register với thẻ mới).
+     * 
+     * @param userCode           Mã user
+     * @param cardPublicKeyBytes Public key modulus mới
+     * @return true nếu update thành công
+     */
+    public boolean updateCardPublicKey(String userCode, byte[] cardPublicKeyBytes) throws SQLException {
+        String base64Key = Base64.getEncoder().encodeToString(cardPublicKeyBytes);
+        String sql = "UPDATE users SET card_public_key = ? WHERE user_code = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, base64Key);
+            ps.setString(2, userCode);
+            int rows = ps.executeUpdate();
+            return rows > 0;
+        }
+    }
+
     // ===== Package Management methods =====
 
     /**

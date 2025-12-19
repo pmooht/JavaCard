@@ -146,7 +146,11 @@ public class UserPanel extends JPanel {
     private JPanel createHomePanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(248, 249, 250));
-        panel.setBorder(new EmptyBorder(30, 30, 30, 30));
+        panel.setBorder(new EmptyBorder(25, 30, 25, 30));
+
+        // Top section with welcome + dark mode toggle
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setOpaque(false);
 
         // Welcome message
         JPanel welcomePanel = new JPanel();
@@ -159,77 +163,132 @@ public class UserPanel extends JPanel {
         welcomeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         welcomePanel.add(welcomeLabel);
 
-        welcomePanel.add(Box.createVerticalStrut(10));
+        welcomePanel.add(Box.createVerticalStrut(8));
 
         String today = new SimpleDateFormat("EEEE, dd/MM/yyyy").format(new Date());
-        JLabel dateLabel = new JLabel("Hôm nay: " + today);
-        dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        JLabel dateLabel = new JLabel("📅 Hôm nay: " + today);
+        dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         dateLabel.setForeground(new Color(127, 140, 141));
         dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         welcomePanel.add(dateLabel);
 
-        panel.add(welcomePanel, BorderLayout.NORTH);
+        topPanel.add(welcomePanel, BorderLayout.WEST);
+        panel.add(topPanel, BorderLayout.NORTH);
 
-        // Quick action cards
-        JPanel cardsPanel = new JPanel(new GridLayout(2, 3, 20, 20));
+        // Quick action cards - 2 rows x 3 columns
+        JPanel cardsPanel = new JPanel(new GridLayout(2, 3, 18, 18));
         cardsPanel.setOpaque(false);
-        cardsPanel.setBorder(new EmptyBorder(30, 0, 0, 0));
+        cardsPanel.setBorder(new EmptyBorder(25, 0, 0, 0));
 
-        cardsPanel.add(createQuickCard("Check-in", "Ghi nhận vào/ra phòng tập",
-                new Color(46, 204, 113), () -> showPanel("checkin")));
-        cardsPanel.add(createQuickCard("Nạp tiền", "Nạp thêm số dư vào thẻ",
-                new Color(241, 196, 15), () -> showPanel("topup")));
-        cardsPanel.add(createQuickCard("Gói tập", "Xem và đăng ký gói tập",
-                new Color(52, 152, 219), () -> showPanel("package")));
-        cardsPanel.add(createQuickCard("Dịch vụ", "Mua dịch vụ bổ sung",
-                new Color(155, 89, 182), () -> showPanel("services")));
-        cardsPanel.add(createQuickCard("Thống kê", "Xem lịch sử tập luyện",
-                new Color(230, 126, 34), () -> showPanel("statistics")));
-        cardsPanel.add(createQuickCard("Thông tin", "Cập nhật thông tin cá nhân",
-                new Color(149, 165, 166), () -> showPanel("info")));
+        // Row 1
+        cardsPanel.add(createQuickCard("Check-in", "Ghi nhận vào/ra phòng tập nhanh chóng qua thẻ hoặc mã QR.",
+                "🎯", new Color(138, 97, 218), () -> showPanel("checkin")));
+        cardsPanel.add(createQuickCard("Nạp tiền", "Nạp thêm số dư vào thẻ hội viên để sử dụng dịch vụ.",
+                "💳", new Color(243, 156, 18), () -> showPanel("topup")));
+        cardsPanel.add(createQuickCard("Gói tập", "Xem thông tin gói hiện tại và đăng ký gia hạn gói tập.",
+                "📋", new Color(52, 152, 219), () -> showPanel("package")));
+
+        // Row 2
+        cardsPanel.add(createQuickCard("Dịch vụ", "Mua dịch vụ bổ sung như khăn, tủ đồ, nước uống.",
+                "💎", new Color(46, 204, 113), () -> showPanel("services")));
+        cardsPanel.add(createQuickCard("Thống kê", "Xem lịch sử tập luyện và tần suất đến phòng tập.",
+                "📊", new Color(231, 76, 60), () -> showPanel("statistics")));
+        cardsPanel.add(createQuickCard("Thông tin", "Cập nhật thông tin cá nhân và cài đặt tài khoản.",
+                "👥", new Color(149, 165, 166), () -> showPanel("info")));
 
         panel.add(cardsPanel, BorderLayout.CENTER);
+
+        // Footer
+        JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        footerPanel.setOpaque(false);
+        footerPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
+        JLabel footerLabel = new JLabel("© SmartCard Gym System. Designed for Member Experience.");
+        footerLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        footerLabel.setForeground(new Color(160, 170, 180));
+        footerPanel.add(footerLabel);
+        panel.add(footerPanel, BorderLayout.SOUTH);
 
         return panel;
     }
 
-    private JPanel createQuickCard(String title, String desc, Color color, Runnable onClick) {
-        JPanel card = new JPanel(new BorderLayout(10, 10));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(color, 2),
-                new EmptyBorder(25, 20, 25, 20)));
+    private JPanel createQuickCard(String title, String desc, String icon, Color iconColor, Runnable onClick) {
+        JPanel card = new JPanel(new BorderLayout(15, 0)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(Color.WHITE);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+                // Subtle shadow effect
+                g2d.setColor(new Color(0, 0, 0, 10));
+                g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
+            }
+        };
+        card.setOpaque(false);
+        card.setBorder(new EmptyBorder(20, 20, 20, 15));
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
+        // Left side - Icon with colored background
+        JPanel iconPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                // Light background tint
+                g2d.setColor(new Color(iconColor.getRed(), iconColor.getGreen(), iconColor.getBlue(), 30));
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+            }
+        };
+        iconPanel.setOpaque(false);
+        iconPanel.setPreferredSize(new Dimension(55, 55));
+        iconPanel.setLayout(new GridBagLayout());
+
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+        iconPanel.add(iconLabel);
+
+        card.add(iconPanel, BorderLayout.WEST);
+
+        // Center - Title and description
         JPanel textPanel = new JPanel();
         textPanel.setOpaque(false);
         textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
 
         JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        titleLabel.setForeground(color);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        titleLabel.setForeground(new Color(44, 62, 80));
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         textPanel.add(titleLabel);
 
-        textPanel.add(Box.createVerticalStrut(8));
+        textPanel.add(Box.createVerticalStrut(6));
 
-        JLabel descLabel = new JLabel("<html>" + desc + "</html>");
-        descLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        JLabel descLabel = new JLabel("<html><div style='width:130px'>" + desc + "</div></html>");
+        descLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         descLabel.setForeground(new Color(127, 140, 141));
+        descLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         textPanel.add(descLabel);
 
         card.add(textPanel, BorderLayout.CENTER);
 
+        // Right - Arrow
+        JLabel arrowLabel = new JLabel("→");
+        arrowLabel.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        arrowLabel.setForeground(new Color(180, 190, 200));
+        card.add(arrowLabel, BorderLayout.EAST);
+
         card.addMouseListener(new java.awt.event.MouseAdapter() {
+            private Color originalBg = Color.WHITE;
+
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 onClick.run();
             }
 
             public void mouseEntered(java.awt.event.MouseEvent e) {
-                card.setBackground(new Color(248, 249, 250));
+                card.repaint();
             }
 
             public void mouseExited(java.awt.event.MouseEvent e) {
-                card.setBackground(Color.WHITE);
+                card.repaint();
             }
         });
 

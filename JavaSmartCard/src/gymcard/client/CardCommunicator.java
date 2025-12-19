@@ -194,40 +194,62 @@ public class CardCommunicator {
      * @return AuthResult chứa kết quả PIN và RSA
      */
     public AuthResult verifyPinWithCardAuth(String pin) throws Exception {
+        System.out.println("============================================");
+        System.out.println("[AUTH] === BAT DAU XAC THUC PIN + RSA ===");
+        System.out.println("============================================");
+
         AuthResult result = new AuthResult();
 
         // Bước 1: Verify PIN
+        System.out.println("[AUTH] Buoc 1: Dang xac thuc PIN...");
         result.pinVerified = verifyPin(pin);
+        System.out.println("[AUTH] Buoc 1: Ket qua PIN = " + (result.pinVerified ? "THANH CONG" : "THAT BAI"));
+
         if (!result.pinVerified) {
+            System.out.println("[AUTH] PIN sai - Dung xac thuc.");
             return result;
         }
 
         // Bước 2: Đọc CardID từ thẻ để tra cứu public key
-        // Sử dụng FIELD_CARDID thay vì FIELD_PHONE vì CardID không thể thay đổi
+        System.out.println("[AUTH] Buoc 2: Dang doc CardID tu the...");
         try {
             byte[] cardIdBytes = cardManager.readField(CardManager.FIELD_CARDID);
             if (cardIdBytes != null && cardIdBytes.length > 0) {
                 result.cardId = new String(cardIdBytes, "UTF-8").trim();
+                System.out.println("[AUTH] Buoc 2: Da doc duoc CardID = '" + result.cardId + "'");
+            } else {
+                System.out.println("[AUTH] Buoc 2: CardID rong hoac null");
             }
         } catch (Exception e) {
-            System.out.println("[AUTH] Could not read CardID from card: " + e.getMessage());
+            System.out.println("[AUTH] Buoc 2: LOI doc CardID: " + e.getMessage());
         }
 
         // Nếu không có cardId, skip RSA auth
         if (result.cardId == null || result.cardId.isEmpty()) {
-            System.out.println("[AUTH] No CardID found, skipping RSA authentication");
+            System.out.println("[AUTH] Khong co CardID => BO QUA xac thuc RSA");
+            System.out.println("[AUTH] (The chua duoc dang ky trong he thong)");
             result.rsaSkipped = true;
+            System.out.println("[AUTH] === KET THUC: PIN OK, RSA SKIPPED ===");
             return result;
         }
 
         // Bước 3: Xác thực RSA
+        System.out.println("[AUTH] Buoc 3: Bat dau xac thuc RSA cho CardID = " + result.cardId);
         try {
             result.rsaVerified = authenticateCard(result.cardId);
+            System.out.println("[AUTH] Buoc 3: Ket qua RSA = " + (result.rsaVerified ? "THANH CONG" : "THAT BAI"));
         } catch (Exception e) {
-            System.out.println("[AUTH] RSA authentication error: " + e.getMessage());
+            System.out.println("[AUTH] Buoc 3: LOI RSA: " + e.getMessage());
             result.rsaError = e.getMessage();
             result.rsaVerified = false;
         }
+
+        System.out.println("============================================");
+        System.out.println("[AUTH] === KET THUC XAC THUC ===");
+        System.out.println("[AUTH] PIN: " + (result.pinVerified ? "OK" : "FAIL"));
+        System.out.println("[AUTH] RSA: " + (result.rsaVerified ? "OK" : (result.rsaSkipped ? "SKIPPED" : "FAIL")));
+        System.out.println("[AUTH] CardID: " + result.cardId);
+        System.out.println("============================================");
 
         return result;
     }
@@ -362,9 +384,11 @@ public class CardCommunicator {
 
     /**
      * Lưu card public key vào database.
+     * Nếu user đã tồn tại, UPDATE public key mới (fix issue: RSA key phải được cập
+     * nhật khi re-register).
      * 
      * @param userCode Mã người dùng (thường là số điện thoại hoặc CardID)
-     * @return ID của user trong DB, hoặc -1 nếu thất bại
+     * @return ID của user trong DB, hoặc 0 nếu đã update
      */
     public long saveCardPublicKeyToDb(String userCode) throws Exception {
         if (!connected)
@@ -374,14 +398,20 @@ public class CardCommunicator {
 
         DatabaseManager db = DatabaseManager.getInstance();
 
-        // Kiểm tra user đã tồn tại chưa
+        // Kiểm tra user đã tồn tại chưa - nếu có thì UPDATE public key thay vì skip
         if (db.userExists(userCode)) {
-            System.out.println("[CARD] User " + userCode + " already exists in DB, skipping insert");
-            return 0; // Already exists
+            System.out.println("[CARD] User " + userCode + " already exists, UPDATING public key...");
+            boolean updated = db.updateCardPublicKey(userCode, modulus);
+            if (updated) {
+                System.out.println("[CARD] Public key UPDATED for user: " + userCode);
+            } else {
+                System.out.println("[CARD] WARNING: Failed to update public key for user: " + userCode);
+            }
+            return 0; // Already exists, updated
         }
 
         long userId = db.insertUser(userCode, modulus);
-        System.out.println("[CARD] Saved card public key to DB for user: " + userCode + ", userId=" + userId);
+        System.out.println("[CARD] Saved NEW card public key to DB for user: " + userCode + ", userId=" + userId);
         return userId;
     }
 
@@ -398,52 +428,70 @@ public class CardCommunicator {
      * @return true nếu thẻ authentic, false nếu thẻ giả hoặc không khớp
      */
     public boolean authenticateCard(String userCode) throws Exception {
-        if (!connected)
-            throw new Exception("Chưa kết nối thẻ");
+        System.out.println("--------------------------------------------");
+        System.out.println("[RSA] === BAT DAU XAC THUC RSA ===");
+        System.out.println("[RSA] CardID/UserCode: " + userCode);
+        System.out.println("--------------------------------------------");
+
+        if (!connected) {
+            System.out.println("[RSA] LOI: Chua ket noi the!");
+            throw new Exception("Chua ket noi the");
+        }
 
         // 1. Lấy stored public key từ DB
+        System.out.println("[RSA] Buoc 1: Lay public key tu database...");
         DatabaseManager db = DatabaseManager.getInstance();
         byte[] storedModulus = db.getCardPublicKeyBytes(userCode);
 
         if (storedModulus == null) {
-            System.out.println("[AUTH] No stored public key found for user: " + userCode);
+            System.out.println("[RSA] Buoc 1: KHONG TIM THAY public key trong DB!");
+            System.out.println("[RSA] => The chua duoc dang ky hoac CardID sai");
             return false;
         }
+        System.out.println("[RSA] Buoc 1: Da tim thay public key (" + storedModulus.length + " bytes)");
 
         RSAPublicKey storedPubKey = RSAKeyUtils.importFromModulus(storedModulus);
-        System.out.println("[AUTH] Loaded stored public key for user: " + userCode);
+        System.out.println("[RSA] Buoc 1: Da import thanh cong RSA PublicKey");
 
         // 2. Sinh challenge ngẫu nhiên (32 bytes)
+        System.out.println("[RSA] Buoc 2: Tao challenge ngau nhien...");
         byte[] challenge = new byte[32];
         new SecureRandom().nextBytes(challenge);
-        System.out.println("[AUTH] Generated challenge: " + challenge.length + " bytes");
+        System.out.println("[RSA] Buoc 2: Da tao challenge " + challenge.length + " bytes");
 
         // 3. Gửi challenge xuống thẻ để ký
+        System.out.println("[RSA] Buoc 3: Gui challenge xuong the de ky...");
         byte[] signature;
         try {
             signature = cardManager.signChallenge(challenge);
-            System.out.println("[AUTH] Received signature: " + signature.length + " bytes");
+            System.out.println("[RSA] Buoc 3: The da ky thanh cong! Signature: " + signature.length + " bytes");
         } catch (Exception e) {
-            System.out.println("[AUTH] Card failed to sign challenge: " + e.getMessage());
+            System.out.println("[RSA] Buoc 3: LOI - The khong ky duoc challenge!");
+            System.out.println("[RSA] Chi tiet loi: " + e.getMessage());
             return false;
         }
 
         // 4. Verify signature bằng stored public key
+        System.out.println("[RSA] Buoc 4: Verify signature bang public key tu DB...");
         try {
             Signature sig = Signature.getInstance("SHA1withRSA");
             sig.initVerify(storedPubKey);
             sig.update(challenge);
             boolean valid = sig.verify(signature);
 
+            System.out.println("--------------------------------------------");
             if (valid) {
-                System.out.println("[AUTH] [OK] Card authenticated successfully!");
+                System.out.println("[RSA] *** KET QUA: XAC THUC THANH CONG ***");
+                System.out.println("[RSA] The la CHINH CHU - Signature hop le!");
             } else {
-                System.out.println("[AUTH] [FAIL] Signature verification failed - card may be fake!");
+                System.out.println("[RSA] !!! KET QUA: XAC THUC THAT BAI !!!");
+                System.out.println("[RSA] The co the la GIA MAO - Signature sai!");
             }
+            System.out.println("--------------------------------------------");
 
             return valid;
         } catch (Exception e) {
-            System.out.println("[AUTH] Error verifying signature: " + e.getMessage());
+            System.out.println("[RSA] Buoc 4: LOI verify signature: " + e.getMessage());
             return false;
         }
     }
