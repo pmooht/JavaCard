@@ -277,6 +277,8 @@ public class CardCommunicator {
 
     /**
      * Đổi PIN: old -> new (INS_CHANGE_PIN)
+     * Sau khi đổi PIN thành công, cập nhật public key trong DB để xác thực RSA vẫn
+     * hoạt động.
      */
     public boolean changePin(String oldPin, String newPin) throws Exception {
         if (!connected)
@@ -291,6 +293,22 @@ public class CardCommunicator {
         try {
             cardManager.changePin(oldPin, newPin);
             System.out.println("[CARD] PIN changed successfully");
+
+            // Sau khi đổi PIN, cập nhật public key trong DB
+            try {
+                byte[] cardIdBytes = cardManager.readField(CardManager.FIELD_CARDID);
+                String cardId = (cardIdBytes != null && cardIdBytes.length > 0)
+                        ? new String(cardIdBytes, "UTF-8").trim()
+                        : null;
+                if (cardId != null && !cardId.isEmpty()) {
+                    saveCardPublicKeyToDb(cardId);
+                    System.out.println("[CARD] Public key updated in DB after PIN change for: " + cardId);
+                }
+            } catch (Exception e) {
+                System.out.println("[CARD] Warning: Could not update public key after PIN change: " + e.getMessage());
+                // Không throw exception vì PIN đã đổi thành công
+            }
+
             return true;
         } catch (RuntimeException ex) {
             System.out.println("[CARD] Change PIN failed: " + ex.getMessage());

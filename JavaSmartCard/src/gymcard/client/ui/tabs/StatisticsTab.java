@@ -5,26 +5,39 @@ import gymcard.client.CheckInInfo;
 import gymcard.client.PackageInfo;
 import gymcard.client.ui.BaseTabPanel;
 import java.awt.*;
+import java.awt.geom.RoundRectangle2D;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 /**
- * Tab Thong ke - Giao dien cai tien voi grid 2x2 va dich vu da mua
+ * Tab Thống kê - Modern Dashboard Design
  */
 public class StatisticsTab extends BaseTabPanel {
 
+    private static final Color BG_LIGHT = new Color(248, 250, 252);
+    private static final Color TEXT_DARK = new Color(30, 41, 59);
+    private static final Color TEXT_GRAY = new Color(100, 116, 139);
+    private static final Color PRIMARY_BLUE = new Color(59, 130, 246);
+    private static final Color PRIMARY_GREEN = new Color(34, 197, 94);
+    private static final Color PRIMARY_PINK = new Color(236, 72, 153);
+
     private final List<String> purchasedServices;
 
-    // Fields for labels that need to be updated
-    private JLabel packageTypeLabel;
+    // Labels for dynamic data
+    private JLabel packageNameLabel;
     private JLabel packageExpiryLabel;
-    private JLabel sessionsLabel;
+    private JLabel packageStatusLabel;
     private JLabel balanceValueLabel;
-    private JLabel checkInCountLabel;
-    private JLabel lastCheckInLabel;
-    private JLabel countLabel;
-    private DefaultListModel<String> servicesModel;
+    private JLabel servicesCountLabel;
+    private JLabel totalSessionsLabel;
+    private JLabel avgTimeLabel;
+    private JPanel activityLogPanel;
+    private JLabel lastUpdateLabel;
+    private JPanel chartPanel;
+    private String lastCheckInDate = ""; // Store last check-in date for chart
 
     public StatisticsTab(CardCommunicator cardComm, List<String> purchasedServices) {
         super(cardComm);
@@ -33,88 +46,612 @@ public class StatisticsTab extends BaseTabPanel {
     }
 
     private void initUI() {
-        setLayout(new BorderLayout(15, 15));
-        setBorder(new EmptyBorder(15, 15, 15, 15));
-        setBackground(new Color(248, 249, 250));
+        setLayout(new BorderLayout());
+        setBackground(BG_LIGHT);
+
+        JPanel mainContent = new JPanel();
+        mainContent.setLayout(new BoxLayout(mainContent, BoxLayout.Y_AXIS));
+        mainContent.setBackground(BG_LIGHT);
+        mainContent.setBorder(new EmptyBorder(25, 30, 25, 30));
 
         // Header
-        JLabel headerLabel = new JLabel("THONG KE HOAT DONG");
-        headerLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        headerLabel.setForeground(new Color(52, 73, 94));
-        add(headerLabel, BorderLayout.NORTH);
+        mainContent.add(createHeader());
+        mainContent.add(Box.createVerticalStrut(25));
 
-        // Main grid 2x2
-        JPanel gridPanel = new JPanel(new GridLayout(2, 2, 15, 15));
-        gridPanel.setBackground(new Color(248, 249, 250));
+        // Stat cards row
+        mainContent.add(createStatCardsRow());
+        mainContent.add(Box.createVerticalStrut(25));
 
-        // Card 1: Goi tap hien tai
-        JPanel packageCard = createStatCard("GOI TAP HIEN TAI", new Color(52, 152, 219));
-        packageTypeLabel = new JLabel("Chua co goi tap");
-        packageTypeLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        packageExpiryLabel = new JLabel("Han: --");
-        packageExpiryLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        sessionsLabel = new JLabel("");
-        sessionsLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        // Bottom section: Activity chart + Activity log
+        mainContent.add(createBottomSection());
 
-        JPanel packageContent = (JPanel) packageCard.getComponent(1);
-        packageContent.add(packageTypeLabel);
-        packageContent.add(Box.createVerticalStrut(5));
-        packageContent.add(packageExpiryLabel);
-        packageContent.add(sessionsLabel);
-        gridPanel.add(packageCard);
+        JScrollPane scrollPane = new JScrollPane(mainContent);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setBackground(BG_LIGHT);
+        add(scrollPane, BorderLayout.CENTER);
+    }
 
-        // Card 2: So du tai khoan
-        JPanel balanceCard = createStatCard("SO DU TAI KHOAN", new Color(46, 204, 113));
-        balanceValueLabel = new JLabel("0 VND");
-        balanceValueLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        balanceValueLabel.setForeground(new Color(46, 204, 113));
+    private JPanel createHeader() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+        header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+        header.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel balanceContent = (JPanel) balanceCard.getComponent(1);
-        balanceContent.add(balanceValueLabel);
-        gridPanel.add(balanceCard);
+        // Left - Title
+        JPanel titlePanel = new JPanel();
+        titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
+        titlePanel.setOpaque(false);
 
-        // Card 3: Hoat dong tap luyen
-        JPanel activityCard = createStatCard("HOAT DONG TAP LUYEN", new Color(155, 89, 182));
-        checkInCountLabel = new JLabel("So buoi tap: 0");
-        checkInCountLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        lastCheckInLabel = new JLabel("Lan tap gan nhat: --");
-        lastCheckInLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        JLabel titleLabel = new JLabel("THỐNG KÊ HOẠT ĐỘNG");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        titleLabel.setForeground(TEXT_DARK);
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel activityContent = (JPanel) activityCard.getComponent(1);
-        activityContent.add(checkInCountLabel);
-        activityContent.add(Box.createVerticalStrut(5));
-        activityContent.add(lastCheckInLabel);
-        gridPanel.add(activityCard);
+        JLabel subtitleLabel = new JLabel("Tổng quan về tình trạng thẻ và hiệu suất tập luyện của bạn.");
+        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        subtitleLabel.setForeground(TEXT_GRAY);
+        subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Card 4: Dich vu da mua
-        JPanel servicesCard = createStatCard("DICH VU DA MUA", new Color(231, 76, 60));
-        servicesModel = new DefaultListModel<>();
-        JList<String> servicesList = new JList<>(servicesModel);
-        servicesList.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        servicesList.setBackground(new Color(250, 250, 250));
-        servicesList.setFixedCellHeight(24);
-        JScrollPane servicesScroll = new JScrollPane(servicesList);
-        servicesScroll.setPreferredSize(new Dimension(0, 100));
-        servicesScroll.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1));
+        titlePanel.add(titleLabel);
+        titlePanel.add(Box.createVerticalStrut(5));
+        titlePanel.add(subtitleLabel);
+        header.add(titlePanel, BorderLayout.WEST);
 
-        JPanel servicesContent = (JPanel) servicesCard.getComponent(1);
-        servicesContent.setLayout(new BorderLayout(5, 5));
-        countLabel = new JLabel("Tong: 0 dich vu");
-        countLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        servicesContent.add(countLabel, BorderLayout.NORTH);
-        servicesContent.add(servicesScroll, BorderLayout.CENTER);
-        gridPanel.add(servicesCard);
+        // Right - Last update + Refresh button
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
+        rightPanel.setOpaque(false);
 
-        add(gridPanel, BorderLayout.CENTER);
+        lastUpdateLabel = new JLabel("Cập nhật lần cuối: --");
+        lastUpdateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lastUpdateLabel.setForeground(TEXT_GRAY);
+        rightPanel.add(lastUpdateLabel);
 
-        // Nut tai lai
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
-        buttonPanel.setBackground(new Color(248, 249, 250));
-        JButton refreshBtn = createModernButton("Tai lai thong ke", new Color(52, 152, 219), 14);
-        refreshBtn.setPreferredSize(new Dimension(180, 40));
-        refreshBtn.addActionListener(e -> refreshData());
-        buttonPanel.add(refreshBtn);
-        add(buttonPanel, BorderLayout.SOUTH);
+        JButton refreshBtn = createRefreshButton();
+        rightPanel.add(refreshBtn);
+
+        header.add(rightPanel, BorderLayout.EAST);
+
+        return header;
+    }
+
+    private JButton createRefreshButton() {
+        JButton btn = new JButton("↻  Tải lại dữ liệu") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
+                g2.setColor(new Color(226, 232, 240));
+                g2.setStroke(new BasicStroke(1.5f));
+                g2.draw(new RoundRectangle2D.Float(1, 1, getWidth() - 2, getHeight() - 2, 10, 10));
+
+                g2.setColor(TEXT_DARK);
+                g2.setFont(getFont());
+                FontMetrics fm = g2.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2.drawString(getText(), x, y);
+                g2.dispose();
+            }
+        };
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btn.setPreferredSize(new Dimension(140, 38));
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(e -> refreshData());
+        return btn;
+    }
+
+    private JPanel createStatCardsRow() {
+        JPanel row = new JPanel(new GridLayout(1, 3, 20, 0));
+        row.setOpaque(false);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 160));
+        row.setPreferredSize(new Dimension(0, 160));
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        row.add(createPackageCard());
+        row.add(createBalanceCard());
+        row.add(createServicesCard());
+
+        return row;
+    }
+
+    private JPanel createPackageCard() {
+        JPanel card = createCardBase();
+        card.setLayout(new BorderLayout());
+        card.setBorder(new EmptyBorder(18, 20, 18, 20));
+
+        // Top row
+        JPanel topRow = new JPanel(new BorderLayout());
+        topRow.setOpaque(false);
+
+        JLabel categoryLabel = new JLabel("GÓI TẬP HIỆN TẠI");
+        categoryLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        categoryLabel.setForeground(PRIMARY_BLUE);
+        topRow.add(categoryLabel, BorderLayout.WEST);
+
+        // Icon
+        JPanel iconPanel = createIconCircle(new Color(219, 234, 254), "✈");
+        topRow.add(iconPanel, BorderLayout.EAST);
+
+        // Content
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setOpaque(false);
+        content.setBorder(new EmptyBorder(10, 0, 0, 0));
+
+        packageNameLabel = new JLabel("Chưa có gói tập");
+        packageNameLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        packageNameLabel.setForeground(TEXT_DARK);
+        packageNameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel expiryRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        expiryRow.setOpaque(false);
+        expiryRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel calIcon = new JLabel("📅");
+        calIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 12));
+        JLabel expiryTitle = new JLabel("Hết hạn:");
+        expiryTitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        expiryTitle.setForeground(TEXT_GRAY);
+        packageExpiryLabel = new JLabel("--");
+        packageExpiryLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        packageExpiryLabel.setForeground(TEXT_DARK);
+        expiryRow.add(calIcon);
+        expiryRow.add(expiryTitle);
+        expiryRow.add(packageExpiryLabel);
+
+        // Status badge
+        packageStatusLabel = new JLabel("Chưa kích hoạt") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(220, 252, 231));
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        packageStatusLabel.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        packageStatusLabel.setForeground(new Color(22, 163, 74));
+        packageStatusLabel.setBorder(new EmptyBorder(4, 10, 4, 10));
+        packageStatusLabel.setOpaque(false);
+
+        JPanel bottomRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        bottomRow.setOpaque(false);
+        bottomRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        bottomRow.add(expiryRow);
+        bottomRow.add(packageStatusLabel);
+
+        content.add(packageNameLabel);
+        content.add(Box.createVerticalStrut(8));
+        content.add(bottomRow);
+
+        card.add(topRow, BorderLayout.NORTH);
+        card.add(content, BorderLayout.CENTER);
+
+        return card;
+    }
+
+    private JPanel createBalanceCard() {
+        JPanel card = createCardBase();
+        card.setLayout(new BorderLayout());
+        card.setBorder(new EmptyBorder(18, 20, 18, 20));
+
+        // Top row
+        JPanel topRow = new JPanel(new BorderLayout());
+        topRow.setOpaque(false);
+
+        JLabel categoryLabel = new JLabel("SỐ DƯ TÀI KHOẢN");
+        categoryLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        categoryLabel.setForeground(PRIMARY_GREEN);
+        topRow.add(categoryLabel, BorderLayout.WEST);
+
+        JPanel iconPanel = createIconCircle(new Color(220, 252, 231), "💳");
+        topRow.add(iconPanel, BorderLayout.EAST);
+
+        // Content
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setOpaque(false);
+        content.setBorder(new EmptyBorder(10, 0, 0, 0));
+
+        JPanel balanceRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        balanceRow.setOpaque(false);
+        balanceRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        balanceValueLabel = new JLabel("0");
+        balanceValueLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        balanceValueLabel.setForeground(TEXT_DARK);
+
+        JLabel currencyLabel = new JLabel(" VND");
+        currencyLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        currencyLabel.setForeground(TEXT_GRAY);
+
+        balanceRow.add(balanceValueLabel);
+        balanceRow.add(currencyLabel);
+
+        JLabel availableLabel = new JLabel("● Khả dụng cho mọi dịch vụ");
+        availableLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        availableLabel.setForeground(TEXT_GRAY);
+        availableLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        content.add(balanceRow);
+        content.add(Box.createVerticalStrut(8));
+        content.add(availableLabel);
+
+        card.add(topRow, BorderLayout.NORTH);
+        card.add(content, BorderLayout.CENTER);
+
+        return card;
+    }
+
+    private JPanel createServicesCard() {
+        JPanel card = createCardBase();
+        card.setLayout(new BorderLayout());
+        card.setBorder(new EmptyBorder(18, 20, 18, 20));
+
+        // Top row
+        JPanel topRow = new JPanel(new BorderLayout());
+        topRow.setOpaque(false);
+
+        JLabel categoryLabel = new JLabel("DỊCH VỤ ĐÃ MUA");
+        categoryLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        categoryLabel.setForeground(PRIMARY_PINK);
+        topRow.add(categoryLabel, BorderLayout.WEST);
+
+        JPanel iconPanel = createIconCircle(new Color(252, 231, 243), "🛍");
+        topRow.add(iconPanel, BorderLayout.EAST);
+
+        // Content
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setOpaque(false);
+        content.setBorder(new EmptyBorder(10, 0, 0, 0));
+
+        JPanel countRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        countRow.setOpaque(false);
+        countRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        servicesCountLabel = new JLabel("0");
+        servicesCountLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        servicesCountLabel.setForeground(TEXT_DARK);
+
+        JLabel unitLabel = new JLabel(" dịch vụ");
+        unitLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        unitLabel.setForeground(TEXT_GRAY);
+
+        countRow.add(servicesCountLabel);
+        countRow.add(unitLabel);
+
+        JPanel linkRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        linkRow.setOpaque(false);
+        linkRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel infoLabel = new JLabel("Chưa đăng ký dịch vụ bổ sung");
+        infoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        infoLabel.setForeground(TEXT_GRAY);
+
+        JLabel buyLink = new JLabel("Mua ngay →");
+        buyLink.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        buyLink.setForeground(PRIMARY_PINK);
+        buyLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        linkRow.add(infoLabel);
+        linkRow.add(buyLink);
+
+        content.add(countRow);
+        content.add(Box.createVerticalStrut(8));
+        content.add(linkRow);
+
+        card.add(topRow, BorderLayout.NORTH);
+        card.add(content, BorderLayout.CENTER);
+
+        return card;
+    }
+
+    private JPanel createBottomSection() {
+        JPanel section = new JPanel(new GridLayout(1, 2, 20, 0));
+        section.setOpaque(false);
+        section.setMaximumSize(new Dimension(Integer.MAX_VALUE, 300));
+        section.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        section.add(createActivityChartPanel());
+        section.add(createActivityLogPanel());
+
+        return section;
+    }
+
+    private JPanel createActivityChartPanel() {
+        JPanel card = createCardBase();
+        card.setLayout(new BorderLayout());
+        card.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        // Header
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+
+        JPanel titlePanel = new JPanel();
+        titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
+        titlePanel.setOpaque(false);
+
+        JPanel titleRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        titleRow.setOpaque(false);
+        JLabel chartIcon = new JLabel("📊");
+        chartIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
+        JLabel chartTitle = new JLabel("Hoạt động tập luyện");
+        chartTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        chartTitle.setForeground(TEXT_DARK);
+        titleRow.add(chartIcon);
+        titleRow.add(chartTitle);
+
+        JLabel chartSubtitle = new JLabel("Thống kê số buổi tập trong 7 ngày qua");
+        chartSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        chartSubtitle.setForeground(TEXT_GRAY);
+
+        titlePanel.add(titleRow);
+        titlePanel.add(Box.createVerticalStrut(3));
+        titlePanel.add(chartSubtitle);
+        header.add(titlePanel, BorderLayout.WEST);
+
+        // Stats badges
+        JPanel statsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
+        statsPanel.setOpaque(false);
+
+        JPanel totalPanel = new JPanel();
+        totalPanel.setLayout(new BoxLayout(totalPanel, BoxLayout.Y_AXIS));
+        totalPanel.setOpaque(false);
+        JLabel totalLabel = new JLabel("TỔNG BUỔI");
+        totalLabel.setFont(new Font("Segoe UI", Font.PLAIN, 9));
+        totalLabel.setForeground(TEXT_GRAY);
+        totalSessionsLabel = new JLabel("0");
+        totalSessionsLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        totalSessionsLabel.setForeground(TEXT_DARK);
+        totalPanel.add(totalLabel);
+        totalPanel.add(totalSessionsLabel);
+
+        JPanel avgPanel = new JPanel();
+        avgPanel.setLayout(new BoxLayout(avgPanel, BoxLayout.Y_AXIS));
+        avgPanel.setOpaque(false);
+        JLabel avgLabel = new JLabel("TRUNG BÌNH");
+        avgLabel.setFont(new Font("Segoe UI", Font.PLAIN, 9));
+        avgLabel.setForeground(TEXT_GRAY);
+        avgTimeLabel = new JLabel("~60p");
+        avgTimeLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        avgTimeLabel.setForeground(TEXT_DARK);
+        avgPanel.add(avgLabel);
+        avgPanel.add(avgTimeLabel);
+
+        statsPanel.add(totalPanel);
+        statsPanel.add(avgPanel);
+        header.add(statsPanel, BorderLayout.EAST);
+
+        // Chart area (bar chart based on check-in data)
+        chartPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int w = getWidth();
+                int h = getHeight();
+                int barWidth = (w - 80) / 7;
+                int maxBarHeight = h - 50;
+
+                // Determine which day of week had check-in
+                int[] data = new int[7];
+                int todayDayOfWeek = -1;
+
+                // Parse lastCheckInDate to determine day of week
+                if (lastCheckInDate != null && !lastCheckInDate.isEmpty()) {
+                    try {
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+                        Date checkInDate = sdf.parse(lastCheckInDate);
+                        java.util.Calendar cal = java.util.Calendar.getInstance();
+                        cal.setTime(checkInDate);
+                        int dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK);
+                        // Convert to 0=Monday...6=Sunday
+                        int index = (dayOfWeek == java.util.Calendar.SUNDAY) ? 6 : dayOfWeek - 2;
+                        if (index >= 0 && index < 7) {
+                            data[index] = 1;
+                            todayDayOfWeek = index;
+                        }
+                    } catch (Exception e) {
+                        // Ignore parse errors
+                    }
+                }
+
+                String[] days = { "Th 2", "Th 3", "Th 4", "Th 5", "Th 6", "Th 7", "CN" };
+
+                for (int i = 0; i < 7; i++) {
+                    int barHeight = data[i] > 0 ? (int) (maxBarHeight * 0.7) : (int) (maxBarHeight * 0.1);
+                    if (barHeight < 10)
+                        barHeight = 10;
+                    int x = 40 + i * barWidth;
+                    int y = h - 30 - barHeight;
+
+                    // Bar - highlight the check-in day
+                    if (data[i] > 0) {
+                        g2.setColor(PRIMARY_BLUE);
+                    } else {
+                        g2.setColor(new Color(219, 234, 254));
+                    }
+                    g2.fillRoundRect(x, y, barWidth - 10, barHeight, 6, 6);
+
+                    // Day label - highlight current day
+                    g2.setColor(i == todayDayOfWeek ? PRIMARY_BLUE : TEXT_GRAY);
+                    g2.setFont(new Font("Segoe UI", i == todayDayOfWeek ? Font.BOLD : Font.PLAIN, 11));
+                    FontMetrics fm = g2.getFontMetrics();
+                    int labelX = x + (barWidth - 10 - fm.stringWidth(days[i])) / 2;
+                    g2.drawString(days[i], labelX, h - 10);
+                }
+
+                g2.dispose();
+            }
+        };
+        chartPanel.setOpaque(false);
+        chartPanel.setPreferredSize(new Dimension(0, 180));
+
+        card.add(header, BorderLayout.NORTH);
+        card.add(chartPanel, BorderLayout.CENTER);
+
+        return card;
+    }
+
+    private JPanel createActivityLogPanel() {
+        JPanel card = createCardBase();
+        card.setLayout(new BorderLayout());
+        card.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        // Header
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+
+        JPanel titleRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        titleRow.setOpaque(false);
+        JLabel logIcon = new JLabel("🕐");
+        logIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
+        JLabel logTitle = new JLabel("Nhật ký vào ra");
+        logTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        logTitle.setForeground(TEXT_DARK);
+        titleRow.add(logIcon);
+        titleRow.add(logTitle);
+        header.add(titleRow, BorderLayout.WEST);
+
+        JLabel viewAllLink = new JLabel("Xem tất cả");
+        viewAllLink.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        viewAllLink.setForeground(PRIMARY_BLUE);
+        viewAllLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        header.add(viewAllLink, BorderLayout.EAST);
+
+        // Log entries
+        activityLogPanel = new JPanel();
+        activityLogPanel.setLayout(new BoxLayout(activityLogPanel, BoxLayout.Y_AXIS));
+        activityLogPanel.setOpaque(false);
+        activityLogPanel.setBorder(new EmptyBorder(15, 0, 0, 0));
+
+        // Add placeholder
+        JLabel placeholderLabel = new JLabel("Chưa có hoạt động nào");
+        placeholderLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        placeholderLabel.setForeground(TEXT_GRAY);
+        activityLogPanel.add(placeholderLabel);
+
+        // Footer
+        JLabel footerLink = new JLabel("Xem lịch sử đầy đủ");
+        footerLink.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        footerLink.setForeground(TEXT_GRAY);
+        footerLink.setHorizontalAlignment(SwingConstants.CENTER);
+        footerLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        JScrollPane scrollPane = new JScrollPane(activityLogPanel);
+        scrollPane.setBorder(null);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+
+        card.add(header, BorderLayout.NORTH);
+        card.add(scrollPane, BorderLayout.CENTER);
+        card.add(footerLink, BorderLayout.SOUTH);
+
+        return card;
+    }
+
+    private JPanel createCardBase() {
+        return new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 16, 16));
+                g2.dispose();
+            }
+        };
+    }
+
+    private JPanel createIconCircle(Color bgColor, String icon) {
+        JPanel panel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(bgColor);
+                g2.fillOval(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
+        panel.setLayout(new GridBagLayout());
+        panel.setPreferredSize(new Dimension(40, 40));
+        panel.setOpaque(false);
+
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
+        panel.add(iconLabel);
+
+        return panel;
+    }
+
+    private void addLogEntry(String type, String time, String location, String date) {
+        JPanel entry = new JPanel(new BorderLayout());
+        entry.setOpaque(false);
+        entry.setBorder(new EmptyBorder(8, 0, 8, 0));
+        entry.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        entry.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Left - Icon and info
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        leftPanel.setOpaque(false);
+
+        boolean isCheckIn = type.equals("Check-in");
+        Color iconBg = isCheckIn ? new Color(220, 252, 231) : new Color(254, 226, 226);
+        Color iconFg = isCheckIn ? PRIMARY_GREEN : PRIMARY_PINK;
+
+        JPanel iconPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(iconBg);
+                g2.fillOval(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
+        iconPanel.setLayout(new GridBagLayout());
+        iconPanel.setPreferredSize(new Dimension(35, 35));
+        iconPanel.setOpaque(false);
+        JLabel arrow = new JLabel(isCheckIn ? "→" : "←");
+        arrow.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        arrow.setForeground(iconFg);
+        iconPanel.add(arrow);
+
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setOpaque(false);
+        JLabel typeLabel = new JLabel(type);
+        typeLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        typeLabel.setForeground(TEXT_DARK);
+        JLabel detailLabel = new JLabel(time + " • " + location);
+        detailLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        detailLabel.setForeground(TEXT_GRAY);
+        infoPanel.add(typeLabel);
+        infoPanel.add(detailLabel);
+
+        leftPanel.add(iconPanel);
+        leftPanel.add(infoPanel);
+
+        // Right - Date
+        JLabel dateLabel = new JLabel(date);
+        dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        dateLabel.setForeground(TEXT_GRAY);
+
+        entry.add(leftPanel, BorderLayout.WEST);
+        entry.add(dateLabel, BorderLayout.EAST);
+
+        activityLogPanel.add(entry);
     }
 
     /**
@@ -122,41 +659,61 @@ public class StatisticsTab extends BaseTabPanel {
      */
     public void refreshData() {
         try {
-            // Load goi tap
+            // Load package info
             PackageInfo pkg = cardComm.getPackage();
-            packageTypeLabel.setText(pkg.getPackageTypeName());
-            packageExpiryLabel.setText("Han: " + (pkg.expiry.isEmpty() ? "--" : pkg.expiry));
-            if (pkg.type == 2 && pkg.remainingSessions > 0) {
-                sessionsLabel.setText("Con: " + pkg.remainingSessions + " buoi");
+            packageNameLabel.setText(pkg.getPackageTypeName());
+            packageExpiryLabel.setText(pkg.expiry.isEmpty() ? "--" : pkg.expiry);
+            if (pkg.type > 0) {
+                packageStatusLabel.setText("Đang hoạt động");
             } else {
-                sessionsLabel.setText("");
+                packageStatusLabel.setText("Chưa kích hoạt");
             }
 
-            // Load so du
+            // Load balance
             long balance = cardComm.getBalance();
-            balanceValueLabel.setText(String.format("%,d VND", balance));
+            balanceValueLabel.setText(String.format("%,d", balance));
 
-            // Load check-in
+            // Load services count
+            servicesCountLabel.setText(String.valueOf(purchasedServices.size()));
+
+            // Load check-in count
             int checkInCount = cardComm.getCheckInCount();
-            checkInCountLabel.setText("So buoi tap: " + checkInCount);
+            totalSessionsLabel.setText(String.valueOf(checkInCount));
+
+            // Update activity log
+            activityLogPanel.removeAll();
             CheckInInfo lastCheckIn = cardComm.getLastCheckIn();
             if (lastCheckIn != null && !lastCheckIn.date.isEmpty()) {
-                lastCheckInLabel.setText("Gan nhat: " + lastCheckIn.date + " " + lastCheckIn.checkInTime);
+                // Store date for chart
+                lastCheckInDate = lastCheckIn.date;
+
+                addLogEntry("Check-in", lastCheckIn.checkInTime, "Cổng chính", lastCheckIn.date);
+                if (lastCheckIn.checkOutTime != null && !lastCheckIn.checkOutTime.isEmpty()) {
+                    addLogEntry("Check-out", lastCheckIn.checkOutTime, "Cổng chính", lastCheckIn.date);
+                }
             } else {
-                lastCheckInLabel.setText("Lan tap gan nhat: --");
+                lastCheckInDate = "";
+                JLabel placeholderLabel = new JLabel("Chưa có hoạt động nào");
+                placeholderLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+                placeholderLabel.setForeground(TEXT_GRAY);
+                activityLogPanel.add(placeholderLabel);
+            }
+            activityLogPanel.revalidate();
+            activityLogPanel.repaint();
+
+            // Repaint chart with new data
+            if (chartPanel != null) {
+                chartPanel.repaint();
             }
 
-            // Load dich vu da mua
-            servicesModel.clear();
-            for (String svc : purchasedServices) {
-                servicesModel.addElement(svc);
-            }
-            countLabel.setText("Tong: " + purchasedServices.size() + " dich vu");
+            // Update last update time
+            String now = new SimpleDateFormat("HH:mm").format(new Date());
+            lastUpdateLabel.setText("Cập nhật lần cuối: " + now);
 
-            log("Da tai thong ke tu the");
+            log("Đã tải thống kê từ thẻ");
 
         } catch (Exception ex) {
-            log("LOI tai thong ke: " + ex.getMessage());
+            log("LỖI tải thống kê: " + ex.getMessage());
         }
     }
 }
