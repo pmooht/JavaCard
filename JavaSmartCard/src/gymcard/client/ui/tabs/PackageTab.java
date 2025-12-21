@@ -15,7 +15,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 /**
- * Tab xem các gói tập - Load từ Database với UI đẹp
+ * Tab xem các gói tập - Gói theo ngày (15, 30, 60, 90 ngày)
  */
 public class PackageTab extends BaseTabPanel {
 
@@ -82,15 +82,13 @@ public class PackageTab extends BaseTabPanel {
             DatabaseManager db = DatabaseManager.getInstance();
             List<PlanInfo> plans = db.getActivePlans();
 
-            String[] icons = { "[1M]", "[3M]", "[6M]", "[1Y]", "[10B]", "[30B]", "[VIP]" };
+            // Icons and colors for day-based packages
+            String[] icons = { "📅", "📆", "🗓", "📋" };
             Color[] colors = {
-                    new Color(46, 204, 113),
-                    new Color(52, 152, 219),
-                    new Color(155, 89, 182),
-                    new Color(230, 126, 34),
-                    new Color(241, 196, 15),
-                    new Color(231, 76, 60),
-                    new Color(142, 68, 173)
+                    new Color(46, 204, 113), // 15 days - green
+                    new Color(52, 152, 219), // 30 days - blue
+                    new Color(155, 89, 182), // 60 days - purple
+                    new Color(230, 126, 34) // 90 days - orange
             };
 
             for (int i = 0; i < plans.size(); i++) {
@@ -120,15 +118,9 @@ public class PackageTab extends BaseTabPanel {
         loadBtn.addActionListener(e -> {
             try {
                 PackageInfo pkg = cardComm.getPackage();
-
-                String packageInfo = String.format("%s | Đăng ký: %s | Hết hạn: %s",
-                        pkg.getPackageTypeName(), pkg.registration, pkg.expiry);
-                if (pkg.type == 2) {
-                    packageInfo += " | Còn: " + pkg.remainingSessions + " buổi";
-                }
+                String packageInfo = String.format("%s | Hết hạn: %s", pkg.getPackageTypeName(), pkg.expiry);
                 currentPackageLabel.setText(packageInfo);
                 log("Đã tải thông tin gói tập hiện tại");
-
             } catch (Exception ex) {
                 log("LỖI: " + ex.getMessage());
                 JOptionPane.showMessageDialog(this,
@@ -150,10 +142,10 @@ public class PackageTab extends BaseTabPanel {
 
         // Left: Icon
         JLabel iconLabel = new JLabel(icon);
-        iconLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 28));
         iconLabel.setForeground(color);
-        iconLabel.setPreferredSize(new Dimension(80, 60));
-        iconLabel.setMinimumSize(new Dimension(80, 60));
+        iconLabel.setPreferredSize(new Dimension(60, 60));
+        iconLabel.setMinimumSize(new Dimension(60, 60));
         iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
         card.add(iconLabel, BorderLayout.WEST);
 
@@ -172,13 +164,7 @@ public class PackageTab extends BaseTabPanel {
         descLabel.setForeground(Color.GRAY);
         infoPanel.add(descLabel);
 
-        String duration = "";
-        if (plan.durationDays > 0) {
-            duration = plan.durationDays + " ngày";
-        } else if (plan.sessionCount > 0) {
-            duration = plan.sessionCount + " buổi";
-        }
-        JLabel durationLabel = new JLabel("Thời hạn: " + duration);
+        JLabel durationLabel = new JLabel("Thời hạn: " + plan.durationDays + " ngày");
         durationLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         durationLabel.setForeground(new Color(100, 100, 100));
         infoPanel.add(durationLabel);
@@ -198,7 +184,7 @@ public class PackageTab extends BaseTabPanel {
 
         rightPanel.add(Box.createVerticalStrut(5));
 
-        JButton buyBtn = new JButton("Mua ngay");
+        JButton buyBtn = new JButton("Mua / Gia hạn");
         buyBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         buyBtn.setBackground(color);
         buyBtn.setForeground(Color.WHITE);
@@ -216,37 +202,56 @@ public class PackageTab extends BaseTabPanel {
     }
 
     private void showPurchaseDialog(PlanInfo plan, Color color, JLabel currentPackageLabel) {
-        // Kiểm tra gói hiện tại
+        // Get current package to check if extending
         PackageInfo currentPkg = null;
-        boolean hasExistingPackage = false;
+        String currentExpiry = "";
         try {
             currentPkg = cardComm.getPackage();
-            if (currentPkg != null && currentPkg.type > 0) {
-                hasExistingPackage = true;
+            if (currentPkg != null && currentPkg.type > 0 && !currentPkg.expiry.isEmpty()) {
+                currentExpiry = currentPkg.expiry;
             }
         } catch (Exception ex) {
-            // Không có gói
+            // No existing package
         }
 
-        double originalPrice = plan.price;
-        double finalPrice = originalPrice;
-        String discountInfo = "";
+        // Calculate new expiry date
+        Calendar cal = Calendar.getInstance();
+        String baseDate = "hôm nay";
 
-        if (hasExistingPackage) {
-            finalPrice = originalPrice * 0.5;
-            discountInfo = "GIẢM 50% khi nâng cấp!";
+        // If has existing package and not expired, add days to current expiry
+        if (!currentExpiry.isEmpty()) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+                Date expiryDate = sdf.parse(currentExpiry);
+                if (expiryDate.after(new Date())) {
+                    // Still valid, extend from expiry date
+                    cal.setTime(expiryDate);
+                    baseDate = currentExpiry;
+                }
+            } catch (Exception e) {
+                // Use today if parse fails
+            }
         }
 
-        // Tạo dialog
+        cal.add(Calendar.DAY_OF_MONTH, plan.durationDays);
+        String newExpiry = new SimpleDateFormat("dd/MM/yyyy").format(cal.getTime());
+
+        // Get current balance
+        long currentBalance = 0;
+        try {
+            currentBalance = cardComm.getBalance();
+        } catch (Exception ex) {
+        }
+
+        // Create dialog
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Xác nhận mua gói", true);
-        dialog.setSize(500, 450);
+        dialog.setSize(420, 320);
         dialog.setLocationRelativeTo(this);
 
-        JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
-        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 0));
         mainPanel.setBackground(Color.WHITE);
 
-        // Header
+        // Header with gradient
         JPanel headerPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -255,179 +260,126 @@ public class PackageTab extends BaseTabPanel {
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 GradientPaint gp = new GradientPaint(0, 0, color, getWidth(), 0, color.darker());
                 g2d.setPaint(gp);
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
             }
         };
-        headerPanel.setPreferredSize(new Dimension(0, 60));
+        headerPanel.setPreferredSize(new Dimension(0, 70));
         headerPanel.setLayout(new BorderLayout());
-        JLabel titleLabel = new JLabel(plan.name, SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+
+        JPanel headerContent = new JPanel();
+        headerContent.setOpaque(false);
+        headerContent.setLayout(new BoxLayout(headerContent, BoxLayout.Y_AXIS));
+        headerContent.setBorder(new EmptyBorder(15, 20, 15, 20));
+
+        JLabel titleLabel = new JLabel(plan.name);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
         titleLabel.setForeground(Color.WHITE);
-        headerPanel.add(titleLabel, BorderLayout.CENTER);
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel subtitleLabel = new JLabel(plan.durationDays + " ngày tập không giới hạn");
+        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        subtitleLabel.setForeground(new Color(255, 255, 255, 200));
+        subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        headerContent.add(titleLabel);
+        headerContent.add(Box.createVerticalStrut(3));
+        headerContent.add(subtitleLabel);
+        headerPanel.add(headerContent, BorderLayout.WEST);
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
         // Content
-        JPanel contentPanel = new JPanel(new GridBagLayout());
+        JPanel contentPanel = new JPanel();
         contentPanel.setBackground(Color.WHITE);
-        GridBagConstraints gbcContent = new GridBagConstraints();
-        gbcContent.insets = new Insets(8, 10, 8, 10);
-        gbcContent.anchor = GridBagConstraints.WEST;
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setBorder(new EmptyBorder(20, 25, 20, 25));
 
-        int row = 0;
+        // Info rows
+        contentPanel.add(createInfoRow("💰 Giá gói:", String.format("%,.0f VNĐ", plan.price), color, true));
+        contentPanel.add(Box.createVerticalStrut(12));
+        contentPanel.add(createInfoRow("📅 Hết hạn mới:", newExpiry, new Color(46, 204, 113), true));
+        contentPanel.add(Box.createVerticalStrut(12));
+        contentPanel.add(createInfoRow("📍 Cộng từ:", baseDate, new Color(100, 116, 139), false));
+        contentPanel.add(Box.createVerticalStrut(12));
+        contentPanel.add(createInfoRow("💳 Số dư hiện tại:", String.format("%,d VND", currentBalance),
+                currentBalance >= (long) plan.price ? new Color(46, 204, 113) : new Color(239, 68, 68), true));
 
-        gbcContent.gridx = 0;
-        gbcContent.gridy = row;
-        contentPanel.add(new JLabel("Mô tả:"), gbcContent);
-        gbcContent.gridx = 1;
-        JLabel descValueLabel = new JLabel(plan.description);
-        descValueLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        contentPanel.add(descValueLabel, gbcContent);
-
-        row++;
-        gbcContent.gridx = 0;
-        gbcContent.gridy = row;
-        contentPanel.add(new JLabel("Giá gốc:"), gbcContent);
-        gbcContent.gridx = 1;
-        JLabel origPriceLabel = new JLabel(String.format("%,.0f VNĐ", originalPrice));
-        if (hasExistingPackage) {
-            origPriceLabel.setText("<html><s>" + String.format("%,.0f VNĐ", originalPrice) + "</s></html>");
-            origPriceLabel.setForeground(Color.GRAY);
+        // Warning if not enough balance
+        if (currentBalance < (long) plan.price) {
+            contentPanel.add(Box.createVerticalStrut(15));
+            JLabel warningLabel = new JLabel("⚠️ Số dư không đủ! Vui lòng nạp thêm tiền.");
+            warningLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            warningLabel.setForeground(new Color(239, 68, 68));
+            warningLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            contentPanel.add(warningLabel);
         }
-        contentPanel.add(origPriceLabel, gbcContent);
-
-        if (hasExistingPackage) {
-            row++;
-            gbcContent.gridx = 0;
-            gbcContent.gridy = row;
-            JLabel discountLabel = new JLabel(discountInfo);
-            discountLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-            discountLabel.setForeground(new Color(231, 76, 60));
-            gbcContent.gridwidth = 2;
-            contentPanel.add(discountLabel, gbcContent);
-            gbcContent.gridwidth = 1;
-
-            row++;
-            gbcContent.gridx = 0;
-            gbcContent.gridy = row;
-            contentPanel.add(new JLabel("Thanh toán:"), gbcContent);
-            gbcContent.gridx = 1;
-            JLabel finalPriceLabel = new JLabel(String.format("%,.0f VNĐ", finalPrice));
-            finalPriceLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-            finalPriceLabel.setForeground(new Color(46, 204, 113));
-            contentPanel.add(finalPriceLabel, gbcContent);
-        }
-
-        row++;
-        gbcContent.gridx = 0;
-        gbcContent.gridy = row;
-        contentPanel.add(new JLabel("So du hien tai:"), gbcContent);
-        gbcContent.gridx = 1;
-        long currentBalance = 0;
-        try {
-            currentBalance = cardComm.getBalance();
-        } catch (Exception ex) {
-        }
-        JLabel balanceLabel = new JLabel(String.format("%,d VND", currentBalance));
-        balanceLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        contentPanel.add(balanceLabel, gbcContent);
-
-        // PIN field
-        row++;
-        gbcContent.gridx = 0;
-        gbcContent.gridy = row;
-        JLabel pinLabel = new JLabel("Nhập mã PIN:");
-        pinLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        pinLabel.setForeground(new Color(231, 76, 60));
-        contentPanel.add(pinLabel, gbcContent);
-        gbcContent.gridx = 1;
-        JPasswordField pinField = new JPasswordField(10);
-        pinField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        pinField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(231, 76, 60), 2),
-                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
-        contentPanel.add(pinField, gbcContent);
 
         mainPanel.add(contentPanel, BorderLayout.CENTER);
 
         // Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
         buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setBorder(new EmptyBorder(0, 20, 20, 20));
 
-        double priceToDeduct = finalPrice;
-        long priceInVND = (long) priceToDeduct;
+        long priceInVND = (long) plan.price;
         final long finalBalance = currentBalance;
+        final String finalNewExpiry = newExpiry;
 
-        JButton confirmBtn = new JButton("Xác nhận thanh toán");
+        // Confirm button with custom painting
+        JButton confirmBtn = new JButton("✓ Xác nhận mua") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) {
+                    g2d.setColor(color.darker());
+                } else if (getModel().isRollover()) {
+                    g2d.setColor(color.brighter());
+                } else {
+                    g2d.setColor(color);
+                }
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+
+                g2d.setColor(Color.WHITE);
+                g2d.setFont(getFont());
+                FontMetrics fm = g2d.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2d.drawString(getText(), x, y);
+            }
+        };
         confirmBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        confirmBtn.setBackground(color);
-        confirmBtn.setForeground(Color.WHITE);
+        confirmBtn.setPreferredSize(new Dimension(160, 42));
+        confirmBtn.setBorderPainted(false);
+        confirmBtn.setContentAreaFilled(false);
         confirmBtn.setFocusPainted(false);
+        confirmBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        confirmBtn.setEnabled(finalBalance >= priceInVND);
+
         confirmBtn.addActionListener(ev -> {
             try {
-                String enteredPin = new String(pinField.getPassword()).trim();
-                if (enteredPin.isEmpty()) {
-                    JOptionPane.showMessageDialog(dialog,
-                            "Vui lòng nhập mã PIN để xác thực!",
-                            "Thiếu mã PIN", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-                if (!enteredPin.matches("\\d{6}")) {
-                    JOptionPane.showMessageDialog(dialog,
-                            "Mã PIN phải gồm 6 chữ số!",
-                            "PIN không hợp lệ", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-
-                boolean pinValid = cardComm.verifyPin(enteredPin);
-                if (!pinValid) {
-                    JOptionPane.showMessageDialog(dialog,
-                            "Mã PIN không chính xác!",
-                            "Sai PIN", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
                 if (finalBalance < priceInVND) {
                     JOptionPane.showMessageDialog(dialog,
-                            "So du khong du! Vui long nap them tien.",
-                            "Khong du tien", JOptionPane.WARNING_MESSAGE);
+                            "Số dư không đủ! Vui lòng nạp thêm tiền.",
+                            "Không đủ tiền", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
 
                 if (cardComm.deductBalance(priceInVND)) {
                     byte packageType = 1;
-                    if (plan.code.startsWith("SESSION")) {
-                        packageType = 2;
-                    } else if (plan.code.equals("VIP")) {
-                        packageType = 3;
-                    }
-
                     String today = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
-                    Calendar cal = Calendar.getInstance();
-                    if (plan.durationDays > 0) {
-                        cal.add(Calendar.DAY_OF_MONTH, plan.durationDays);
-                    } else {
-                        cal.add(Calendar.YEAR, 1);
-                    }
-                    String expiry = new SimpleDateFormat("dd/MM/yyyy").format(cal.getTime());
-                    short sessions = (short) plan.sessionCount;
 
-                    cardComm.setPackage(packageType, expiry, today, sessions);
+                    cardComm.setPackage(packageType, finalNewExpiry, today, (short) 0);
 
-                    String pkgInfo = String.format("%s | Đăng ký: %s | Hết hạn: %s",
-                            plan.name, today, expiry);
-                    if (packageType == 2) {
-                        pkgInfo += " | Còn: " + sessions + " buổi";
-                    }
+                    String pkgInfo = String.format("%s | Hết hạn: %s", plan.name, finalNewExpiry);
                     currentPackageLabel.setText(pkgInfo);
 
                     long newBalance = cardComm.getBalance();
-                    balanceLabel.setText(String.format("%,d VND", newBalance));
 
-                    log("Da mua thanh cong: " + plan.name + " - " + String.format("%,.0f", priceToDeduct) + " VND");
+                    log("Đã mua thành công: " + plan.name + " - " + String.format("%,.0f", plan.price) + " VND");
                     JOptionPane.showMessageDialog(dialog,
-                            "Mua goi thanh cong!\n" + plan.name + "\nSo du con lai: "
-                                    + String.format("%,d VND", newBalance),
-                            "Thanh cong", JOptionPane.INFORMATION_MESSAGE);
+                            "🎉 Mua gói thành công!\n\n" + plan.name + "\nHết hạn: " + finalNewExpiry +
+                                    "\nSố dư còn lại: " + String.format("%,d VND", newBalance),
+                            "Thành công", JOptionPane.INFORMATION_MESSAGE);
                     dialog.dispose();
                 }
             } catch (Exception ex) {
@@ -437,8 +389,37 @@ public class PackageTab extends BaseTabPanel {
             }
         });
 
-        JButton cancelBtn = new JButton("Hủy");
-        cancelBtn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        // Cancel button with custom painting
+        JButton cancelBtn = new JButton("✕ Hủy") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                Color btnColor = new Color(100, 116, 139);
+                if (getModel().isPressed()) {
+                    g2d.setColor(btnColor.darker());
+                } else if (getModel().isRollover()) {
+                    g2d.setColor(btnColor);
+                } else {
+                    g2d.setColor(new Color(226, 232, 240));
+                }
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+
+                g2d.setColor(getModel().isRollover() || getModel().isPressed() ? Color.WHITE : new Color(71, 85, 105));
+                g2d.setFont(getFont());
+                FontMetrics fm = g2d.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2d.drawString(getText(), x, y);
+            }
+        };
+        cancelBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        cancelBtn.setPreferredSize(new Dimension(100, 42));
+        cancelBtn.setBorderPainted(false);
+        cancelBtn.setContentAreaFilled(false);
+        cancelBtn.setFocusPainted(false);
+        cancelBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         cancelBtn.addActionListener(ev -> dialog.dispose());
 
         buttonPanel.add(confirmBtn);
@@ -449,15 +430,35 @@ public class PackageTab extends BaseTabPanel {
         dialog.setVisible(true);
     }
 
+    private JPanel createInfoRow(String label, String value, Color valueColor, boolean bold) {
+        JPanel row = new JPanel(new BorderLayout());
+        row.setBackground(Color.WHITE);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel labelComp = new JLabel(label);
+        labelComp.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        labelComp.setForeground(new Color(100, 116, 139));
+
+        JLabel valueComp = new JLabel(value);
+        valueComp.setFont(new Font("Segoe UI", bold ? Font.BOLD : Font.PLAIN, 14));
+        valueComp.setForeground(valueColor);
+        valueComp.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        row.add(labelComp, BorderLayout.WEST);
+        row.add(valueComp, BorderLayout.EAST);
+
+        return row;
+    }
+
     /**
      * Refresh data from database - reload all packages
      */
     public void refreshData() {
-        // Remove all components and rebuild UI
         removeAll();
         initUI();
         revalidate();
         repaint();
-        log("Da reload goi tap tu database");
+        log("Đã reload gói tập từ database");
     }
 }

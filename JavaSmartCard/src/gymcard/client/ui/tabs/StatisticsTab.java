@@ -32,6 +32,7 @@ public class StatisticsTab extends BaseTabPanel {
     private JLabel packageStatusLabel;
     private JLabel balanceValueLabel;
     private JLabel servicesCountLabel;
+    private JLabel servicesInfoLabel;
     private JLabel totalSessionsLabel;
     private JLabel avgTimeLabel;
     private JPanel activityLogPanel;
@@ -332,16 +333,16 @@ public class StatisticsTab extends BaseTabPanel {
         linkRow.setOpaque(false);
         linkRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel infoLabel = new JLabel("Chưa đăng ký dịch vụ bổ sung");
-        infoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        infoLabel.setForeground(TEXT_GRAY);
+        servicesInfoLabel = new JLabel("Chưa đăng ký dịch vụ bổ sung");
+        servicesInfoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        servicesInfoLabel.setForeground(TEXT_GRAY);
 
         JLabel buyLink = new JLabel("Mua ngay →");
         buyLink.setFont(new Font("Segoe UI", Font.BOLD, 11));
         buyLink.setForeground(PRIMARY_PINK);
         buyLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        linkRow.add(infoLabel);
+        linkRow.add(servicesInfoLabel);
         linkRow.add(buyLink);
 
         content.add(countRow);
@@ -673,8 +674,28 @@ public class StatisticsTab extends BaseTabPanel {
             long balance = cardComm.getBalance();
             balanceValueLabel.setText(String.format("%,d", balance));
 
-            // Load services count
-            servicesCountLabel.setText(String.valueOf(purchasedServices.size()));
+            // Load services count and update info label
+            int svcCount = purchasedServices.size();
+            servicesCountLabel.setText(String.valueOf(svcCount));
+            if (svcCount > 0) {
+                // Build a short list of service names
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < Math.min(svcCount, 2); i++) {
+                    String svc = purchasedServices.get(i);
+                    // Extract just the service name (before " - ")
+                    int dashIdx = svc.indexOf(" - ");
+                    String name = dashIdx > 0 ? svc.substring(0, dashIdx) : svc;
+                    if (i > 0)
+                        sb.append(", ");
+                    sb.append(name);
+                }
+                if (svcCount > 2) {
+                    sb.append(" +").append(svcCount - 2).append(" khác");
+                }
+                servicesInfoLabel.setText(sb.toString());
+            } else {
+                servicesInfoLabel.setText("Chưa đăng ký dịch vụ bổ sung");
+            }
 
             // Load check-in count
             int checkInCount = cardComm.getCheckInCount();

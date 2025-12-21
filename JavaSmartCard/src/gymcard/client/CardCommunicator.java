@@ -681,9 +681,9 @@ public class CardCommunicator {
 
     /**
      * Set gói tập:
-     * - type: 0=chưa, 1=tháng, 2=buổi, 3=VIP...
+     * - type: 0=chưa có, 1=gói ngày (15/30/60/90 ngày)
      * - expiry, registration: dd/MM/yyyy
-     * - sessions: số buổi còn lại (nếu gói theo buổi)
+     * - sessions: không sử dụng (đặt 0)
      *
      * Lưu xuống thẻ dạng string ngắn:
      * "type|expiry|registration|sessions"
@@ -788,17 +788,6 @@ public class CardCommunicator {
 
         // Ghi lên thẻ
         boolean writtenToCard = writeCheckInToCard();
-
-        // Trừ buổi nếu gói theo buổi (type == 2)
-        if (packageInfo.type == 2 && packageInfo.remainingSessions > 0) {
-            packageInfo.remainingSessions--;
-            try {
-                setPackage(packageInfo.type, packageInfo.expiry, packageInfo.registration,
-                        packageInfo.remainingSessions);
-            } catch (Exception e) {
-                System.out.println("[WARN] Could not update package on card: " + e.getMessage());
-            }
-        }
 
         System.out.println(
                 "[" + (writtenToCard ? "CARD" : "RAM") + "] Checked in at " + time + ", count=" + checkInCount);
@@ -1077,10 +1066,10 @@ public class CardCommunicator {
         memberInfo.phone = "0987654321";
         memberInfo.address = "123 Đường ABC, Quận XYZ, Hà Nội";
 
-        packageInfo.type = 2;
+        packageInfo.type = 1; // Day-based package
         packageInfo.expiry = "31/12/2026";
         packageInfo.registration = "01/01/2025";
-        packageInfo.remainingSessions = 50;
+        packageInfo.remainingSessions = 0; // Not used for day-based packages
 
         lastCheckIn.date = "29/11/2025";
         lastCheckIn.checkInTime = "08:00:00";

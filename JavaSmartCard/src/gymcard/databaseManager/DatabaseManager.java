@@ -152,67 +152,40 @@ public class DatabaseManager {
     private void insertDefaultPlans() throws SQLException {
         String sql = "INSERT INTO membership_plans(code, name, description, duration_days, session_count, price) VALUES(?,?,?,?,?,?)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            // Gói tháng
-            ps.setString(1, "MONTHLY_1");
-            ps.setString(2, "Gói 1 tháng");
+            // Gói 15 ngày
+            ps.setString(1, "DAY_15");
+            ps.setString(2, "Gói 15 ngày");
+            ps.setString(3, "Tập không giới hạn trong 15 ngày");
+            ps.setInt(4, 15);
+            ps.setNull(5, Types.INTEGER);
+            ps.setDouble(6, 300000);
+            ps.executeUpdate();
+
+            // Gói 30 ngày
+            ps.setString(1, "DAY_30");
+            ps.setString(2, "Gói 30 ngày");
             ps.setString(3, "Tập không giới hạn trong 30 ngày");
             ps.setInt(4, 30);
             ps.setNull(5, Types.INTEGER);
             ps.setDouble(6, 500000);
             ps.executeUpdate();
 
-            // Gói 3 tháng
-            ps.setString(1, "MONTHLY_3");
-            ps.setString(2, "Gói 3 tháng");
-            ps.setString(3, "Tập không giới hạn trong 90 ngày, tiết kiệm 10%");
+            // Gói 60 ngày
+            ps.setString(1, "DAY_60");
+            ps.setString(2, "Gói 60 ngày");
+            ps.setString(3, "Tập không giới hạn trong 60 ngày");
+            ps.setInt(4, 60);
+            ps.setNull(5, Types.INTEGER);
+            ps.setDouble(6, 900000);
+            ps.executeUpdate();
+
+            // Gói 90 ngày
+            ps.setString(1, "DAY_90");
+            ps.setString(2, "Gói 90 ngày");
+            ps.setString(3, "Tập không giới hạn trong 90 ngày");
             ps.setInt(4, 90);
             ps.setNull(5, Types.INTEGER);
-            ps.setDouble(6, 1350000);
-            ps.executeUpdate();
-
-            // Gói 6 tháng
-            ps.setString(1, "MONTHLY_6");
-            ps.setString(2, "Gói 6 tháng");
-            ps.setString(3, "Tập không giới hạn trong 180 ngày, tiết kiệm 15%");
-            ps.setInt(4, 180);
-            ps.setNull(5, Types.INTEGER);
-            ps.setDouble(6, 2550000);
-            ps.executeUpdate();
-
-            // Gói năm
-            ps.setString(1, "YEARLY");
-            ps.setString(2, "Gói 1 năm");
-            ps.setString(3, "Tập không giới hạn trong 365 ngày, tiết kiệm 20%");
-            ps.setInt(4, 365);
-            ps.setNull(5, Types.INTEGER);
-            ps.setDouble(6, 4800000);
-            ps.executeUpdate();
-
-            // Gói theo buổi
-            ps.setString(1, "SESSION_10");
-            ps.setString(2, "Gói 10 buổi");
-            ps.setString(3, "10 lượt tập, không giới hạn thời gian");
-            ps.setNull(4, Types.INTEGER);
-            ps.setInt(5, 10);
-            ps.setDouble(6, 400000);
-            ps.executeUpdate();
-
-            // Gói theo buổi 30
-            ps.setString(1, "SESSION_30");
-            ps.setString(2, "Gói 30 buổi");
-            ps.setString(3, "30 lượt tập, không giới hạn thời gian");
-            ps.setNull(4, Types.INTEGER);
-            ps.setInt(5, 30);
-            ps.setDouble(6, 1000000);
-            ps.executeUpdate();
-
-            // Gói VIP
-            ps.setString(1, "VIP");
-            ps.setString(2, "Gói VIP");
-            ps.setString(3, "Tập không giới hạn + HLV riêng + Đồ uống miễn phí");
-            ps.setInt(4, 365);
-            ps.setNull(5, Types.INTEGER);
-            ps.setDouble(6, 12000000);
+            ps.setDouble(6, 1200000);
             ps.executeUpdate();
         }
     }

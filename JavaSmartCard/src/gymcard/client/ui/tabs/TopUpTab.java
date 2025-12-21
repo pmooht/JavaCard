@@ -513,31 +513,7 @@ public class TopUpTab extends BaseTabPanel {
             return;
         }
 
-        // Admin authentication dialog
-        JPasswordField passField = new JPasswordField(10);
-        JPanel passPanel = new JPanel(new BorderLayout(5, 5));
-        passPanel.add(new JLabel("Nhập mật khẩu Admin:"), BorderLayout.NORTH);
-        passPanel.add(passField, BorderLayout.CENTER);
-
-        int result = JOptionPane.showConfirmDialog(this, passPanel,
-                "Xác thực Admin", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-
-        if (result != JOptionPane.OK_OPTION)
-            return;
-
-        String adminPass = new String(passField.getPassword()).trim();
-        if (adminPass.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập mật khẩu!", "Lỗi",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        if (!adminPass.equals("123456")) {
-            JOptionPane.showMessageDialog(this, "Mật khẩu Admin không chính xác!", "Sai mật khẩu",
-                    JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Process top-up
+        // Process top-up directly without admin authentication
         try {
             if (cardComm.addBalance(amount)) {
                 long newBalance = cardComm.getBalance();
