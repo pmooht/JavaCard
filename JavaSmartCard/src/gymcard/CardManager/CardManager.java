@@ -19,6 +19,7 @@ public class CardManager {
     private static final byte INS_CHANGE_PIN = (byte) 0x21;
     private static final byte INS_UNLOCK = (byte) 0x22;
     private static final byte INS_ADMIN_SET_PIN = (byte) 0x23;
+    private static final byte INS_CHECK_DEFAULT_PIN = (byte) 0x24;
 
     private static final byte INS_WRITE_PERSONAL = (byte) 0x30;
     private static final byte INS_READ_PERSONAL = (byte) 0x31;
@@ -144,6 +145,17 @@ public class CardManager {
                 new CommandAPDU(CLA, INS_GET_TRIES, 0, 0, 1));
         checkStatus(r, "GET_TRIES");
         return r.getData()[0];
+    }
+
+    public boolean checkDefaultPin() throws Exception {
+        ResponseAPDU r = channel.transmit(
+                new CommandAPDU(CLA, INS_CHECK_DEFAULT_PIN, 0, 0, 0)); // Le=0 (auto) or explicit 1
+        checkStatus(r, "CHECK_DEFAULT_PIN");
+        // Returns 1 byte: 1 (true) or 0 (false)
+        byte[] data = r.getData();
+        if (data == null || data.length == 0)
+            return false;
+        return data[0] == (byte) 1;
     }
 
     // ===================================================

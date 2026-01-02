@@ -130,9 +130,92 @@ public class GymCardApp extends JFrame {
                     }
                 } else if (authResult.rsaVerified || authResult.rsaSkipped) {
                     // PIN dung + RSA OK hoac skip
-                    System.out.println("[LOGIN] THANH CONG! Vao trang User...");
-                    mainCardLayout.show(mainContentPanel, "user");
-                    userPanel.onLogin();
+
+                    // === NEW: CHECK DEFAULT PIN & FORCE CHANGE ===
+                    // Fallback: If PIN is "000000", FORCE CHANGE even if Applet check fails (e.g.
+                    // old applet version)
+                    if (cardComm.checkDefaultPin() || pin.equals("000000")) {
+                        System.out.println("[LOGIN] Phat hien PIN mac dinh (Flag hoac '000000') -> Bat buoc doi PIN.");
+                        JOptionPane.showMessageDialog(this,
+                                "Đây là lần đăng nhập đầu tiên (Mã PIN mặc định).\n\n" +
+                                        "Vì lý do bảo mật, bạn BẮT BUỘC phải đổi mã PIN mới để tiếp tục.",
+                                "Yêu cầu đổi PIN", JOptionPane.WARNING_MESSAGE);
+
+                        // Show Change PIN Dialog (Force New PIN)
+                        JPanel changePanel = new JPanel(new GridLayout(2, 1, 5, 5));
+                        JPasswordField newPinField = new JPasswordField(6);
+                        JPasswordField confirmPinField = new JPasswordField(6);
+
+                        // Style fields
+                        Font pinFont = new Font("Segoe UI", Font.BOLD, 18);
+                        newPinField.setFont(pinFont);
+                        newPinField.setHorizontalAlignment(JTextField.CENTER);
+                        confirmPinField.setFont(pinFont);
+                        confirmPinField.setHorizontalAlignment(JTextField.CENTER);
+
+                        JPanel p1 = new JPanel(new BorderLayout());
+                        p1.add(new JLabel("Mã PIN mới (6 số):"), BorderLayout.NORTH);
+                        p1.add(newPinField, BorderLayout.CENTER);
+                        JPanel p2 = new JPanel(new BorderLayout());
+                        p2.add(new JLabel("Xác nhận PIN mới:"), BorderLayout.NORTH);
+                        p2.add(confirmPinField, BorderLayout.CENTER);
+
+                        changePanel.add(p1);
+                        changePanel.add(p2);
+
+                        int chgResult = JOptionPane.showConfirmDialog(this, changePanel,
+                                "Đổi mã PIN mới", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+                        if (chgResult == JOptionPane.OK_OPTION) {
+                            String newPin = new String(newPinField.getPassword());
+                            String confirm = new String(confirmPinField.getPassword());
+
+                            if (newPin.length() != 6 || !newPin.matches("\\d+")) {
+                                JOptionPane.showMessageDialog(this, "Mã PIN phải gồm 6 chữ số!", "Lỗi",
+                                        JOptionPane.ERROR_MESSAGE);
+                                return; // Back to Welcome
+                            }
+                            if (!newPin.equals(confirm)) {
+                                JOptionPane.showMessageDialog(this, "Mã xác nhận không khớp!", "Lỗi",
+                                        JOptionPane.ERROR_MESSAGE);
+                                return; // Back to Welcome
+                            }
+                            if (newPin.equals("000000")) {
+                                JOptionPane.showMessageDialog(this, "Không được sử dụng lại PIN mặc định 000000!",
+                                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
+
+                            // Perform Change PIN (Old PIN is 000000)
+                            try {
+                                boolean changed = cardComm.changePin("000000", newPin);
+                                if (changed) {
+                                    JOptionPane.showMessageDialog(this,
+                                            "Đổi PIN thành công!\nVui lòng ghi nhớ mã PIN mới của bạn.", "Thành công",
+                                            JOptionPane.INFORMATION_MESSAGE);
+                                    // Proceed to User Panel
+                                    System.out.println("[LOGIN] THANH CONG! Vao trang User...");
+                                    mainCardLayout.show(mainContentPanel, "user");
+                                    userPanel.onLogin();
+                                } else {
+                                    JOptionPane.showMessageDialog(this, "Đổi PIN thất bại!", "Lỗi",
+                                            JOptionPane.ERROR_MESSAGE);
+                                }
+                            } catch (Exception ex) {
+                                JOptionPane.showMessageDialog(this, "Lỗi đổi PIN: " + ex.getMessage(), "Lỗi",
+                                        JOptionPane.ERROR_MESSAGE);
+                            }
+                        } else {
+                            // Cancelled
+                            JOptionPane.showMessageDialog(this, "Bạn đã hủy đổi PIN. Đăng nhập bị từ chối.", "Hủy bỏ",
+                                    JOptionPane.WARNING_MESSAGE);
+                        }
+                    } else {
+                        // Normal login
+                        System.out.println("[LOGIN] THANH CONG! Vao trang User...");
+                        mainCardLayout.show(mainContentPanel, "user");
+                        userPanel.onLogin();
+                    }
                 } else {
                     // PIN dung nhung RSA FAIL - THE GIA MAO!
                     System.out.println("[LOGIN] !!! CANH BAO: RSA THAT BAI - THE CO THE GIA MAO !!!");

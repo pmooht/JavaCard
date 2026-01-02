@@ -321,6 +321,17 @@ public class CardCommunicator {
         }
     }
 
+    public boolean checkDefaultPin() {
+        if (!connected || !authenticated)
+            return false;
+        try {
+            return cardManager.checkDefaultPin();
+        } catch (Exception e) {
+            System.out.println("[WARN] Check Default PIN failed: " + e.getMessage());
+            return false;
+        }
+    }
+
     /**
      * Mở khóa thẻ bằng mật khẩu admin ("ADMIN" theo applet)
      */

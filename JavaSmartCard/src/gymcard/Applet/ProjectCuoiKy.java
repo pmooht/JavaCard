@@ -17,6 +17,9 @@
 //    private boolean blocked;
 //    private boolean userAuthenticated;
 //
+//    // NEW: Flag to track if PIN is default
+//    private boolean isDefaultPin;
+//
 //    // ===================== AES / HASH CONFIG =====================
 //    private static final short AES_KEY_LEN = (short) 16; // 128-bit AES
 //    private static final short SHA_256_LEN = (short) 32;
@@ -87,7 +90,7 @@
 //    private byte[] encPrivMod; // AES(MK, PrivateModulus)
 //    private byte[] encPrivExp; // AES(MK, PrivateExponent)
 //
-//    // RAM: Buffer tam de giai ma Private Key truoc khi np (Transient RAM)
+//    // RAM: Buffer tam de giai ma Private Key truoc khi n p (Transient RAM)
 //    private byte[] ramPrivMod;
 //    private byte[] ramPrivExp;
 //
@@ -99,6 +102,7 @@
 //    private static final byte INS_CHANGE_PIN = (byte) 0x21;
 //    private static final byte INS_UNLOCK = (byte) 0x22;
 //    private static final byte INS_ADMIN_SET_PIN = (byte) 0x23;
+//    private static final byte INS_CHECK_DEFAULT_PIN = (byte) 0x24; // NEW
 //
 //    private static final byte INS_WRITE_PERSONAL = (byte) 0x30;
 //    private static final byte INS_READ_PERSONAL = (byte) 0x31;
@@ -142,6 +146,7 @@
 //        triesRemaining = MAX_PIN_TRIES;
 //        blocked = false;
 //        userAuthenticated = false;
+//        isDefaultPin = true; // Default state
 //
 //        // AES & SHA Engines
 //        masterKey = (AESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_AES, KeyBuilder.LENGTH_AES_128, false);
@@ -150,7 +155,7 @@
 //        try {
 //            sha = MessageDigest.getInstance(ALG_SHA_256, false);
 //        } catch (CryptoException e) {
-//            // Nu th quá c không h tr SHA-256, nó s nhy vào ây
+//            // N u th quá c không h tr SHA-256, nó s nh y vào ây
 //            ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
 //        }
 //
@@ -309,6 +314,9 @@
 //            case INS_ADMIN_SET_PIN:
 //                adminSetUserPin(apdu);
 //                return;
+//            case INS_CHECK_DEFAULT_PIN:
+//                checkDefaultPin(apdu);
+//                return;
 //
 //            case INS_AVATAR_BEGIN:
 //                avatarBegin(apdu);
@@ -438,6 +446,7 @@
 //        triesRemaining = MAX_PIN_TRIES;
 //        blocked = false;
 //        userAuthenticated = false;
+//        isDefaultPin = true; // Set to true on Init (Admin creates card)
 //
 //        resetBalanceZero();
 //        Util.arrayFillNonAtomic(checkinBuf, (short) 0, CHECKIN_LEN, (byte) 0x00);
@@ -504,9 +513,19 @@
 //
 //        triesRemaining = MAX_PIN_TRIES;
 //        userAuthenticated = true;
+//        isDefaultPin = false; // PIN changed successfully
 //
 //        Util.arrayFillNonAtomic(mkBuf, (short) 0, AES_KEY_LEN, (byte) 0x00);
 //        Util.arrayFillNonAtomic(pinKeyBuf, (short) 0, AES_KEY_LEN, (byte) 0x00);
+//    }
+//
+//    private void checkDefaultPin(APDU apdu) {
+//        if (!userAuthenticated)
+//            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+//
+//        byte[] buf = apdu.getBuffer();
+//        buf[0] = isDefaultPin ? (byte) 1 : (byte) 0;
+//        apdu.setOutgoingAndSend((short) 0, (short) 1);
 //    }
 //
 //    private void unlockCard(APDU apdu) {
@@ -549,6 +568,15 @@
 //
 //        Util.arrayFillNonAtomic(mkBuf, (short) 0, AES_KEY_LEN, (byte) 0x00);
 //        Util.arrayFillNonAtomic(pinKeyBuf, (short) 0, AES_KEY_LEN, (byte) 0x00);
+//
+//        // When Admin resets PIN, set flag back to default?
+//        // Logic: if admin sets it to 000000 explicitly?
+//        // For now let's assume Admin resetting PIN is a different flow.
+//        // But if admin initializes the card, initCard is called.
+//        // This is adminSetUserPin (reset PIN). Maybe we should set isDefaultPin = true
+//        // here too?
+//        // Let's safe side set it to true so user is forced to change again.
+//        isDefaultPin = true;
 //    }
 //
 //    // =========================================================

@@ -27,8 +27,7 @@ public class RegistrationTab extends BaseTabPanel {
     private JTextField birthDateField;
     private JTextField phoneField;
     private JTextArea addressArea;
-    private JPasswordField[] pinFields = new JPasswordField[6];
-    private JPasswordField[] confirmPinFields = new JPasswordField[6];
+    // PIN fields removed - using default PIN 000000
     private JLabel avatarLabel;
     private String avatarPath;
 
@@ -148,24 +147,12 @@ public class RegistrationTab extends BaseTabPanel {
         card.add(addressPanel);
         card.add(Box.createVerticalStrut(30));
 
-        // Row 3: PIN and Avatar side by side
-        JPanel row3 = new JPanel(new GridLayout(1, 2, 50, 0));
+        // Row 3: Avatar only (PIN is now default 000000)
+        JPanel row3 = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         row3.setOpaque(false);
-        row3.setMaximumSize(new Dimension(Integer.MAX_VALUE, 180));
         row3.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Left: PIN boxes
-        JPanel pinSection = new JPanel();
-        pinSection.setLayout(new BoxLayout(pinSection, BoxLayout.Y_AXIS));
-        pinSection.setOpaque(false);
-
-        pinSection.add(createPinBoxesPanel("Mã PIN (6 chữ số):", pinFields));
-        pinSection.add(Box.createVerticalStrut(20));
-        pinSection.add(createPinBoxesPanel("Xác nhận PIN:", confirmPinFields));
-
-        row3.add(pinSection);
-
-        // Right: Avatar
+        // Avatar
         JPanel avatarSection = createAvatarPanel();
         row3.add(avatarSection);
 
@@ -178,7 +165,7 @@ public class RegistrationTab extends BaseTabPanel {
         notePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         notePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel note1 = new JLabel("ℹ  Ghi chú: Mã PIN được bảo vệ giới hạn số lần thử.");
+        JLabel note1 = new JLabel("ℹ  Ghi chú: Thẻ mới sẽ có mã PIN mặc định là 000000.");
         note1.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         note1.setForeground(TEXT_GRAY);
         notePanel.add(note1);
@@ -244,69 +231,7 @@ public class RegistrationTab extends BaseTabPanel {
         return field;
     }
 
-    private JPanel createPinBoxesPanel(String labelText, JPasswordField[] fields) {
-        JPanel panel = new JPanel(new BorderLayout(0, 8));
-        panel.setOpaque(false);
-
-        JLabel label = new JLabel(labelText + " *");
-        label.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        label.setForeground(TEXT_GRAY);
-        panel.add(label, BorderLayout.NORTH);
-
-        JPanel boxesPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        boxesPanel.setOpaque(false);
-
-        for (int i = 0; i < 6; i++) {
-            final int index = i;
-            fields[i] = new JPasswordField() {
-                @Override
-                protected void paintComponent(Graphics g) {
-                    Graphics2D g2d = (Graphics2D) g;
-                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2d.setColor(INPUT_BG);
-                    g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-                    super.paintComponent(g);
-                }
-            };
-            fields[i].setOpaque(false);
-            fields[i].setFont(new Font("Segoe UI", Font.BOLD, 24));
-            fields[i].setForeground(TEXT_WHITE);
-            fields[i].setCaretColor(TEXT_WHITE);
-            fields[i].setHorizontalAlignment(JTextField.CENTER);
-            fields[i].setBorder(new EmptyBorder(12, 12, 12, 12));
-            fields[i].setPreferredSize(new Dimension(55, 55));
-            fields[i].setMinimumSize(new Dimension(55, 55));
-            fields[i].setMaximumSize(new Dimension(55, 55));
-            fields[i].setEchoChar('●');
-
-            // Auto-move to next field
-            fields[i].addKeyListener(new java.awt.event.KeyAdapter() {
-                public void keyTyped(java.awt.event.KeyEvent e) {
-                    char c = e.getKeyChar();
-                    if (!Character.isDigit(c)) {
-                        e.consume();
-                        return;
-                    }
-                    if (new String(fields[index].getPassword()).length() >= 1) {
-                        e.consume();
-                        if (index < 5) {
-                            fields[index + 1].requestFocus();
-                        }
-                    }
-                }
-
-                public void keyReleased(java.awt.event.KeyEvent e) {
-                    if (new String(fields[index].getPassword()).length() == 1 && index < 5) {
-                        fields[index + 1].requestFocus();
-                    }
-                }
-            });
-            boxesPanel.add(fields[i]);
-        }
-
-        panel.add(boxesPanel, BorderLayout.CENTER);
-        return panel;
-    }
+    // PIN boxes panel helper removed
 
     private JPanel createAvatarPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 10));
@@ -437,13 +362,7 @@ public class RegistrationTab extends BaseTabPanel {
         return panel;
     }
 
-    private String getPinFromFields(JPasswordField[] fields) {
-        StringBuilder sb = new StringBuilder();
-        for (JPasswordField f : fields) {
-            sb.append(new String(f.getPassword()));
-        }
-        return sb.toString();
-    }
+    // getPinFromFields removed
 
     private void chooseAvatarImage() {
         JFileChooser chooser = new JFileChooser();
@@ -515,10 +434,10 @@ public class RegistrationTab extends BaseTabPanel {
             String birthDate = birthDateField.getText().trim();
             String phone = phoneField.getText().trim();
             String address = addressArea.getText().trim();
-            String pin = getPinFromFields(pinFields);
-            String confirmPin = getPinFromFields(confirmPinFields);
+            String pin = "000000"; // Default PIN
+            // String confirmPin = getPinFromFields(confirmPinFields); // Removed
 
-            if (name.isEmpty() || birthDate.isEmpty() || phone.isEmpty() || pin.length() != 6) {
+            if (name.isEmpty() || birthDate.isEmpty() || phone.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Vui lòng điền đầy đủ thông tin!", "Thiếu thông tin",
                         JOptionPane.WARNING_MESSAGE);
                 return;
@@ -534,10 +453,7 @@ public class RegistrationTab extends BaseTabPanel {
                 return;
             }
 
-            if (!pin.equals(confirmPin)) {
-                JOptionPane.showMessageDialog(this, "Mã PIN không khớp!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            // Removed PIN mismatch check
 
             String cardId = gymcard.CardManager.CardIdGenerator.nextId();
             log("Khoi tao the voi CardID = " + cardId);
@@ -566,7 +482,8 @@ public class RegistrationTab extends BaseTabPanel {
             }
 
             JOptionPane.showMessageDialog(this,
-                    "Đăng ký thành công!\n\nHội viên: " + name + "\nMã thẻ: " + cardId + "\nPIN: " + pin,
+                    "Đăng ký thành công!\n\nHội viên: " + name + "\nMã thẻ: " + cardId + "\nPIN mặc định: " + pin
+                            + "\n(Yêu cầu đổi PIN khi đăng nhập)",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
             clearForm();
 
@@ -582,10 +499,8 @@ public class RegistrationTab extends BaseTabPanel {
         birthDateField.setText(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
         phoneField.setText("");
         addressArea.setText("");
-        for (JTextField f : pinFields)
-            f.setText("");
-        for (JTextField f : confirmPinFields)
-            f.setText("");
+        // for (JTextField f : pinFields) f.setText("");
+        // for (JTextField f : confirmPinFields) f.setText("");
         avatarLabel.setIcon(null);
         avatarLabel.setText("PREVIEW");
         avatarPath = null;
