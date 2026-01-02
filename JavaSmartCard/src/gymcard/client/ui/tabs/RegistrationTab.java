@@ -470,16 +470,17 @@ public class RegistrationTab extends BaseTabPanel {
         int x = (original.getWidth() - size) / 2;
         int y = (original.getHeight() - size) / 2;
         BufferedImage crop = original.getSubimage(x, y, size, size);
-        int targetSize = 64;
+        int targetSize = 128; // Tăng từ 64 lên 128 để ảnh rõ hơn
         BufferedImage resized = new BufferedImage(targetSize, targetSize, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = resized.createGraphics();
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         g2d.drawImage(crop, 0, 0, targetSize, targetSize, null);
         g2d.dispose();
-        float quality = 0.5f;
+        float quality = 0.7f; // Tăng quality từ 0.5 lên 0.7
         byte[] result = encodeJpeg(resized, quality);
-        while (result.length > maxBytes && quality > 0.1f) {
-            quality -= 0.1f;
+        while (result.length > maxBytes && quality > 0.2f) {
+            quality -= 0.05f;
             result = encodeJpeg(resized, quality);
         }
         return result.length > maxBytes ? null : result;
@@ -549,7 +550,7 @@ public class RegistrationTab extends BaseTabPanel {
 
             byte[] avatarBytes = null;
             if (avatarPath != null) {
-                avatarBytes = compressAvatarToCardSize(avatarPath, 4096);
+                avatarBytes = compressAvatarToCardSize(avatarPath, 8192);
             }
 
             boolean ok = cardComm.setMemberInfo(name, birthDate, phone, address, avatarBytes);

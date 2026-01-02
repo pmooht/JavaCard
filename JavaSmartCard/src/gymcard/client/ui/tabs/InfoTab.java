@@ -123,8 +123,8 @@ public class InfoTab extends BaseTabPanel {
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 // Circle background
-               // g2d.setColor(new Color(230, 240, 250));
-               // g2d.fillOval(0, 0, getWidth(), getHeight());
+                // g2d.setColor(new Color(230, 240, 250));
+                // g2d.fillOval(0, 0, getWidth(), getHeight());
                 // Draw image or text
                 super.paintComponent(g);
             }
@@ -658,20 +658,21 @@ public class InfoTab extends BaseTabPanel {
         if (src == null)
             throw new Exception("Không đọc được ảnh.");
 
-        int target = 96;
+        int target = 128; // Tăng từ 96 lên 128 để ảnh rõ hơn
         BufferedImage scaled = new BufferedImage(target, target, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = scaled.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         g.drawImage(src, 0, 0, target, target, null);
         g.dispose();
 
-        for (float q = 0.70f; q >= 0.15f; q -= 0.05f) {
+        for (float q = 0.75f; q >= 0.20f; q -= 0.05f) {
             byte[] jpg = encodeJpeg(scaled, q);
-            if (jpg.length <= 4096)
+            if (jpg.length <= 8192) // Tăng từ 4096 lên 8192
                 return jpg;
         }
 
-        throw new Exception("Không thể nén ảnh xuống <= 4096 bytes.");
+        throw new Exception("Không thể nén ảnh xuống <= 8192 bytes.");
     }
 
     private byte[] encodeJpeg(BufferedImage img, float quality) throws Exception {

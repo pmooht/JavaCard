@@ -2,6 +2,7 @@ package gymcard.client.ui.tabs;
 
 import gymcard.client.CardCommunicator;
 import gymcard.client.CheckInInfo;
+import gymcard.client.CheckInLogEntry;
 import gymcard.client.PackageInfo;
 import gymcard.client.ui.BaseTabPanel;
 import java.awt.*;
@@ -701,26 +702,33 @@ public class StatisticsTab extends BaseTabPanel {
             int checkInCount = cardComm.getCheckInCount();
             totalSessionsLabel.setText(String.valueOf(checkInCount));
 
-            // Update activity log
-            activityLogPanel.removeAll();
-            CheckInInfo lastCheckIn = cardComm.getLastCheckIn();
-            if (lastCheckIn != null && !lastCheckIn.date.isEmpty()) {
-                // Store date for chart
-                lastCheckInDate = lastCheckIn.date;
-
-                addLogEntry("Check-in", lastCheckIn.checkInTime, "Cổng chính", lastCheckIn.date);
-                if (lastCheckIn.checkOutTime != null && !lastCheckIn.checkOutTime.isEmpty()) {
-                    addLogEntry("Check-out", lastCheckIn.checkOutTime, "Cổng chính", lastCheckIn.date);
-                }
-            } else {
-                lastCheckInDate = "";
-                JLabel placeholderLabel = new JLabel("Chưa có hoạt động nào");
-                placeholderLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-                placeholderLabel.setForeground(TEXT_GRAY);
-                activityLogPanel.add(placeholderLabel);
-            }
-            activityLogPanel.revalidate();
-            activityLogPanel.repaint();
+// Update activity log - hiển thị lịch sử từ thẻ (tối đa 10 entries)
+activityLogPanel.removeAll();
+CheckInInfo lastCheckIn = cardComm.getLastCheckIn();
+java.util.List<CheckInLogEntry> history = cardComm.getCheckInHistory();
+if (history != null && !history.isEmpty()) {
+    for (CheckInLogEntry entry : history) {
+        if (entry != null && entry.date != null && !entry.date.isEmpty()) {
+            addLogEntry("Tập gym", entry.checkInTime + " - " + entry.checkOutTime, 
+                       entry.getTotalTimeText(), entry.date);
+        }
+    }
+    lastCheckInDate = lastCheckIn != null ? lastCheckIn.date : "";
+} else if (lastCheckIn != null && !lastCheckIn.date.isEmpty()) {
+    lastCheckInDate = lastCheckIn.date;
+    addLogEntry("Check-in", lastCheckIn.checkInTime, "Cổng chính", lastCheckIn.date);
+    if (lastCheckIn.checkOutTime != null && !lastCheckIn.checkOutTime.isEmpty()) {
+        addLogEntry("Check-out", lastCheckIn.checkOutTime, "Cổng chính", lastCheckIn.date);
+    }
+} else {
+    lastCheckInDate = "";
+    JLabel placeholderLabel = new JLabel("Chưa có hoạt động nào");
+    placeholderLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+    placeholderLabel.setForeground(TEXT_GRAY);
+    activityLogPanel.add(placeholderLabel);
+}
+activityLogPanel.revalidate();
+activityLogPanel.repaint();
 
             // Repaint chart with new data
             if (chartPanel != null) {

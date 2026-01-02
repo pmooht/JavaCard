@@ -87,7 +87,8 @@ public class CheckInTab extends BaseTabPanel {
         countLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         statsPanel.add(countLabel);
 
-        lastLabel = new JLabel("<html>Click vao ngay check-in<br>de xem chi tiet gio vao - ra</html>");
+        // Label hiển thị trạng thái và thời gian
+        lastLabel = new JLabel("<html>Trạng thái: Chưa check-in<br>Thời gian hôm nay: 0 phút</html>");
         lastLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
         lastLabel.setForeground(new Color(127, 140, 141));
         statsPanel.add(lastLabel);
@@ -121,17 +122,17 @@ public class CheckInTab extends BaseTabPanel {
                     CheckInInfo info = cardComm.getLastCheckIn();
                     int count = cardComm.getCheckInCount();
 
-                    countLabel.setText("So buoi da tap: " + count + " buoi");
+                    countLabel.setText("Số buổi đã tập: " + count + " buổi");
                     lastLabel.setText(String.format(
-                            "<html>Lan tap gan nhat:<br>%s<br>Vao: %s | Ra: %s</html>",
-                            info.date, info.checkInTime, info.checkOutTime));
+                            "<html>Trạng thái: <b style='color:green'>Đang trong phòng tập</b><br>Vào lúc: %s<br>Thời gian hôm nay: %s</html>",
+                            info.checkInTime, info.getTotalTimeText()));
 
                     decorator.addCheckInDate(date); // Green - dang trong phong tap
                     currentCheckInDate = date; // Luu lai de biet khi checkout
 
                     JOptionPane.showMessageDialog(this,
-                            "Check-in thanh cong!\nChuc ban buoi tap tot!",
-                            "Thanh cong", JOptionPane.INFORMATION_MESSAGE);
+                            "Check-in thành công!\nChúc bạn buổi tập tốt!",
+                            "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     log("Check-in that bai");
                 }
@@ -139,8 +140,8 @@ public class CheckInTab extends BaseTabPanel {
             } catch (Exception ex) {
                 log("LOI: " + ex.getMessage());
                 JOptionPane.showMessageDialog(this,
-                        "Loi check-in: " + ex.getMessage(),
-                        "Loi", JOptionPane.ERROR_MESSAGE);
+                        "Lỗi check-in: " + ex.getMessage(),
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -155,8 +156,8 @@ public class CheckInTab extends BaseTabPanel {
 
                     CheckInInfo info = cardComm.getLastCheckIn();
                     lastLabel.setText(String.format(
-                            "<html>Lan tap gan nhat:<br>%s<br>Vao: %s | Ra: %s</html>",
-                            info.date, info.checkInTime, info.checkOutTime));
+                            "<html>Trạng thái: <b style='color:#8e44ad'>Đã rời phòng tập</b><br>Vào: %s | Ra: %s<br>Thời gian hôm nay: %s</html>",
+                            info.checkInTime, info.checkOutTime, info.getTotalTimeText()));
 
                     // Chuyen sang mau tim khi checkout xong (hoan thanh buoi tap)
                     if (currentCheckInDate != null) {
@@ -166,11 +167,11 @@ public class CheckInTab extends BaseTabPanel {
 
                     // Cap nhat so buoi tap
                     int count = cardComm.getCheckInCount();
-                    countLabel.setText("So buoi da tap: " + count + " buoi");
+                    countLabel.setText("Số buổi đã tập: " + count + " buổi");
 
                     JOptionPane.showMessageDialog(this,
-                            "Check-out thanh cong!\nHen gap lai!",
-                            "Thanh cong", JOptionPane.INFORMATION_MESSAGE);
+                            "Check-out thành công!\nTổng thời gian hôm nay: " + info.getTotalTimeText(),
+                            "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     log("Check-out that bai");
                 }
@@ -178,8 +179,8 @@ public class CheckInTab extends BaseTabPanel {
             } catch (Exception ex) {
                 log("LOI: " + ex.getMessage());
                 JOptionPane.showMessageDialog(this,
-                        "Loi check-out: " + ex.getMessage(),
-                        "Loi", JOptionPane.ERROR_MESSAGE);
+                        "Lỗi check-out: " + ex.getMessage(),
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -200,31 +201,37 @@ public class CheckInTab extends BaseTabPanel {
     public void refreshData() {
         try {
             int count = cardComm.getCheckInCount();
-            countLabel.setText("So buoi da tap: " + count + " buoi");
+            countLabel.setText("Số buổi đã tập: " + count + " buổi");
 
             CheckInInfo info = cardComm.getLastCheckIn();
             if (info != null && !info.date.isEmpty()) {
-                lastLabel.setText(String.format(
-                        "<html>Lan tap gan nhat:<br>%s<br>Vao: %s | Ra: %s</html>",
-                        info.date, info.checkInTime, info.checkOutTime));
+                // Hiển thị trạng thái và thời gian
+                String today = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
+                if (info.date.equals(today)) {
+                    if (info.isCheckedIn) {
+                        lastLabel.setText(String.format(
+                                "<html>Trạng thái: <b style='color:green'>Đang trong phòng tập</b><br>Vào lúc: %s<br>Thời gian hôm nay: %s</html>",
+                                info.checkInTime, info.getTotalTimeText()));
+                        decorator.addCheckInDate(info.date);
+                        currentCheckInDate = info.date;
+                    } else {
+                        lastLabel.setText(String.format(
+                                "<html>Trạng thái: <b style='color:#8e44ad'>Đã rời phòng tập</b><br>Vào: %s | Ra: %s<br>Thời gian hôm nay: %s</html>",
+                                info.checkInTime, info.checkOutTime, info.getTotalTimeText()));
+                        decorator.addCompletedDate(info.date);
+                    }
+                } else {
+                    lastLabel.setText(String.format(
+                            "<html>Lần tập gần nhất:<br>%s<br>Vào: %s | Ra: %s</html>",
+                            info.date, info.checkInTime, info.checkOutTime));
+                }
                 lastLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
                 lastLabel.setForeground(new Color(52, 73, 94));
-
-                // Hien thi mau cho ngay check-in gan nhat
-                if (info.checkOutTime != null && !info.checkOutTime.isEmpty()
-                        && !info.checkOutTime.equals("--:--:--")) {
-                    // Da checkout - xanh
-                    decorator.addCompletedDate(info.date);
-                } else {
-                    // Chua checkout - tim
-                    decorator.addCheckInDate(info.date);
-                    currentCheckInDate = info.date;
-                }
             }
-            log("Da tai thong tin check-in tu the");
+            log("Đã tải thông tin check-in từ thẻ");
 
         } catch (Exception ex) {
-            log("LOI tai check-in: " + ex.getMessage());
+            log("LỖI tải check-in: " + ex.getMessage());
         }
     }
 }

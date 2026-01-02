@@ -49,7 +49,7 @@ public class CardManager {
     public static final byte FIELD_BALANCE = (byte) 0x08; // Số dư (có mã hóa trên thẻ)
 
     // ================== AVATAR CONFIG ==================
-    public static final int AVATAR_STORE_LEN = 4096;
+    public static final int AVATAR_STORE_LEN = 8192; // 8KB cho ảnh 128x128
     private static final int AVATAR_MAX_DATA = AVATAR_STORE_LEN - 2; // 2 bytes length prefix
     private static final int AVATAR_CHUNK_SIZE = 220; // T=0 safe
 
@@ -170,7 +170,7 @@ public class CardManager {
     public void writeAvatar(byte[] avatarBytes) throws Exception {
         if (avatarBytes == null)
             avatarBytes = new byte[0];
-        if (avatarBytes.length > 4094)
+        if (avatarBytes.length > AVATAR_MAX_DATA)
             throw new IllegalArgumentException("Avatar too large");
 
         // BEGIN (2 bytes length)
@@ -200,13 +200,12 @@ public class CardManager {
     }
 
     public byte[] readAvatar() throws Exception {
-        // đọc 2 byte length nằm ở cuối plaintext, nhưng để tiện: ta đọc header từ cuối:
-        // trong applet mình lưu len ở (4096-2..4096-1)
-        int lenPos = 4096 - 2;
+        // trong applet mình lưu len ở cuối buffer
+        int lenPos = AVATAR_STORE_LEN - 2;
         byte[] tail = readAvatarChunk(lenPos, 2);
 
         int len = ((tail[0] & 0xFF) << 8) | (tail[1] & 0xFF);
-        if (len <= 0 || len > 4094)
+        if (len <= 0 || len > AVATAR_MAX_DATA)
             return null;
 
         byte[] out = new byte[len];

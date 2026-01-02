@@ -233,12 +233,13 @@ public class PackageManagementTab extends BaseTabPanel {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
 
-        String[] columns = { "ID", "MÃ GÓI", "TÊN GÓI", "MÔ TẢ", "NGÀY", "BUỔI", "GIÁ (VND)", "TRẠNG THÁI",
+        String[] columns = { "ID", "MÃ GÓI", "TÊN GÓI", "MÔ TẢ", "NGÀY", "BUỔI", "THỜI LƯỢNG", "GIÁ (VND)",
+                "TRẠNG THÁI",
                 "THAO TÁC" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 8;
+                return column == 9; // THAO TÁC column
             }
         };
 
@@ -265,14 +266,15 @@ public class PackageManagementTab extends BaseTabPanel {
         planTable.getColumnModel().getColumn(0).setPreferredWidth(0);
 
         // Set column widths
-        planTable.getColumnModel().getColumn(1).setPreferredWidth(90);
+        planTable.getColumnModel().getColumn(1).setPreferredWidth(80);
         planTable.getColumnModel().getColumn(2).setPreferredWidth(100);
-        planTable.getColumnModel().getColumn(3).setPreferredWidth(180);
-        planTable.getColumnModel().getColumn(4).setPreferredWidth(50);
-        planTable.getColumnModel().getColumn(5).setPreferredWidth(50);
-        planTable.getColumnModel().getColumn(6).setPreferredWidth(90);
-        planTable.getColumnModel().getColumn(7).setPreferredWidth(50);
-        planTable.getColumnModel().getColumn(8).setPreferredWidth(150);
+        planTable.getColumnModel().getColumn(3).setPreferredWidth(160);
+        planTable.getColumnModel().getColumn(4).setPreferredWidth(45);
+        planTable.getColumnModel().getColumn(5).setPreferredWidth(45);
+        planTable.getColumnModel().getColumn(6).setPreferredWidth(80); // Thời lượng
+        planTable.getColumnModel().getColumn(7).setPreferredWidth(90); // Giá
+        planTable.getColumnModel().getColumn(8).setPreferredWidth(50); // Trạng thái
+        planTable.getColumnModel().getColumn(9).setPreferredWidth(150); // Thao tác
 
         // Custom renderers
         planTable.setDefaultRenderer(Object.class, new DarkTableCellRenderer());
@@ -297,7 +299,7 @@ public class PackageManagementTab extends BaseTabPanel {
             setBorder(new EmptyBorder(5, 10, 5, 10));
 
             // Status column styling
-            if (column == 7 && value != null) {
+            if (column == 8 && value != null) {
                 String status = value.toString();
                 if (status.contains("Active")) {
                     setForeground(ACCENT_GREEN);
@@ -314,6 +316,8 @@ public class PackageManagementTab extends BaseTabPanel {
             tableModel.setRowCount(0);
             List<PlanInfo> plans = db.getAllPlans();
             for (PlanInfo plan : plans) {
+                // Format thời lượng
+                String durationText = plan.getMaxDurationText();
                 Object[] row = {
                         plan.id,
                         plan.code,
@@ -321,15 +325,16 @@ public class PackageManagementTab extends BaseTabPanel {
                         plan.description,
                         plan.durationDays > 0 ? plan.durationDays : "-",
                         plan.sessionCount > 0 ? plan.sessionCount : "-",
+                        durationText,
                         String.format("%,.0f", plan.price),
                         plan.isActive ? "Active" : "Inactive",
                         "actions"
                 };
                 tableModel.addRow(row);
             }
-            log("Da tai " + plans.size() + " goi tap");
+            log("Đã tải " + plans.size() + " gói tập");
         } catch (SQLException e) {
-            log("LOI tai goi tap: " + e.getMessage());
+            log("LỖI tải gói tập: " + e.getMessage());
         }
     }
 
@@ -428,6 +433,32 @@ public class PackageManagementTab extends BaseTabPanel {
             sessSpinner.setValue(existing.sessionCount);
         formPanel.add(sessSpinner, gbc);
 
+        // Max Duration (minutes)
+        row++;
+        gbc.gridx = 0;
+        gbc.gridy = row;
+        gbc.weightx = 0;
+        JLabel durationLbl = new JLabel("Thời lượng tối đa (phút):");
+        durationLbl.setForeground(TEXT_WHITE);
+        formPanel.add(durationLbl, gbc);
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        JSpinner maxDurationSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 1440, 30)); // Max 24 giờ
+        if (isEdit && existing.maxDurationMinutes > 0)
+            maxDurationSpinner.setValue(existing.maxDurationMinutes);
+        formPanel.add(maxDurationSpinner, gbc);
+
+        // Note label
+        row++;
+        gbc.gridx = 0;
+        gbc.gridy = row;
+        gbc.gridwidth = 2;
+        JLabel noteLbl = new JLabel("(0 = Không giới hạn thời lượng)");
+        noteLbl.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        noteLbl.setForeground(TEXT_GRAY);
+        formPanel.add(noteLbl, gbc);
+        gbc.gridwidth = 1;
+
         // Price
         row++;
         gbc.gridx = 0;
@@ -457,6 +488,7 @@ public class PackageManagementTab extends BaseTabPanel {
                 String desc = descField.getText().trim();
                 int days = (Integer) daysSpinner.getValue();
                 int sessions = (Integer) sessSpinner.getValue();
+                int maxDuration = (Integer) maxDurationSpinner.getValue();
                 double price = ((Number) priceSpinner.getValue()).doubleValue();
 
                 if (code.isEmpty() || name.isEmpty() || price <= 0) {
@@ -466,10 +498,17 @@ public class PackageManagementTab extends BaseTabPanel {
                 }
 
                 if (isEdit) {
-                    db.updatePlan(existing.id, code, name, desc, days > 0 ? days : null, sessions > 0 ? sessions : null,
+                    db.updatePlan(existing.id, code, name, desc,
+                            days > 0 ? days : null,
+                            sessions > 0 ? sessions : null,
+                            maxDuration > 0 ? maxDuration : null,
                             price);
                 } else {
-                    db.addPlan(code, name, desc, days > 0 ? days : null, sessions > 0 ? sessions : null, price);
+                    db.addPlan(code, name, desc,
+                            days > 0 ? days : null,
+                            sessions > 0 ? sessions : null,
+                            maxDuration > 0 ? maxDuration : null,
+                            price);
                 }
                 dialog.dispose();
                 loadPlans();

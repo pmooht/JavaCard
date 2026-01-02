@@ -8,6 +8,8 @@ import gymcard.databaseManager.DatabaseManager;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Card Communicator - Nói chuyện với thẻ JavaCard thật
@@ -21,7 +23,7 @@ public class CardCommunicator {
     private static final int DOB_MAX_LEN = 16;
     private static final int PHONE_MAX_LEN = 16;
     private static final int ADDRESS_MAX_LEN = 128;
-    private static final int AVATAR_MAX_LEN = 4096; // khop AVATAR_LEN tren the
+    private static final int AVATAR_MAX_LEN = 8192; // 8KB cho ảnh 128x128
 
     // Gioi han so du toi da (8 bytes long) - 999,999,999 VND (khoang 1 ty)
     public static final long MAX_BALANCE = 999_999_999_999L; // 999 ty dong
@@ -33,10 +35,11 @@ public class CardCommunicator {
     // Làm việc với thẻ thật
     private CardManager cardManager;
 
-    // Simulated member state (nhưng dữ liệu core sẽ được sync với thẻ)
     private MemberInfo memberInfo;
     private PackageInfo packageInfo;
     private CheckInInfo lastCheckIn;
+    private List<CheckInLogEntry> checkInHistory; // Lịch sử 10 bản ghi gần nhất
+    private static final int MAX_CHECKIN_LOG = 10;
     private long balance;
     private int checkInCount;
     private final TransactionInfo[] transactions;
@@ -76,6 +79,8 @@ public class CardCommunicator {
         lastCheckIn.date = "";
         lastCheckIn.checkInTime = "";
         lastCheckIn.checkOutTime = "";
+
+        checkInHistory = new ArrayList<>();
     }
 
     // ---------------------------------------------------------------------
@@ -681,15 +686,16 @@ public class CardCommunicator {
 
     /**
      * Set gói tập:
-     * - type: 0=chưa có, 1=gói ngày (15/30/60/90 ngày)
+     * - type: 0=chưa có, 1=gói ngày, 2=gói theo lượt
      * - expiry, registration: dd/MM/yyyy
-     * - sessions: không sử dụng (đặt 0)
+     * - sessions: số buổi còn lại (gói theo lượt)
+     * - maxDuration: thời lượng tối đa/buổi (phút), 0 = không giới hạn
      *
      * Lưu xuống thẻ dạng string ngắn:
-     * "type|expiry|registration|sessions"
+     * "type|expiry|registration|sessions|maxDuration|usedMinutesToday"
      * rồi writeField(FIELD_PACKAGE, bytes).
      */
-    public boolean setPackage(byte type, String expiry, String registration, short sessions)
+    public boolean setPackage(byte type, String expiry, String registration, int sessions, int maxDuration)
             throws Exception {
 
         if (!connected || !authenticated) {
@@ -699,7 +705,9 @@ public class CardCommunicator {
         String packStr = (type & 0xFF) + "|" +
                 (expiry == null ? "" : expiry) + "|" +
                 (registration == null ? "" : registration) + "|" +
-                sessions;
+                sessions + "|" +
+                maxDuration + "|" +
+                0; // usedMinutesToday = 0 khi set gói mới
 
         byte[] data = packStr.getBytes("UTF-8");
         cardManager.writeField(CardManager.FIELD_PACKAGE, data);
@@ -708,13 +716,24 @@ public class CardCommunicator {
         packageInfo.expiry = expiry;
         packageInfo.registration = registration;
         packageInfo.remainingSessions = sessions;
+        packageInfo.maxDurationMinutes = maxDuration;
+        packageInfo.usedMinutesToday = 0;
 
         System.out.println("[CARD] Package info written: " + packStr);
         return true;
     }
 
     /**
+     * Overload cũ để tương thích ngược
+     */
+    public boolean setPackage(byte type, String expiry, String registration, short sessions)
+            throws Exception {
+        return setPackage(type, expiry, registration, sessions, 0);
+    }
+
+    /**
      * Đọc gói tập từ thẻ
+     * Format mới: type|expiry|registration|sessions|maxDuration|usedMinutesToday
      */
     public PackageInfo getPackage() throws Exception {
         if (!connected || !authenticated) {
@@ -723,7 +742,6 @@ public class CardCommunicator {
 
         byte[] data = cardManager.readField(CardManager.FIELD_PACKAGE);
         String packStr = new String(data, "UTF-8");
-        // Format: type|expiry|registration|sessions
         String[] parts = packStr.split("\\|");
         PackageInfo p = new PackageInfo();
 
@@ -742,9 +760,23 @@ public class CardCommunicator {
         }
         if (parts.length >= 4) {
             try {
-                p.remainingSessions = (short) Integer.parseInt(parts[3]);
+                p.remainingSessions = Integer.parseInt(parts[3]);
             } catch (NumberFormatException e) {
                 p.remainingSessions = 0;
+            }
+        }
+        if (parts.length >= 5) {
+            try {
+                p.maxDurationMinutes = Integer.parseInt(parts[4]);
+            } catch (NumberFormatException e) {
+                p.maxDurationMinutes = 0;
+            }
+        }
+        if (parts.length >= 6) {
+            try {
+                p.usedMinutesToday = Integer.parseInt(parts[5]);
+            } catch (NumberFormatException e) {
+                p.usedMinutesToday = 0;
             }
         }
 
@@ -759,7 +791,9 @@ public class CardCommunicator {
 
     /**
      * Check-in: ghi lên thẻ với FIELD_CHECKIN (plaintext, không mã hóa)
-     * Mỗi ngày chỉ được check-in 1 lần
+     * Hỗ trợ ra vào nhiều lần trong ngày - cộng dồn thời gian
+     * - Nếu chưa check-in hôm nay -> tạo buổi tập mới
+     * - Nếu đã check-out rồi quay lại -> check-in lại (đã tính là 1 buổi)
      */
     public boolean checkIn(String date, String time) throws Exception {
         if (!connected || !authenticated) {
@@ -769,72 +803,107 @@ public class CardCommunicator {
         // Đọc check-in từ thẻ trước để kiểm tra
         getLastCheckIn();
 
-        // Kiểm tra nếu đã check-in cùng ngày
-        if (lastCheckIn.date.equals(date) && !lastCheckIn.checkInTime.isEmpty()) {
-            if (lastCheckIn.checkOutTime.isEmpty()) {
-                throw new Exception(
-                        "Bạn đã check-in hôm nay lúc " + lastCheckIn.checkInTime + ". Vui lòng check-out trước!");
-            } else {
-                throw new Exception("Bạn đã tập xong hôm nay (" + lastCheckIn.checkInTime + " - "
-                        + lastCheckIn.checkOutTime + "). Mỗi ngày chỉ tập 1 buổi!");
-            }
+        // Kiểm tra nếu đang trong phòng tập
+        if (lastCheckIn.date.equals(date) && lastCheckIn.isCheckedIn) {
+            throw new Exception(
+                    "Bạn đang trong phòng tập từ " + lastCheckIn.checkInTime + ". Vui lòng check-out trước!");
         }
 
-        lastCheckIn.date = date;
+        // Nếu là ngày mới hoàn toàn
+        boolean isNewDay = !lastCheckIn.date.equals(date);
+        if (isNewDay) {
+            // Reset cho ngày mới
+            lastCheckIn.date = date;
+            lastCheckIn.totalMinutesToday = 0;
+        }
+
         lastCheckIn.checkInTime = time;
-        lastCheckIn.checkOutTime = "";
-        // So buoi khong tang o day - chi tang khi checkout xong
+        lastCheckIn.checkOutTime = ""; // Chưa checkout
+        lastCheckIn.isCheckedIn = true;
         lastCheckIn.count = checkInCount;
+
+        // Nếu là buổi tập mới (ngày mới hoặc lần đầu trong ngày) - tăng số buổi
+        if (isNewDay) {
+            checkInCount++;
+            lastCheckIn.count = checkInCount;
+        }
 
         // Ghi lên thẻ
         boolean writtenToCard = writeCheckInToCard();
 
+        String status = isNewDay ? "NEW SESSION" : "RE-ENTRY";
         System.out.println(
-                "[" + (writtenToCard ? "CARD" : "RAM") + "] Checked in at " + time + ", count=" + checkInCount);
+                "[" + (writtenToCard ? "CARD" : "RAM") + "] Check-in (" + status + ") at " + time + ", total sessions="
+                        + checkInCount);
         return true;
     }
 
     /**
-     * Check-out: ghi len the voi FIELD_CHECKIN (plaintext)
-     * Chi cho phep checkout neu da check-in va chua checkout trong ngay
+     * Check-out: ghi lên thẻ với FIELD_CHECKIN (plaintext)
+     * Tính thời lượng buổi tập và cộng dồn vào tổng thời gian hôm nay
      */
     public boolean checkOut(String time) throws Exception {
         if (!connected || !authenticated) {
-            throw new Exception("Chua xac thuc PIN");
+            throw new Exception("Chưa xác thực PIN");
         }
 
-        // Doc check-in tu the de kiem tra
+        // Đọc check-in từ thẻ để kiểm tra
         getLastCheckIn();
 
-        // Kiem tra da check-in chua
-        if (lastCheckIn.date.isEmpty() || lastCheckIn.checkInTime.isEmpty()) {
-            throw new Exception("Ban chua check-in! Vui long check-in truoc.");
+        // Kiểm tra đã check-in chưa
+        if (!lastCheckIn.isCheckedIn) {
+            throw new Exception("Bạn chưa check-in! Vui lòng check-in trước.");
         }
 
-        // Kiem tra xem co phai hom nay khong
+        // Kiểm tra xem có phải hôm nay không
         String today = new java.text.SimpleDateFormat("dd/MM/yyyy").format(new java.util.Date());
         if (!lastCheckIn.date.equals(today)) {
-            throw new Exception("Ban chua check-in hom nay! Check-in truoc khi checkout.");
+            throw new Exception("Bạn chưa check-in hôm nay! Check-in trước khi checkout.");
         }
 
-        // Kiem tra da checkout chua
-        if (!lastCheckIn.checkOutTime.isEmpty()) {
-            throw new Exception(
-                    "Ban da checkout hom nay luc " + lastCheckIn.checkOutTime + ". Moi ngay chi checkout 1 lan!");
-        }
+        // Tính thời gian buổi tập này
+        int sessionMinutes = calculateSessionMinutes(lastCheckIn.checkInTime, time);
+        lastCheckIn.totalMinutesToday += sessionMinutes;
 
         lastCheckIn.checkOutTime = time;
+        lastCheckIn.isCheckedIn = false;
 
-        // Tang so buoi tap khi checkout hoan tat
-        checkInCount++;
-        lastCheckIn.count = checkInCount;
+        // Thêm vào history - MỖI LẦN checkout tạo 1 entry mới (không gộp theo ngày)
+        CheckInLogEntry logEntry = new CheckInLogEntry(
+                lastCheckIn.date,
+                lastCheckIn.checkInTime,
+                lastCheckIn.checkOutTime,
+                sessionMinutes); // Lưu thời gian buổi tập này, không phải tổng
+        // Thêm vào đầu list
+        checkInHistory.add(0, logEntry);
+        // Giữ tối đa 10 entries
+        while (checkInHistory.size() > MAX_CHECKIN_LOG) {
+            checkInHistory.remove(checkInHistory.size() - 1);
+        }
 
-        // Ghi len the
+        // Ghi lên thẻ
         boolean writtenToCard = writeCheckInToCard();
 
-        System.out.println("[" + (writtenToCard ? "CARD" : "RAM") + "] Checked out at " + time + ", total sessions = "
-                + checkInCount);
+        System.out.println("[" + (writtenToCard ? "CARD" : "RAM") + "] Check-out at " + time +
+                ", session=" + sessionMinutes + "min, today total=" + lastCheckIn.totalMinutesToday + "min");
         return true;
+    }
+
+    /**
+     * Tính số phút giữa 2 mốc thời gian HH:mm:ss
+     */
+    private int calculateSessionMinutes(String startTime, String endTime) {
+        try {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm:ss");
+            java.util.Date start = sdf.parse(startTime);
+            java.util.Date end = sdf.parse(endTime);
+            long diffMs = end.getTime() - start.getTime();
+            if (diffMs < 0)
+                diffMs = 0; // Tránh giá trị âm
+            return (int) (diffMs / 60000); // Chuyển ms sang phút
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     public int getCheckInCount() throws Exception {
@@ -853,19 +922,46 @@ public class CardCommunicator {
             byte[] data = cardManager.readField(CardManager.FIELD_CHECKIN);
             if (data != null && data.length > 0) {
                 String str = new String(data, "UTF-8");
-                String[] parts = str.split("\\|");
-                if (parts.length >= 1)
-                    lastCheckIn.date = parts[0];
-                if (parts.length >= 2)
-                    lastCheckIn.checkInTime = parts[1];
-                if (parts.length >= 3)
-                    lastCheckIn.checkOutTime = parts[2];
-                if (parts.length >= 4) {
-                    try {
-                        lastCheckIn.count = Integer.parseInt(parts[3]);
-                        checkInCount = lastCheckIn.count; // Sync RAM voi the
-                    } catch (NumberFormatException e) {
-                        lastCheckIn.count = 0;
+                // Format mới: currentState;historyEntry1;historyEntry2;...
+                // currentState = date|inTime|outTime|count|isCheckedIn|totalMinutes
+                // historyEntry = date|inTime|outTime|minutes
+                String[] entries = str.split(";");
+
+                // Parse current state (first entry)
+                if (entries.length >= 1 && !entries[0].isEmpty()) {
+                    String[] parts = entries[0].split("\\|");
+                    if (parts.length >= 1)
+                        lastCheckIn.date = parts[0];
+                    if (parts.length >= 2)
+                        lastCheckIn.checkInTime = parts[1];
+                    if (parts.length >= 3)
+                        lastCheckIn.checkOutTime = parts[2];
+                    if (parts.length >= 4) {
+                        try {
+                            lastCheckIn.count = Integer.parseInt(parts[3]);
+                            checkInCount = lastCheckIn.count;
+                        } catch (NumberFormatException e) {
+                            lastCheckIn.count = 0;
+                        }
+                    }
+                    if (parts.length >= 5) {
+                        lastCheckIn.isCheckedIn = "1".equals(parts[4]);
+                    }
+                    if (parts.length >= 6) {
+                        try {
+                            lastCheckIn.totalMinutesToday = Integer.parseInt(parts[5]);
+                        } catch (NumberFormatException e) {
+                            lastCheckIn.totalMinutesToday = 0;
+                        }
+                    }
+                }
+
+                // Parse history entries (remaining entries)
+                checkInHistory.clear();
+                for (int i = 1; i < entries.length && i <= MAX_CHECKIN_LOG; i++) {
+                    CheckInLogEntry entry = CheckInLogEntry.parse(entries[i]);
+                    if (entry != null) {
+                        checkInHistory.add(entry);
                     }
                 }
             }
@@ -1002,21 +1098,48 @@ public class CardCommunicator {
 
     /**
      * Ghi check-in lên thẻ (plaintext, không mã hóa)
+     * Format mới: currentState;historyEntry1;historyEntry2;...
+     * currentState = date|inTime|outTime|count|isCheckedIn|totalMinutes
+     * historyEntry = date|inTime|outTime|minutes
      */
     private boolean writeCheckInToCard() {
         try {
-            String str = (lastCheckIn.date == null ? "" : lastCheckIn.date) + "|" +
-                    (lastCheckIn.checkInTime == null ? "" : lastCheckIn.checkInTime) + "|" +
-                    (lastCheckIn.checkOutTime == null ? "" : lastCheckIn.checkOutTime) + "|" +
-                    lastCheckIn.count;
-            byte[] data = str.getBytes("UTF-8");
+            StringBuilder sb = new StringBuilder();
+            // Current state
+            sb.append(lastCheckIn.date == null ? "" : lastCheckIn.date).append("|")
+                    .append(lastCheckIn.checkInTime == null ? "" : lastCheckIn.checkInTime).append("|")
+                    .append(lastCheckIn.checkOutTime == null ? "" : lastCheckIn.checkOutTime).append("|")
+                    .append(lastCheckIn.count).append("|")
+                    .append(lastCheckIn.isCheckedIn ? "1" : "0").append("|")
+                    .append(lastCheckIn.totalMinutesToday);
+
+            // Append history entries (max 10)
+            if (checkInHistory != null) {
+                for (CheckInLogEntry entry : checkInHistory) {
+                    sb.append(";").append(entry.serialize());
+                }
+            }
+
+            byte[] data = sb.toString().getBytes("UTF-8");
             cardManager.writeField(CardManager.FIELD_CHECKIN, data);
-            System.out.println("[CARD] Wrote check-in to card: " + str);
+            System.out.println(
+                    "[CARD] Wrote check-in to card: " + sb.toString().substring(0, Math.min(60, sb.length())) + "...");
             return true;
         } catch (Exception e) {
             System.out.println("[WARN] Could not write check-in to card: " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Lấy lịch sử check-in (tối đa 10 entries)
+     */
+    public List<CheckInLogEntry> getCheckInHistory() throws Exception {
+        if (!connected || !authenticated) {
+            throw new Exception("Chưa xác thực PIN");
+        }
+        // Đã được load khi gọi getLastCheckIn()
+        return checkInHistory;
     }
 
     public TransactionInfo getTransaction(byte index) throws Exception {

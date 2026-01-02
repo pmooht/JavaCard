@@ -164,10 +164,19 @@ public class PackageTab extends BaseTabPanel {
         descLabel.setForeground(Color.GRAY);
         infoPanel.add(descLabel);
 
-        JLabel durationLabel = new JLabel("Thời hạn: " + plan.durationDays + " ngày");
+        // Hàng thời hạn và thời lượng
+        JLabel durationLabel = new JLabel("Thời hạn: " + plan.durationDays + " ngày | " + plan.getMaxDurationText());
         durationLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         durationLabel.setForeground(new Color(100, 100, 100));
         infoPanel.add(durationLabel);
+
+        // Hiển thị số buổi nếu là gói theo lượt
+        if (plan.sessionCount > 0) {
+            JLabel sessionsLabel = new JLabel("⚙ " + plan.sessionCount + " buổi tập");
+            sessionsLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            sessionsLabel.setForeground(new Color(155, 89, 182));
+            infoPanel.add(sessionsLabel);
+        }
 
         card.add(infoPanel, BorderLayout.CENTER);
 

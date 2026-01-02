@@ -55,6 +55,7 @@ public class DatabaseManager {
                             ");");
 
             // Bảng membership_plans: các gói tập
+            // max_duration_minutes: 0 = không giới hạn, khác 0 = giới hạn phút/buổi
             st.execute(
                     "CREATE TABLE IF NOT EXISTS membership_plans (" +
                             "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -63,12 +64,14 @@ public class DatabaseManager {
                             "  description TEXT," +
                             "  duration_days INTEGER," +
                             "  session_count INTEGER," +
+                            "  max_duration_minutes INTEGER DEFAULT 0," +
                             "  price REAL NOT NULL," +
                             "  is_active INTEGER NOT NULL DEFAULT 1," +
                             "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP" +
                             ");");
 
             // Bảng services: dịch vụ bổ sung (HLV riêng, nước uống...)
+            // service_type: CONSUMABLE = vật phẩm tiêu hao, SESSION = dịch vụ theo lượt
             st.execute(
                     "CREATE TABLE IF NOT EXISTS services (" +
                             "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -76,6 +79,7 @@ public class DatabaseManager {
                             "  name TEXT NOT NULL," +
                             "  description TEXT," +
                             "  price REAL NOT NULL," +
+                            "  service_type TEXT DEFAULT 'CONSUMABLE'," +
                             "  is_active INTEGER NOT NULL DEFAULT 1," +
                             "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP" +
                             ");");
@@ -148,88 +152,85 @@ public class DatabaseManager {
 
     /**
      * Insert các gói tập mặc định.
+     * - BASIC: 30 ngày, 2 giờ/buổi
+     * - STANDARD: 30 ngày, 4 giờ/buổi
+     * - PREMIUM: 30 ngày, không giới hạn
+     * - SESSIONS_20: 20 buổi trong 90 ngày, 3 giờ/buổi
      */
     private void insertDefaultPlans() throws SQLException {
-        String sql = "INSERT INTO membership_plans(code, name, description, duration_days, session_count, price) VALUES(?,?,?,?,?,?)";
+        String sql = "INSERT INTO membership_plans(code, name, description, duration_days, session_count, max_duration_minutes, price) VALUES(?,?,?,?,?,?,?)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            // Gói 15 ngày
-            ps.setString(1, "DAY_15");
-            ps.setString(2, "Gói 15 ngày");
-            ps.setString(3, "Tập không giới hạn trong 15 ngày");
-            ps.setInt(4, 15);
-            ps.setNull(5, Types.INTEGER);
-            ps.setDouble(6, 300000);
+            // Gói BASIC - 30 ngày, 2 giờ/buổi
+            ps.setString(1, "BASIC");
+            ps.setString(2, "Gói Basic");
+            ps.setString(3, "Thời hạn 30 ngày, tối đa 2 giờ/buổi");
+            ps.setInt(4, 30);
+            ps.setNull(5, Types.INTEGER); // Không giới hạn số buổi
+            ps.setInt(6, 120); // 120 phút = 2 giờ
+            ps.setDouble(7, 300000);
             ps.executeUpdate();
 
-            // Gói 30 ngày
-            ps.setString(1, "DAY_30");
-            ps.setString(2, "Gói 30 ngày");
-            ps.setString(3, "Tập không giới hạn trong 30 ngày");
+            // Gói STANDARD - 30 ngày, 4 giờ/buổi
+            ps.setString(1, "STANDARD");
+            ps.setString(2, "Gói Standard");
+            ps.setString(3, "Thời hạn 30 ngày, tối đa 4 giờ/buổi");
             ps.setInt(4, 30);
             ps.setNull(5, Types.INTEGER);
-            ps.setDouble(6, 500000);
+            ps.setInt(6, 240); // 240 phút = 4 giờ
+            ps.setDouble(7, 500000);
             ps.executeUpdate();
 
-            // Gói 60 ngày
-            ps.setString(1, "DAY_60");
-            ps.setString(2, "Gói 60 ngày");
-            ps.setString(3, "Tập không giới hạn trong 60 ngày");
-            ps.setInt(4, 60);
+            // Gói PREMIUM - 30 ngày, không giới hạn thời lượng
+            ps.setString(1, "PREMIUM");
+            ps.setString(2, "Gói Premium");
+            ps.setString(3, "Thời hạn 30 ngày, không giới hạn thời gian");
+            ps.setInt(4, 30);
             ps.setNull(5, Types.INTEGER);
-            ps.setDouble(6, 900000);
+            ps.setInt(6, 0); // 0 = không giới hạn
+            ps.setDouble(7, 800000);
             ps.executeUpdate();
 
-            // Gói 90 ngày
-            ps.setString(1, "DAY_90");
-            ps.setString(2, "Gói 90 ngày");
-            ps.setString(3, "Tập không giới hạn trong 90 ngày");
+            // Gói THEO LƯỢT - 20 buổi trong 90 ngày, 3 giờ/buổi
+            ps.setString(1, "SESSIONS_20");
+            ps.setString(2, "Gói 20 Buổi");
+            ps.setString(3, "20 buổi tập trong 90 ngày, mỗi buổi tối đa 3 giờ");
             ps.setInt(4, 90);
-            ps.setNull(5, Types.INTEGER);
-            ps.setDouble(6, 1200000);
+            ps.setInt(5, 20); // 20 buổi
+            ps.setInt(6, 180); // 180 phút = 3 giờ
+            ps.setDouble(7, 600000);
             ps.executeUpdate();
         }
     }
 
     /**
      * Insert các dịch vụ mặc định.
+     * - CONSUMABLE: vật phẩm tiêu hao (chỉ dùng khi đang check-in)
+     * - SESSION: dịch vụ theo lượt
      */
     private void insertDefaultServices() throws SQLException {
-        String sql = "INSERT INTO services(code, name, description, price) VALUES(?,?,?,?)";
+        String sql = "INSERT INTO services(code, name, description, price, service_type) VALUES(?,?,?,?,?)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, "PT_SESSION");
-            ps.setString(2, "HLV riêng (1 buổi)");
-            ps.setString(3, "Tập với huấn luyện viên cá nhân trong 1 buổi");
-            ps.setDouble(4, 200000);
-            ps.executeUpdate();
-
+            // Vật phẩm tiêu hao
             ps.setString(1, "DRINK");
             ps.setString(2, "Nước uống");
             ps.setString(3, "Nước suối/nước tăng lực");
-            ps.setDouble(4, 20000);
+            ps.setDouble(4, 15000);
+            ps.setString(5, "CONSUMABLE");
             ps.executeUpdate();
 
             ps.setString(1, "TOWEL");
             ps.setString(2, "Khăn tập");
-            ps.setString(3, "Thuê khăn tập");
+            ps.setString(3, "Thuê khăn tập trong buổi");
             ps.setDouble(4, 10000);
+            ps.setString(5, "CONSUMABLE");
             ps.executeUpdate();
 
-            ps.setString(1, "PROTEIN_SHAKE");
-            ps.setString(2, "Protein shake");
-            ps.setString(3, "Đồ uống bổ sung protein");
-            ps.setDouble(4, 50000);
-            ps.executeUpdate();
-
-            ps.setString(1, "NUTRITION");
-            ps.setString(2, "Tư vấn dinh dưỡng");
-            ps.setString(3, "Tư vấn chế độ dinh dưỡng với chuyên gia");
-            ps.setDouble(4, 100000);
-            ps.executeUpdate();
-
-            ps.setString(1, "LOCKER");
-            ps.setString(2, "Thuê tủ khóa");
-            ps.setString(3, "Thuê tủ khóa cá nhân 1 tháng");
-            ps.setDouble(4, 50000);
+            // Dịch vụ theo lượt
+            ps.setString(1, "PT_SESSION");
+            ps.setString(2, "HLV riêng (1 buổi)");
+            ps.setString(3, "Tập với huấn luyện viên cá nhân trong 1 buổi");
+            ps.setDouble(4, 200000);
+            ps.setString(5, "SESSION");
             ps.executeUpdate();
         }
     }
@@ -238,11 +239,11 @@ public class DatabaseManager {
      * Lấy danh sách gói tập đang hoạt động.
      * 
      * @return List<PlanInfo> với id, code, name, description, durationDays,
-     *         sessionCount, price
+     *         sessionCount, maxDurationMinutes, price
      */
     public List<PlanInfo> getActivePlans() throws SQLException {
         List<PlanInfo> plans = new ArrayList<>();
-        String sql = "SELECT id, code, name, description, duration_days, session_count, price FROM membership_plans WHERE is_active = 1 ORDER BY price";
+        String sql = "SELECT id, code, name, description, duration_days, session_count, max_duration_minutes, price FROM membership_plans WHERE is_active = 1 ORDER BY price";
         try (Statement st = connection.createStatement();
                 ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
@@ -253,6 +254,7 @@ public class DatabaseManager {
                 plan.description = rs.getString("description");
                 plan.durationDays = rs.getInt("duration_days");
                 plan.sessionCount = rs.getInt("session_count");
+                plan.maxDurationMinutes = rs.getInt("max_duration_minutes");
                 plan.price = rs.getDouble("price");
                 plans.add(plan);
             }
@@ -265,7 +267,7 @@ public class DatabaseManager {
      */
     public List<ServiceInfo> getActiveServices() throws SQLException {
         List<ServiceInfo> services = new ArrayList<>();
-        String sql = "SELECT id, code, name, description, price FROM services WHERE is_active = 1 ORDER BY price";
+        String sql = "SELECT id, code, name, description, price, service_type FROM services WHERE is_active = 1 ORDER BY price";
         try (Statement st = connection.createStatement();
                 ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
@@ -275,6 +277,7 @@ public class DatabaseManager {
                 svc.name = rs.getString("name");
                 svc.description = rs.getString("description");
                 svc.price = rs.getDouble("price");
+                svc.serviceType = rs.getString("service_type");
                 services.add(svc);
             }
         }
@@ -288,9 +291,25 @@ public class DatabaseManager {
         public String name;
         public String description;
         public int durationDays;
-        public int sessionCount;
+        public int sessionCount; // Số buổi (cho gói theo lượt), 0 = không giới hạn
+        public int maxDurationMinutes; // Thời lượng tối đa/buổi (phút), 0 = không giới hạn
         public double price;
         public boolean isActive = true;
+
+        /**
+         * Lấy thời lượng tối đa dạng text hiển thị
+         */
+        public String getMaxDurationText() {
+            if (maxDurationMinutes <= 0) {
+                return "Không giới hạn";
+            }
+            int hours = maxDurationMinutes / 60;
+            int mins = maxDurationMinutes % 60;
+            if (mins == 0) {
+                return hours + " giờ/buổi";
+            }
+            return hours + " giờ " + mins + " phút/buổi";
+        }
     }
 
     public static class ServiceInfo {
@@ -299,7 +318,16 @@ public class DatabaseManager {
         public String name;
         public String description;
         public double price;
+        public String serviceType = "CONSUMABLE"; // CONSUMABLE hoặc SESSION
         public boolean isActive = true;
+
+        public boolean isConsumable() {
+            return "CONSUMABLE".equals(serviceType);
+        }
+
+        public boolean isSessionBased() {
+            return "SESSION".equals(serviceType);
+        }
     }
 
     // ===== User methods =====
@@ -402,7 +430,7 @@ public class DatabaseManager {
      */
     public List<PlanInfo> getAllPlans() throws SQLException {
         List<PlanInfo> plans = new ArrayList<>();
-        String sql = "SELECT id, code, name, description, duration_days, session_count, price, is_active FROM membership_plans ORDER BY price";
+        String sql = "SELECT id, code, name, description, duration_days, session_count, max_duration_minutes, price, is_active FROM membership_plans ORDER BY price";
         try (Statement st = connection.createStatement();
                 ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
@@ -413,6 +441,7 @@ public class DatabaseManager {
                 plan.description = rs.getString("description");
                 plan.durationDays = rs.getInt("duration_days");
                 plan.sessionCount = rs.getInt("session_count");
+                plan.maxDurationMinutes = rs.getInt("max_duration_minutes");
                 plan.price = rs.getDouble("price");
                 plan.isActive = rs.getInt("is_active") == 1;
                 plans.add(plan);
@@ -425,8 +454,8 @@ public class DatabaseManager {
      * Thêm gói tập mới.
      */
     public int addPlan(String code, String name, String description, Integer durationDays, Integer sessionCount,
-            double price) throws SQLException {
-        String sql = "INSERT INTO membership_plans(code, name, description, duration_days, session_count, price, is_active) VALUES(?,?,?,?,?,?,1)";
+            Integer maxDurationMinutes, double price) throws SQLException {
+        String sql = "INSERT INTO membership_plans(code, name, description, duration_days, session_count, max_duration_minutes, price, is_active) VALUES(?,?,?,?,?,?,?,1)";
         try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, code);
             ps.setString(2, name);
@@ -441,7 +470,12 @@ public class DatabaseManager {
             } else {
                 ps.setNull(5, Types.INTEGER);
             }
-            ps.setDouble(6, price);
+            if (maxDurationMinutes != null) {
+                ps.setInt(6, maxDurationMinutes);
+            } else {
+                ps.setInt(6, 0); // 0 = không giới hạn
+            }
+            ps.setDouble(7, price);
             ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -454,11 +488,19 @@ public class DatabaseManager {
     }
 
     /**
+     * Overload cũ để tương thích ngược
+     */
+    public int addPlan(String code, String name, String description, Integer durationDays, Integer sessionCount,
+            double price) throws SQLException {
+        return addPlan(code, name, description, durationDays, sessionCount, null, price);
+    }
+
+    /**
      * Cập nhật gói tập.
      */
     public boolean updatePlan(int id, String code, String name, String description, Integer durationDays,
-            Integer sessionCount, double price) throws SQLException {
-        String sql = "UPDATE membership_plans SET code=?, name=?, description=?, duration_days=?, session_count=?, price=? WHERE id=?";
+            Integer sessionCount, Integer maxDurationMinutes, double price) throws SQLException {
+        String sql = "UPDATE membership_plans SET code=?, name=?, description=?, duration_days=?, session_count=?, max_duration_minutes=?, price=? WHERE id=?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, code);
             ps.setString(2, name);
@@ -473,10 +515,23 @@ public class DatabaseManager {
             } else {
                 ps.setNull(5, Types.INTEGER);
             }
-            ps.setDouble(6, price);
-            ps.setInt(7, id);
+            if (maxDurationMinutes != null) {
+                ps.setInt(6, maxDurationMinutes);
+            } else {
+                ps.setInt(6, 0);
+            }
+            ps.setDouble(7, price);
+            ps.setInt(8, id);
             return ps.executeUpdate() > 0;
         }
+    }
+
+    /**
+     * Overload cũ để tương thích ngược
+     */
+    public boolean updatePlan(int id, String code, String name, String description, Integer durationDays,
+            Integer sessionCount, double price) throws SQLException {
+        return updatePlan(id, code, name, description, durationDays, sessionCount, null, price);
     }
 
     /**
