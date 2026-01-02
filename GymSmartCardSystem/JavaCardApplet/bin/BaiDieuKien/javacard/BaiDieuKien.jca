@@ -1,0 +1,899 @@
+// converted by version 1.3
+// on Tue Dec 30 20:18:13 ICT 2025
+
+.package BaiDieuKien {
+	.aid 0x11:0x22:0x33:0x44:0x55:0x66:0x0;
+	.version 1.0;
+
+	.imports {
+		0xA0:0x0:0x0:0x0:0x62:0x1:0x1 1.2;		//javacard/framework
+		0xA0:0x0:0x0:0x0:0x62:0x1:0x2 1.2;		//javacard/security
+		0xA0:0x0:0x0:0x0:0x62:0x0:0x1 1.0;		//java/lang
+	}
+
+	.applet {
+		0x11:0x22:0x33:0x44:0x55:0x66:0x1 Bai1;
+		0x11:0x22:0x33:0x44:0x55:0x66:0x2 Bai2;
+		0x11:0x22:0x33:0x44:0x55:0x66:0x5 Bai5;
+	}
+
+	.constantPool {
+		// 0
+		instanceFieldRef byte[] Bai1/masv;
+		// 1
+		instanceFieldRef short Bai1/len_masv;
+		// 2
+		instanceFieldRef byte[] Bai1/hoten;
+		// 3
+		instanceFieldRef short Bai1/len_hoten;
+		// 4
+		instanceFieldRef byte[] Bai1/ngaysinh;
+		// 5
+		instanceFieldRef short Bai1/len_ngaysinh;
+		// 6
+		instanceFieldRef byte[] Bai1/quequan;
+		// 7
+		instanceFieldRef short Bai1/len_quequan;
+		// 8
+		instanceFieldRef short Bai2/tempLen;
+		// 9
+		instanceFieldRef byte[] Bai2/tempBuffer;
+		// 10
+		instanceFieldRef byte[] Bai5/sigBuffer;
+		// 11
+		instanceFieldRef 1.8 Bai5/privateKey;
+		// 12
+		instanceFieldRef 1.9 Bai5/publicKey;
+		// 13
+		instanceFieldRef 1.15 Bai5/rsaSignature;
+		// 14
+		virtualMethodRef 0.10.6()S;		// javacard/framework/APDU.setIncomingAndReceive()S
+		// 15
+		staticMethodRef Bai1/parseData([BSS)V;
+		// 16
+		staticMethodRef 0.16.1([BS[BSS)S;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+		// 17
+		staticMethodRef 0.7.1(S)V;		// javacard/framework/ISOException.throwIt(S)V
+		// 18
+		virtualMethodRef 0.10.7()S;		// javacard/framework/APDU.setOutgoing()S
+		// 19
+		virtualMethodRef 0.10.9(S)V;		// javacard/framework/APDU.setOutgoingLength(S)V
+		// 20
+		virtualMethodRef 0.10.4(SS)V;		// javacard/framework/APDU.sendBytes(SS)V
+		// 21
+		staticMethodRef Bai1/copyPart(B[BSS)V;
+		// 22
+		classRef Bai2;
+		// 23
+		staticMethodRef Bai2/<init>()V;
+		// 24
+		virtualMethodRef 0.3.2([BSB)V;		// javacard/framework/Applet.register([BSB)V
+		// 25
+		staticMethodRef 0.3.0()V;		// javacard/framework/Applet.<init>()V
+		// 26
+		staticMethodRef 0.8.13(SB)[B;		// javacard/framework/JCSystem.makeTransientByteArray(SB)[B
+		// 27
+		classRef Bai1;
+		// 28
+		virtualMethodRef 0.3.3()Z;		// javacard/framework/Applet.selectingApplet()Z
+		// 29
+		staticMethodRef 0.16.2([BS[BSS)S;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+		// 30
+		virtualMethodRef 0.10.5([BSS)V;		// javacard/framework/APDU.sendBytesLong([BSS)V
+		// 31
+		staticMethodRef 0.16.3([BSSB)S;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+		// 32
+		classRef 2.2;		// java/lang/Exception
+		// 33
+		staticMethodRef Bai1/<init>()V;
+		// 34
+		classRef 1.16;		// javacard/security/KeyPair
+		// 35
+		staticMethodRef 1.16.0(BS)V;		// javacard/security/KeyPair.<init>(BS)V
+		// 36
+		virtualMethodRef 1.16.1()V;		// javacard/security/KeyPair.genKeyPair()V
+		// 37
+		virtualMethodRef 1.16.2()Ljavacard/security/PrivateKey;;		// javacard/security/KeyPair.getPrivate()Ljavacard/security/PrivateKey;
+			.descriptor	Ljavacard/security/PrivateKey;	1.2;
+
+		// 38
+		classRef 1.8;		// javacard/security/RSAPrivateKey
+		// 39
+		virtualMethodRef 0.3.2([BSB)V;		// javacard/framework/Applet.register([BSB)V
+		// 40
+		virtualMethodRef 1.16.3()Ljavacard/security/PublicKey;;		// javacard/security/KeyPair.getPublic()Ljavacard/security/PublicKey;
+			.descriptor	Ljavacard/security/PublicKey;	1.3;
+
+		// 41
+		classRef 1.9;		// javacard/security/RSAPublicKey
+		// 42
+		virtualMethodRef 0.3.3()Z;		// javacard/framework/Applet.selectingApplet()Z
+		// 43
+		staticMethodRef 1.15.0(BZ)Ljavacard/security/Signature;;		// javacard/security/Signature.getInstance(BZ)Ljavacard/security/Signature;
+			.descriptor	Ljavacard/security/Signature;	1.15;
+
+		// 44
+		virtualMethodRef 0.10.1()[B;		// javacard/framework/APDU.getBuffer()[B
+		// 45
+		classRef Bai5;
+		// 46
+		staticMethodRef Bai5/<init>()V;
+		// 47
+		virtualMethodRef 0.3.2([BSB)V;		// javacard/framework/Applet.register([BSB)V
+		// 48
+		virtualMethodRef 0.3.3()Z;		// javacard/framework/Applet.selectingApplet()Z
+		// 49
+		staticMethodRef Bai5/signData(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 50
+		staticMethodRef Bai5/verifySignature(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 51
+		virtualMethodRef 0.10.3(S)S;		// javacard/framework/APDU.receiveBytes(S)S
+		// 52
+		virtualMethodRef 1.15.3(Ljavacard/security/Key;B)V;		// javacard/security/Signature.init(Ljavacard/security/Key;B)V
+			.descriptor	Ljavacard/security/Key;	1.0;
+
+		// 53
+		virtualMethodRef 1.15.5([BSS[BS)S;		// javacard/security/Signature.sign([BSS[BS)S
+		// 54
+		virtualMethodRef 0.10.8(SS)V;		// javacard/framework/APDU.setOutgoingAndSend(SS)V
+		// 55
+		virtualMethodRef 1.15.7([BSS[BSS)Z;		// javacard/security/Signature.verify([BSS[BSS)Z
+	}
+
+	.class public Bai1 0 extends 0.3 {		// extends javacard/framework/Applet
+
+		.fields {
+			 byte[] masv 0;		// [B
+			 byte[] hoten 1;		// [B
+			 byte[] ngaysinh 2;		// [B
+			 byte[] quequan 3;		// [B
+			 short len_masv 4;		// S
+			 short len_hoten 5;		// S
+			 short len_ngaysinh 6;		// S
+			 short len_quequan 7;		// S
+			static final byte CLA = -96;		// B
+			static final byte INS_SET_ALL = 1;		// B
+			static final byte INS_GET_FIELD = 17;		// B
+			static final byte INS_GET_ALL = 18;		// B
+		}
+
+		.publicMethodTable 7 {
+			equals(Ljava/lang/Object;)Z;
+			register()V;
+			register([BSB)V;
+			selectingApplet()Z;
+			deselect()V;
+			getShareableInterfaceObject(Ljavacard/framework/AID;B)Ljavacard/framework/Shareable;;
+			select()Z;
+			process(Ljavacard/framework/APDU;)V;
+		}
+
+		.packageMethodTable 0 {
+		}
+
+		.method public <init>()V 0 {
+			.stack 2;
+			.locals 0;
+
+				L0:	aload_0;
+					invokespecial 25;		// javacard/framework/Applet.<init>()V
+					aload_0;
+					bspush 20;
+					newarray 11;
+					putfield_a 0;		// reference BaiDieuKien/Bai1.masv
+					aload_0;
+					sconst_0;
+					putfield_s 1;		// short BaiDieuKien/Bai1.len_masv
+					aload_0;
+					bspush 40;
+					newarray 11;
+					putfield_a 2;		// reference BaiDieuKien/Bai1.hoten
+					aload_0;
+					sconst_0;
+					putfield_s 3;		// short BaiDieuKien/Bai1.len_hoten
+					aload_0;
+					bspush 15;
+					newarray 11;
+					putfield_a 4;		// reference BaiDieuKien/Bai1.ngaysinh
+					aload_0;
+					sconst_0;
+					putfield_s 5;		// short BaiDieuKien/Bai1.len_ngaysinh
+					aload_0;
+					bspush 40;
+					newarray 11;
+					putfield_a 6;		// reference BaiDieuKien/Bai1.quequan
+					aload_0;
+					sconst_0;
+					putfield_s 7;		// short BaiDieuKien/Bai1.len_quequan
+					return;
+		}
+
+		.method public static install([BSB)V 1 {
+			.stack 5;
+			.locals 0;
+
+				L0:	new 27;		// BaiDieuKien/Bai1
+					dup;
+					invokespecial 33;		// BaiDieuKien/Bai1.<init>()V
+					aload_0;
+					sload_1;
+					sconst_1;
+					sadd;
+					aload_0;
+					sload_1;
+					baload;
+					invokevirtual 39;		// javacard/framework/Applet.register([BSB)V
+					return;
+		}
+
+		.method public process(Ljavacard/framework/APDU;)V 7 {
+			.stack 5;
+			.locals 5;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_0;
+					invokevirtual 42;		// javacard/framework/Applet.selectingApplet()Z
+					ifeq L2;
+				L1:	return;
+				L2:	aload_1;
+					invokevirtual 44;		// javacard/framework/APDU.getBuffer()[B
+					astore_2;
+				L3:	aload_1;
+					invokevirtual 14;		// javacard/framework/APDU.setIncomingAndReceive()S
+					sstore_3;
+				L4:	aload_2;
+					sconst_1;
+					baload;
+					slookupswitch L17 3 1 L5 17 L6 18 L15;
+				L5:	aload_0;
+					aload_2;
+					sconst_5;
+					sload_3;
+					invokespecial 15;		// BaiDieuKien/Bai1.parseData([BSS)V
+					goto_w L18;
+				L6:	aload_2;
+					sconst_2;
+					baload;
+					sstore 4;
+				L7:	sconst_0;
+					sstore 5;
+				L8:	sload 4;
+					stableswitch L13 1 4 L9 L10 L11 L12;
+				L9:	getfield_a_this 0;		// reference BaiDieuKien/Bai1.masv
+					sconst_0;
+					aload_2;
+					sconst_0;
+					getfield_s_this 1;		// short BaiDieuKien/Bai1.len_masv
+					invokestatic 16;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+					pop;
+					getfield_s_this 1;		// short BaiDieuKien/Bai1.len_masv
+					sstore 5;
+					goto L14;
+				L10:	getfield_a_this 2;		// reference BaiDieuKien/Bai1.hoten
+					sconst_0;
+					aload_2;
+					sconst_0;
+					getfield_s_this 3;		// short BaiDieuKien/Bai1.len_hoten
+					invokestatic 16;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+					pop;
+					getfield_s_this 3;		// short BaiDieuKien/Bai1.len_hoten
+					sstore 5;
+					goto L14;
+				L11:	getfield_a_this 4;		// reference BaiDieuKien/Bai1.ngaysinh
+					sconst_0;
+					aload_2;
+					sconst_0;
+					getfield_s_this 5;		// short BaiDieuKien/Bai1.len_ngaysinh
+					invokestatic 16;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+					pop;
+					getfield_s_this 5;		// short BaiDieuKien/Bai1.len_ngaysinh
+					sstore 5;
+					goto L14;
+				L12:	getfield_a_this 6;		// reference BaiDieuKien/Bai1.quequan
+					sconst_0;
+					aload_2;
+					sconst_0;
+					getfield_s_this 7;		// short BaiDieuKien/Bai1.len_quequan
+					invokestatic 16;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+					pop;
+					getfield_s_this 7;		// short BaiDieuKien/Bai1.len_quequan
+					sstore 5;
+					goto L14;
+				L13:	sspush 27270;
+					invokestatic 17;		// javacard/framework/ISOException.throwIt(S)V
+				L14:	aload_1;
+					invokevirtual 18;		// javacard/framework/APDU.setOutgoing()S
+					pop;
+					aload_1;
+					sload 5;
+					invokevirtual 19;		// javacard/framework/APDU.setOutgoingLength(S)V
+					aload_1;
+					sconst_0;
+					sload 5;
+					invokevirtual 20;		// javacard/framework/APDU.sendBytes(SS)V
+					goto_w L18;
+				L15:	sconst_0;
+					sstore 6;
+				L16:	getfield_a_this 0;		// reference BaiDieuKien/Bai1.masv
+					sconst_0;
+					aload_2;
+					sload 6;
+					getfield_s_this 1;		// short BaiDieuKien/Bai1.len_masv
+					invokestatic 16;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+					pop;
+					sload 6;
+					getfield_s_this 1;		// short BaiDieuKien/Bai1.len_masv
+					sadd;
+					sstore 6;
+					aload_2;
+					sload 6;
+					sinc 6 1;
+					bspush 124;
+					bastore;
+					getfield_a_this 2;		// reference BaiDieuKien/Bai1.hoten
+					sconst_0;
+					aload_2;
+					sload 6;
+					getfield_s_this 3;		// short BaiDieuKien/Bai1.len_hoten
+					invokestatic 16;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+					pop;
+					sload 6;
+					getfield_s_this 3;		// short BaiDieuKien/Bai1.len_hoten
+					sadd;
+					sstore 6;
+					aload_2;
+					sload 6;
+					sinc 6 1;
+					bspush 124;
+					bastore;
+					getfield_a_this 4;		// reference BaiDieuKien/Bai1.ngaysinh
+					sconst_0;
+					aload_2;
+					sload 6;
+					getfield_s_this 5;		// short BaiDieuKien/Bai1.len_ngaysinh
+					invokestatic 16;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+					pop;
+					sload 6;
+					getfield_s_this 5;		// short BaiDieuKien/Bai1.len_ngaysinh
+					sadd;
+					sstore 6;
+					aload_2;
+					sload 6;
+					sinc 6 1;
+					bspush 124;
+					bastore;
+					getfield_a_this 6;		// reference BaiDieuKien/Bai1.quequan
+					sconst_0;
+					aload_2;
+					sload 6;
+					getfield_s_this 7;		// short BaiDieuKien/Bai1.len_quequan
+					invokestatic 16;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+					pop;
+					sload 6;
+					getfield_s_this 7;		// short BaiDieuKien/Bai1.len_quequan
+					sadd;
+					sstore 6;
+					aload_1;
+					invokevirtual 18;		// javacard/framework/APDU.setOutgoing()S
+					pop;
+					aload_1;
+					sload 6;
+					invokevirtual 19;		// javacard/framework/APDU.setOutgoingLength(S)V
+					aload_1;
+					sconst_0;
+					sload 6;
+					invokevirtual 20;		// javacard/framework/APDU.sendBytes(SS)V
+					goto L18;
+				L17:	sspush 27904;
+					invokestatic 17;		// javacard/framework/ISOException.throwIt(S)V
+				L18:	return;
+		}
+
+		.method private parseData([BSS)V {
+			.stack 6;
+			.locals 3;
+
+				L0:	sload_2;
+					sstore 5;
+				L1:	sconst_1;
+					sstore 6;
+				L2:	sload_2;
+					sstore 4;
+				L3:	sload 4;
+					s2i;
+					sload_2;
+					s2i;
+					sload_3;
+					s2i;
+					iadd;
+					icmp;
+					ifge L7;
+				L4:	aload_1;
+					sload 4;
+					baload;
+					bspush 124;
+					if_scmpne L6;
+				L5:	aload_0;
+					sload 6;
+					aload_1;
+					sload 5;
+					sload 4;
+					sload 5;
+					ssub;
+					invokespecial 21;		// BaiDieuKien/Bai1.copyPart(B[BSS)V
+					sload 6;
+					sconst_1;
+					sadd;
+					s2b;
+					sstore 6;
+					sload 4;
+					sconst_1;
+					sadd;
+					sstore 5;
+				L6:	sinc 4 1;
+					goto L3;
+				L7:	aload_0;
+					sload 6;
+					aload_1;
+					sload 5;
+					sload_2;
+					sload_3;
+					sadd;
+					sload 5;
+					ssub;
+					invokespecial 21;		// BaiDieuKien/Bai1.copyPart(B[BSS)V
+					return;
+		}
+
+		.method private copyPart(B[BSS)V {
+			.stack 5;
+			.locals 0;
+
+				L0:	sload_1;
+					stableswitch L5 1 4 L1 L2 L3 L4;
+				L1:	aload_2;
+					sload_3;
+					getfield_a_this 0;		// reference BaiDieuKien/Bai1.masv
+					sconst_0;
+					sload 4;
+					invokestatic 16;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+					pop;
+					aload_0;
+					sload 4;
+					putfield_s 1;		// short BaiDieuKien/Bai1.len_masv
+					goto L5;
+				L2:	aload_2;
+					sload_3;
+					getfield_a_this 2;		// reference BaiDieuKien/Bai1.hoten
+					sconst_0;
+					sload 4;
+					invokestatic 16;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+					pop;
+					aload_0;
+					sload 4;
+					putfield_s 3;		// short BaiDieuKien/Bai1.len_hoten
+					goto L5;
+				L3:	aload_2;
+					sload_3;
+					getfield_a_this 4;		// reference BaiDieuKien/Bai1.ngaysinh
+					sconst_0;
+					sload 4;
+					invokestatic 16;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+					pop;
+					aload_0;
+					sload 4;
+					putfield_s 5;		// short BaiDieuKien/Bai1.len_ngaysinh
+					goto L5;
+				L4:	aload_2;
+					sload_3;
+					getfield_a_this 6;		// reference BaiDieuKien/Bai1.quequan
+					sconst_0;
+					sload 4;
+					invokestatic 16;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+					pop;
+					aload_0;
+					sload 4;
+					putfield_s 7;		// short BaiDieuKien/Bai1.len_quequan
+				L5:	return;
+		}
+
+	}
+
+	.class public Bai2 1 extends 0.3 {		// extends javacard/framework/Applet
+
+		.fields {
+			private byte[] tempBuffer 0;		// [B
+			private short tempLen 1;		// S
+			static final byte CLA = -96;		// B
+			static final byte INS_INPUT = 1;		// B
+			static final byte INS_PRINT = 2;		// B
+			static final short MAX_BUFFER_SIZE = 128;		// S
+		}
+
+		.publicMethodTable 7 {
+			equals(Ljava/lang/Object;)Z;
+			register()V;
+			register([BSB)V;
+			selectingApplet()Z;
+			deselect()V;
+			getShareableInterfaceObject(Ljavacard/framework/AID;B)Ljavacard/framework/Shareable;;
+			select()Z;
+			process(Ljavacard/framework/APDU;)V;
+		}
+
+		.packageMethodTable 0 {
+		}
+
+		.method public static install([BSB)V 0 {
+			.stack 5;
+			.locals 0;
+
+				L0:	new 22;		// BaiDieuKien/Bai2
+					dup;
+					invokespecial 23;		// BaiDieuKien/Bai2.<init>()V
+					aload_0;
+					sload_1;
+					sconst_1;
+					sadd;
+					aload_0;
+					sload_1;
+					baload;
+					invokevirtual 24;		// javacard/framework/Applet.register([BSB)V
+					return;
+		}
+
+		.method public <init>()V 1 {
+			.stack 3;
+			.locals 0;
+
+				L0:	aload_0;
+					invokespecial 25;		// javacard/framework/Applet.<init>()V
+					aload_0;
+					sconst_0;
+					putfield_s 8;		// short BaiDieuKien/Bai2.tempLen
+					aload_0;
+					sspush 128;
+					sconst_2;
+					invokestatic 26;		// javacard/framework/JCSystem.makeTransientByteArray(SB)[B
+					putfield_a 9;		// reference BaiDieuKien/Bai2.tempBuffer
+					aload_0;
+					sconst_0;
+					putfield_s 8;		// short BaiDieuKien/Bai2.tempLen
+					return;
+		}
+
+		.method public process(Ljavacard/framework/APDU;)V 7 {
+			.stack 5;
+			.locals 2;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_0;
+					invokevirtual 28;		// javacard/framework/Applet.selectingApplet()Z
+					ifeq L2;
+				L1:	return;
+				L2:	aload_1;
+					invokevirtual 44;		// javacard/framework/APDU.getBuffer()[B
+					astore_2;
+				L3:	aload_1;
+					invokevirtual 14;		// javacard/framework/APDU.setIncomingAndReceive()S
+					sstore_3;
+				L4:	aload_2;
+					sconst_1;
+					baload;
+					slookupswitch L10 2 1 L5 2 L9;
+				L5:	sload_3;
+					ifeq L7;
+				L6:	sload_3;
+					sspush 128;
+					if_scmple L8;
+				L7:	sspush 26368;
+					invokestatic 17;		// javacard/framework/ISOException.throwIt(S)V
+				L8:	aload_2;
+					sconst_5;
+					getfield_a_this 9;		// reference BaiDieuKien/Bai2.tempBuffer
+					sconst_0;
+					sload_3;
+					invokestatic 29;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					aload_0;
+					sload_3;
+					putfield_s 8;		// short BaiDieuKien/Bai2.tempLen
+					goto L11;
+				L9:	aload_1;
+					invokevirtual 18;		// javacard/framework/APDU.setOutgoing()S
+					pop;
+					aload_1;
+					getfield_s_this 8;		// short BaiDieuKien/Bai2.tempLen
+					invokevirtual 19;		// javacard/framework/APDU.setOutgoingLength(S)V
+					aload_1;
+					getfield_a_this 9;		// reference BaiDieuKien/Bai2.tempBuffer
+					sconst_0;
+					getfield_s_this 8;		// short BaiDieuKien/Bai2.tempLen
+					invokevirtual 30;		// javacard/framework/APDU.sendBytesLong([BSS)V
+					getfield_a_this 9;		// reference BaiDieuKien/Bai2.tempBuffer
+					sconst_0;
+					getfield_s_this 8;		// short BaiDieuKien/Bai2.tempLen
+					sconst_0;
+					invokestatic 31;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					aload_0;
+					sconst_0;
+					putfield_s 8;		// short BaiDieuKien/Bai2.tempLen
+					goto L11;
+				L10:	sspush 27904;
+					invokestatic 17;		// javacard/framework/ISOException.throwIt(S)V
+				L11:	return;
+		}
+
+	}
+
+	.class public Bai5 2 extends 0.3 {		// extends javacard/framework/Applet
+
+		.fields {
+			private 1.8 privateKey 0;		// Ljavacard/security/RSAPrivateKey;
+			private 1.9 publicKey 1;		// Ljavacard/security/RSAPublicKey;
+			private 1.15 rsaSignature 2;		// Ljavacard/security/Signature;
+			private byte[] sigBuffer 3;		// [B
+			private static final byte CLA_BAI5 = -96;		// B
+			private static final byte INS_SIGN = 16;		// B
+			private static final byte INS_VERIFY = 32;		// B
+			private static final short RSA_KEY_BITS = 1024;		// S
+			private static final short SIG_LENGTH = 128;		// S
+		}
+
+		.publicMethodTable 7 {
+			equals(Ljava/lang/Object;)Z;
+			register()V;
+			register([BSB)V;
+			selectingApplet()Z;
+			deselect()V;
+			getShareableInterfaceObject(Ljavacard/framework/AID;B)Ljavacard/framework/Shareable;;
+			select()Z;
+			process(Ljavacard/framework/APDU;)V;
+		}
+
+		.packageMethodTable 0 {
+		}
+
+		.method private <init>()V {
+			.stack 4;
+			.locals 1;
+
+				L0:	aload_0;
+					invokespecial 25;		// javacard/framework/Applet.<init>()V
+					aload_0;
+					sspush 128;
+					newarray 11;
+					putfield_a 10;		// reference BaiDieuKien/Bai5.sigBuffer
+				L1:	new 34;		// javacard/security/KeyPair
+					dup;
+					sconst_1;
+					sspush 1024;
+					invokespecial 35;		// javacard/security/KeyPair.<init>(BS)V
+					astore_1;
+				L2:	aload_1;
+					invokevirtual 36;		// javacard/security/KeyPair.genKeyPair()V
+					aload_0;
+					aload_1;
+					invokevirtual 37;		// javacard/security/KeyPair.getPrivate()Ljavacard/security/PrivateKey;
+					checkcast 0 38;		// T_CLASSORINTERFACE javacard/security/RSAPrivateKey
+					putfield_a 11;		// reference BaiDieuKien/Bai5.privateKey
+					aload_0;
+					aload_1;
+					invokevirtual 40;		// javacard/security/KeyPair.getPublic()Ljavacard/security/PublicKey;
+					checkcast 0 41;		// T_CLASSORINTERFACE javacard/security/RSAPublicKey
+					putfield_a 12;		// reference BaiDieuKien/Bai5.publicKey
+					aload_0;
+					bspush 10;
+					sconst_0;
+					invokestatic 43;		// javacard/security/Signature.getInstance(BZ)Ljavacard/security/Signature;
+					putfield_a 13;		// reference BaiDieuKien/Bai5.rsaSignature
+				L3:	goto L6;
+				L4:	astore_1;
+				L5:	aload_0;
+					aconst_null;
+					putfield_a 13;		// reference BaiDieuKien/Bai5.rsaSignature
+				L6:	return;
+			.exceptionTable {
+				// start_block end_block handler_block catch_type_index
+				L1 L3 L4 32;
+			}
+		}
+
+		.method public static install([BSB)V 0 {
+			.stack 5;
+			.locals 0;
+
+				L0:	new 45;		// BaiDieuKien/Bai5
+					dup;
+					invokespecial 46;		// BaiDieuKien/Bai5.<init>()V
+					aload_0;
+					sload_1;
+					sconst_1;
+					sadd;
+					aload_0;
+					sload_1;
+					baload;
+					invokevirtual 47;		// javacard/framework/Applet.register([BSB)V
+					return;
+		}
+
+		.method public process(Ljavacard/framework/APDU;)V 7 {
+			.stack 2;
+			.locals 1;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_0;
+					invokevirtual 48;		// javacard/framework/Applet.selectingApplet()Z
+					ifeq L2;
+				L1:	return;
+				L2:	aload_1;
+					invokevirtual 44;		// javacard/framework/APDU.getBuffer()[B
+					astore_2;
+				L3:	aload_2;
+					sconst_0;
+					baload;
+					bspush -96;
+					if_scmpeq L5;
+				L4:	sspush 28160;
+					invokestatic 17;		// javacard/framework/ISOException.throwIt(S)V
+				L5:	getfield_a_this 13;		// reference BaiDieuKien/Bai5.rsaSignature
+					ifnull L7;
+				L6:	getfield_a_this 11;		// reference BaiDieuKien/Bai5.privateKey
+					ifnonnull L8;
+				L7:	sspush 28417;
+					invokestatic 17;		// javacard/framework/ISOException.throwIt(S)V
+				L8:	aload_2;
+					sconst_1;
+					baload;
+					slookupswitch L11 2 16 L9 32 L10;
+				L9:	aload_0;
+					aload_1;
+					invokespecial 49;		// BaiDieuKien/Bai5.signData(Ljavacard/framework/APDU;)V
+					goto L12;
+				L10:	aload_0;
+					aload_1;
+					invokespecial 50;		// BaiDieuKien/Bai5.verifySignature(Ljavacard/framework/APDU;)V
+					goto L12;
+				L11:	sspush 27904;
+					invokestatic 17;		// javacard/framework/ISOException.throwIt(S)V
+				L12:	return;
+		}
+
+		.method private signData(Ljavacard/framework/APDU;)V {
+			.stack 6;
+			.locals 5;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_1;
+					invokevirtual 44;		// javacard/framework/APDU.getBuffer()[B
+					astore_2;
+				L1:	aload_1;
+					invokevirtual 14;		// javacard/framework/APDU.setIncomingAndReceive()S
+					sstore_3;
+				L2:	sconst_5;
+					sstore 4;
+				L3:	sload_3;
+					ifle L5;
+				L4:	sload 4;
+					sload_3;
+					sadd;
+					sstore 4;
+					aload_1;
+					sload 4;
+					invokevirtual 51;		// javacard/framework/APDU.receiveBytes(S)S
+					sstore_3;
+					goto L3;
+				L5:	sload 4;
+					sconst_5;
+					ssub;
+					sstore 5;
+				L6:	sload 5;
+					ifgt L8;
+				L7:	sspush 26368;
+					invokestatic 17;		// javacard/framework/ISOException.throwIt(S)V
+				L8:	getfield_a_this 13;		// reference BaiDieuKien/Bai5.rsaSignature
+					getfield_a_this 11;		// reference BaiDieuKien/Bai5.privateKey
+					sconst_1;
+					invokevirtual 52;		// javacard/security/Signature.init(Ljavacard/security/Key;B)V
+					getfield_a_this 13;		// reference BaiDieuKien/Bai5.rsaSignature
+					aload_2;
+					sconst_5;
+					sload 5;
+					getfield_a_this 10;		// reference BaiDieuKien/Bai5.sigBuffer
+					sconst_0;
+					invokevirtual 53;		// javacard/security/Signature.sign([BSS[BS)S
+					sstore 6;
+				L9:	getfield_a_this 10;		// reference BaiDieuKien/Bai5.sigBuffer
+					sconst_0;
+					aload_2;
+					sconst_0;
+					sload 6;
+					invokestatic 16;		// javacard/framework/Util.arrayCopy([BS[BSS)S
+					pop;
+					aload_1;
+					sconst_0;
+					sload 6;
+					invokevirtual 54;		// javacard/framework/APDU.setOutgoingAndSend(SS)V
+					return;
+		}
+
+		.method private verifySignature(Ljavacard/framework/APDU;)V {
+			.stack 7;
+			.locals 6;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_1;
+					invokevirtual 44;		// javacard/framework/APDU.getBuffer()[B
+					astore_2;
+				L1:	aload_1;
+					invokevirtual 14;		// javacard/framework/APDU.setIncomingAndReceive()S
+					sstore_3;
+				L2:	sconst_5;
+					sstore 4;
+				L3:	sload_3;
+					ifle L5;
+				L4:	sload 4;
+					sload_3;
+					sadd;
+					sstore 4;
+					aload_1;
+					sload 4;
+					invokevirtual 51;		// javacard/framework/APDU.receiveBytes(S)S
+					sstore_3;
+					goto L3;
+				L5:	sload 4;
+					sconst_5;
+					ssub;
+					sstore 5;
+				L6:	sload 5;
+					sspush 128;
+					if_scmpgt L8;
+				L7:	sspush 26368;
+					invokestatic 17;		// javacard/framework/ISOException.throwIt(S)V
+				L8:	sload 5;
+					sspush 128;
+					ssub;
+					sstore 6;
+				L9:	getfield_a_this 13;		// reference BaiDieuKien/Bai5.rsaSignature
+					getfield_a_this 12;		// reference BaiDieuKien/Bai5.publicKey
+					sconst_2;
+					invokevirtual 52;		// javacard/security/Signature.init(Ljavacard/security/Key;B)V
+					getfield_a_this 13;		// reference BaiDieuKien/Bai5.rsaSignature
+					aload_2;
+					sconst_5;
+					sload 6;
+					aload_2;
+					sconst_5;
+					sload 6;
+					sadd;
+					sspush 128;
+					invokevirtual 55;		// javacard/security/Signature.verify([BSS[BSS)Z
+					sstore 7;
+				L10:	aload_2;
+					sconst_0;
+					sload 7;
+					ifeq L12;
+				L11:	sconst_1;
+					goto L13;
+				L12:	sconst_0;
+				L13:	bastore;
+					aload_1;
+					sconst_0;
+					sconst_1;
+					invokevirtual 54;		// javacard/framework/APDU.setOutgoingAndSend(SS)V
+					return;
+		}
+
+	}
+
+}

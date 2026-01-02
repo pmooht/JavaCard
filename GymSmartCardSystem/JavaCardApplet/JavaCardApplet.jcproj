@@ -1,7 +1,17 @@
 <JavaCardProject name="JavaCardApplet">
 <USER>
-<PKG name="ProjectCuoiKy" aid="11 22 33 44 55 00" major="1" minor="0">
-<APPLET aid="11 22 33 44 55 00 00" instanceaid="" parameter="" authority="" privileges="" index="25824" name="ProjectCuoiKy"/>
+<PKG name="BaiDieuKien" aid="11 22 33 44 55 66 00" major="1" minor="0">
+<APPLET aid="11 22 33 44 55 66 01" instanceaid="" parameter="" authority="" privileges="" index="2096" name="Bai1"/>
+<APPLET aid="11 22 33 44 55 66 02" instanceaid="" parameter="" authority="" privileges="" index="-26840" name="Bai2"/>
+<APPLET aid="11 22 33 44 55 66 05" instanceaid="" parameter="" authority="" privileges="" index="-27408" name="Bai5"/>
+</PKG>
+<PKG name="Bai3" aid="54 48 4F 4E 47 54 49 4E" major="1" minor="0">
+<APPLET aid="54 48 4F 4E 47 54 49 4E 01" instanceaid="" parameter="" authority="" privileges="" index="28208" name="Bai3"/>
+</PKG>
+<PKG name="Bai4" aid="11 22 33 44 55 66 77" major="1" minor="0">
+<APPLET aid="11 22 33 44 55 66 77 01" instanceaid="" parameter="" authority="" privileges="" index="-26120" name="Client"/>
+<APPLET aid="11 22 33 44 55 66 77 02" instanceaid="" parameter="" authority="" privileges="" index="-30768" name="Server"/>
+<CLASS name="HpInterface"/>
 </PKG>
 <Libs/>
 </USER>
