@@ -426,6 +426,12 @@ public class ServicesTab extends BaseTabPanel {
                 long newBalance = cardComm.getBalance();
                 String time = new SimpleDateFormat("HH:mm dd/MM").format(new Date());
                 purchasedServices.add(svcName + " - " + String.format("%,d", svcPrice) + " VND (" + time + ")");
+                // Save to card
+                if (!cardComm.savePurchasedServices(purchasedServices)) {
+                    JOptionPane.showMessageDialog(this,
+                            "Cảnh báo: Không thể lưu dịch vụ vào thẻ!\nCó thể Applet chưa được cập nhật tính năng này.",
+                            "Lỗi lưu thẻ", JOptionPane.WARNING_MESSAGE);
+                }
                 log("Đã mua dịch vụ: " + svcName + " - " + String.format("%,d", svcPrice) + " VND");
                 JOptionPane.showMessageDialog(this,
                         "Mua dịch vụ thành công!\n\nDịch vụ: " + svcName + "\nGiá: "

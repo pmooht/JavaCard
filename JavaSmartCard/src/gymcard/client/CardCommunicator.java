@@ -922,6 +922,7 @@ public class CardCommunicator {
             byte[] data = cardManager.readField(CardManager.FIELD_CHECKIN);
             if (data != null && data.length > 0) {
                 String str = new String(data, "UTF-8");
+                System.out.println("[DEBUG] Read check-in from card (" + data.length + " bytes): " + str);
                 // Format mới: currentState;historyEntry1;historyEntry2;...
                 // currentState = date|inTime|outTime|count|isCheckedIn|totalMinutes
                 // historyEntry = date|inTime|outTime|minutes
@@ -1140,6 +1141,68 @@ public class CardCommunicator {
         }
         // Đã được load khi gọi getLastCheckIn()
         return checkInHistory;
+    }
+
+    /**
+     * Lưu danh sách dịch vụ đã mua lên thẻ
+     * Format: service1;service2;service3;...
+     * 
+     * @param services Danh sách dịch vụ đã mua
+     * @return true nếu thành công
+     */
+    public boolean savePurchasedServices(List<String> services) {
+        if (!connected || !authenticated) {
+            return false;
+        }
+        try {
+            String data = String.join(";", services);
+            byte[] bytes = data.getBytes("UTF-8");
+            // Limit to 255 bytes (APDU limit)
+            if (bytes.length > 255) {
+                // Truncate by removing oldest entries
+                while (bytes.length > 255 && services.size() > 0) {
+                    services.remove(0);
+                    data = String.join(";", services);
+                    bytes = data.getBytes("UTF-8");
+                }
+            }
+            cardManager.writeField(CardManager.FIELD_SERVICES, bytes);
+            System.out.println("[CARD] Saved " + services.size() + " purchased services to card");
+            return true;
+        } catch (Exception e) {
+            System.out.println("[WARN] Could not save services to card: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Đọc danh sách dịch vụ đã mua từ thẻ
+     * 
+     * @param targetList Danh sách để đổ dữ liệu vào (sẽ được clear trước)
+     * @return true nếu đọc thành công
+     */
+    public boolean loadPurchasedServices(List<String> targetList) {
+        if (!connected || !authenticated) {
+            return false;
+        }
+        try {
+            targetList.clear();
+            byte[] data = cardManager.readField(CardManager.FIELD_SERVICES);
+            if (data != null && data.length > 0) {
+                String str = new String(data, "UTF-8");
+                String[] parts = str.split(";");
+                for (String part : parts) {
+                    if (part != null && !part.trim().isEmpty()) {
+                        targetList.add(part.trim());
+                    }
+                }
+                System.out.println("[CARD] Loaded " + targetList.size() + " purchased services from card");
+            }
+            return true;
+        } catch (Exception e) {
+            System.out.println("[WARN] Could not load services from card: " + e.getMessage());
+            return false;
+        }
     }
 
     public TransactionInfo getTransaction(byte index) throws Exception {

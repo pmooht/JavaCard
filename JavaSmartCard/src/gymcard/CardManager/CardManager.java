@@ -47,6 +47,7 @@ public class CardManager {
     public static final byte FIELD_AVATAR = (byte) 0x06;
     public static final byte FIELD_CHECKIN = (byte) 0x07; // Check-in data (không mã hóa trên thẻ)
     public static final byte FIELD_BALANCE = (byte) 0x08; // Số dư (có mã hóa trên thẻ)
+    public static final byte FIELD_SERVICES = (byte) 0x09; // Dịch vụ đã mua (plaintext)
 
     // ================== AVATAR CONFIG ==================
     public static final int AVATAR_STORE_LEN = 8192; // 8KB cho ảnh 128x128

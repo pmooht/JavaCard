@@ -78,6 +78,9 @@ public class UserPanel extends JPanel {
         statisticsTab = new StatisticsTab(cardComm, purchasedServices);
         changePinTab = new ChangePinTab(cardComm);
 
+        // Load purchased services from card
+        cardComm.loadPurchasedServices(purchasedServices);
+
         // Add home panel
         contentPanel.add(createHomePanel(), "home");
         contentPanel.add(infoTab, "info");

@@ -53,6 +53,7 @@
 //
 //    private static final short AVATAR_LEN = (short) 8192;
 //    private static final short CHECKIN_LEN = (short) 352; // 10 records x 35 bytes + header
+//    private static final short SERVICES_LEN = (short) 256; // Purchased services data
 //
 //    private static final short BALANCE_LEN = (short) 16;
 //    private static final short BALANCE_VALUE_LEN = (short) 8;
@@ -66,6 +67,7 @@
 //
 //    private byte[] avatarBuf;
 //    private byte[] checkinBuf;
+//    private byte[] servicesBuf; // Purchased services (plaintext)
 //    private byte[] balanceBuf; // Encrypted Balance
 //    private byte[] balanceTmp; // Transient RAM for Balance processing
 //
@@ -122,6 +124,7 @@
 //    private static final byte FIELD_AVATAR = (byte) 0x06;
 //    private static final byte FIELD_CHECKIN = (byte) 0x07;
 //    private static final byte FIELD_BALANCE = (byte) 0x08;
+//    private static final byte FIELD_SERVICES = (byte) 0x09;
 //
 //    private short avatarDataLen = 0;
 //    private static final byte ALG_SHA_256 = (byte) 4;
@@ -180,6 +183,7 @@
 //
 //        avatarBuf = new byte[AVATAR_LEN];
 //        checkinBuf = new byte[CHECKIN_LEN];
+//        servicesBuf = new byte[SERVICES_LEN];
 //        balanceBuf = new byte[BALANCE_LEN];
 //
 //        // RSA Buffers Allocation
@@ -642,6 +646,15 @@
 //            return;
 //        }
 //
+//        if (fieldId == FIELD_SERVICES) {
+//            if (dataLen > SERVICES_LEN)
+//                ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
+//            Util.arrayFillNonAtomic(servicesBuf, (short) 0, SERVICES_LEN, (byte) 0x00);
+//            if (dataLen > 0)
+//                Util.arrayCopyNonAtomic(buf, srcOff, servicesBuf, (short) 0, dataLen);
+//            return;
+//        }
+//
 //        byte[] targetBuf;
 //        short targetLen;
 //
@@ -701,10 +714,16 @@
 //            ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
 //
 //        if (fieldId == FIELD_CHECKIN) {
-//            Util.arrayCopyNonAtomic(checkinBuf, (short) 0, buf, (short) 0, CHECKIN_LEN);
+//            // Calculate actual data length from checkinBuf first
 //            short actualLen = CHECKIN_LEN;
-//            while (actualLen > 0 && buf[(short) (actualLen - 1)] == (byte) 0x00)
+//            while (actualLen > 0 && checkinBuf[(short) (actualLen - 1)] == (byte) 0x00)
 //                actualLen--;
+//            // Limit to APDU buffer size (max 255)
+//            if (actualLen > (short) 255)
+//                actualLen = (short) 255;
+//            // Copy only actual data to APDU buffer
+//            if (actualLen > 0)
+//                Util.arrayCopyNonAtomic(checkinBuf, (short) 0, buf, (short) 0, actualLen);
 //            apdu.setOutgoing();
 //            apdu.setOutgoingLength(actualLen);
 //            if (actualLen > 0)
@@ -717,6 +736,24 @@
 //            apdu.setOutgoing();
 //            apdu.setOutgoingLength(BALANCE_VALUE_LEN);
 //            apdu.sendBytes((short) 0, BALANCE_VALUE_LEN);
+//            return;
+//        }
+//
+//        if (fieldId == FIELD_SERVICES) {
+//            // Calculate actual data length from servicesBuf first
+//            short actualLen = SERVICES_LEN;
+//            while (actualLen > 0 && servicesBuf[(short) (actualLen - 1)] == (byte) 0x00)
+//                actualLen--;
+//            // Limit to APDU buffer size (max 255)
+//            if (actualLen > (short) 255)
+//                actualLen = (short) 255;
+//            // Copy only actual data to APDU buffer
+//            if (actualLen > 0)
+//                Util.arrayCopyNonAtomic(servicesBuf, (short) 0, buf, (short) 0, actualLen);
+//            apdu.setOutgoing();
+//            apdu.setOutgoingLength(actualLen);
+//            if (actualLen > 0)
+//                apdu.sendBytes((short) 0, actualLen);
 //            return;
 //        }
 //
