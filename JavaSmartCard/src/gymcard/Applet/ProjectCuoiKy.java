@@ -33,7 +33,8 @@
 //    private MessageDigest sha;
 //
 //    // Buffers
-//    private byte[] cardSalt; // Salt ngau nhien (Persistent)
+//    private byte[] userSalt; // Salt cho User PIN (Persistent) - Regenerate khi doi PIN
+//    private byte[] adminSalt; // Salt cho Admin PIN (Persistent) - Chi tao 1 lan khi init
 //    private byte[] tmpKeyBuf; // Buffer tam cho SHA-256 (RAM/Transient tot hon nhung de array thuong cho don
 //                              // gian)
 //
@@ -160,7 +161,8 @@
 //        }
 //
 //        // Memory Allocation
-//        cardSalt = new byte[SALT_LEN];
+//        userSalt = new byte[SALT_LEN]; // User Salt - co the doi khi change PIN
+//        adminSalt = new byte[SALT_LEN]; // Admin Salt - chi tao 1 lan
 //        tmpKeyBuf = new byte[SHA_256_LEN]; // 32 bytes
 //        mkHash = new byte[MK_HASH_LEN]; // 32 bytes
 //        encMK_User = new byte[AES_KEY_LEN];
@@ -172,8 +174,9 @@
 //        mkHashCand = JCSystem.makeTransientByteArray(MK_HASH_LEN, JCSystem.CLEAR_ON_DESELECT);
 //        balanceTmp = JCSystem.makeTransientByteArray(BALANCE_LEN, JCSystem.CLEAR_ON_DESELECT);
 //
-//        // Sinh Salt ngau nhien 1 lan duy nhat
-//        rng.generateData(cardSalt, (short) 0, SALT_LEN);
+//        // Sinh Salt ngau nhien cho ca User va Admin
+//        rng.generateData(userSalt, (short) 0, SALT_LEN);
+//        rng.generateData(adminSalt, (short) 0, SALT_LEN);
 //
 //        // Init Master Key (dummy)
 //        masterKey.setKey(mkBuf, (short) 0);
@@ -214,21 +217,23 @@
 //    // =========================================================
 //
 //    // KDF: SHA-256(PIN || Salt) -> Lay 16 bytes lam AES Key
-//    private void deriveKeyFromPin(byte[] pinBuf, short pinOff, short pinLen,
-//            byte[] outKey, short outOff) {
+//    // Nhan salt lam tham so de ho tro ca userSalt va adminSalt
+//    private void deriveKeyFromPinWithSalt(byte[] pinBuf, short pinOff, short pinLen,
+//            byte[] salt, byte[] outKey, short outOff) {
 //        sha.reset();
 //        sha.update(pinBuf, pinOff, pinLen);
-//        sha.doFinal(cardSalt, (short) 0, SALT_LEN, tmpKeyBuf, (short) 0);
+//        sha.doFinal(salt, (short) 0, SALT_LEN, tmpKeyBuf, (short) 0);
 //        Util.arrayCopyNonAtomic(tmpKeyBuf, (short) 0, outKey, outOff, AES_KEY_LEN);
 //        // Clean temp buffer
 //        Util.arrayFillNonAtomic(tmpKeyBuf, (short) 0, SHA_256_LEN, (byte) 0x00);
 //    }
 //
 //    // Hash MK: SHA-256(MK || Salt) -> Full 32 bytes
-//    private void hashMasterKey(byte[] mk, short mkOff, byte[] outHash, short outOff) {
+//    // Nhan salt lam tham so de ho tro ca userSalt va adminSalt
+//    private void hashMasterKeyWithSalt(byte[] mk, short mkOff, byte[] salt, byte[] outHash, short outOff) {
 //        sha.reset();
 //        sha.update(mk, mkOff, AES_KEY_LEN);
-//        sha.doFinal(cardSalt, (short) 0, SALT_LEN, tmpKeyBuf, (short) 0);
+//        sha.doFinal(salt, (short) 0, SALT_LEN, tmpKeyBuf, (short) 0);
 //        Util.arrayCopyNonAtomic(tmpKeyBuf, (short) 0, outHash, outOff, MK_HASH_LEN);
 //        Util.arrayFillNonAtomic(tmpKeyBuf, (short) 0, SHA_256_LEN, (byte) 0x00);
 //    }
@@ -237,16 +242,16 @@
 //    // UNLOCK MASTER KEY LOGIC
 //    // =========================================================
 //    private boolean unlockMasterWithUserPin(byte[] buf, short pinOff) {
-//        // 1. Derive AES Key from PIN
-//        deriveKeyFromPin(buf, pinOff, PIN_SIZE, pinKeyBuf, (short) 0);
+//        // 1. Derive AES Key from PIN using USER SALT
+//        deriveKeyFromPinWithSalt(buf, pinOff, PIN_SIZE, userSalt, pinKeyBuf, (short) 0);
 //        wrapKey.setKey(pinKeyBuf, (short) 0);
 //
 //        // 2. Decrypt Master Key from EEPROM into RAM
 //        aesCipher.init(wrapKey, Cipher.MODE_DECRYPT);
 //        aesCipher.doFinal(encMK_User, (short) 0, AES_KEY_LEN, mkBuf, (short) 0);
 //
-//        // 3. Verify Integrity (Hash)
-//        hashMasterKey(mkBuf, (short) 0, mkHashCand, (short) 0);
+//        // 3. Verify Integrity (Hash) using USER SALT
+//        hashMasterKeyWithSalt(mkBuf, (short) 0, userSalt, mkHashCand, (short) 0);
 //        boolean ok = (Util.arrayCompare(mkHashCand, (short) 0, mkHash, (short) 0, MK_HASH_LEN) == 0);
 //
 //        // 4. If OK, set to Key Object
@@ -264,15 +269,32 @@
 //    }
 //
 //    private boolean unlockMasterWithAdminPin(byte[] buf, short pinOff) {
-//        deriveKeyFromPin(buf, pinOff, PIN_SIZE, pinKeyBuf, (short) 0);
+//        // Derive key using ADMIN SALT
+//        deriveKeyFromPinWithSalt(buf, pinOff, PIN_SIZE, adminSalt, pinKeyBuf, (short) 0);
 //        wrapKey.setKey(pinKeyBuf, (short) 0);
 //
 //        aesCipher.init(wrapKey, Cipher.MODE_DECRYPT);
 //        aesCipher.doFinal(encMK_Admin, (short) 0, AES_KEY_LEN, mkBuf, (short) 0);
 //
-//        hashMasterKey(mkBuf, (short) 0, mkHashCand, (short) 0);
+//        // Hash with ADMIN SALT for admin-side verification
+//        hashMasterKeyWithSalt(mkBuf, (short) 0, adminSalt, mkHashCand, (short) 0);
 //
+//        // Compare with adminMkHash (will be added) or use raw MK comparison
+//        // For now, we verify by checking if decrypted MK can decrypt known data
+//        // Alternative: store separate adminMkHash
+//        // Simplified: Use same mkHash but with userSalt (admin verifies via their own
+//        // path)
+//
+//        // Actually, simpler approach: Admin uses adminSalt for everything
+//        // Admin's encMK_Admin is encrypted with key derived from adminSalt
+//        // We need separate hash for admin verification
+//        // For now, let's verify by re-encrypting and comparing
+//
+//        // Re-derive user key from mkBuf to verify integrity
+//        // This is a simplification - in production, store separate admin hash
+//        hashMasterKeyWithSalt(mkBuf, (short) 0, userSalt, mkHashCand, (short) 0);
 //        boolean ok = (Util.arrayCompare(mkHashCand, (short) 0, mkHash, (short) 0, MK_HASH_LEN) == 0);
+//
 //        if (ok)
 //            masterKey.setKey(mkBuf, (short) 0);
 //
@@ -391,17 +413,21 @@
 //        rng.generateData(mkBuf, (short) 0, AES_KEY_LEN);
 //        masterKey.setKey(mkBuf, (short) 0);
 //
-//        // 3. Hash MK for verification -> EEPROM
-//        hashMasterKey(mkBuf, (short) 0, mkHash, (short) 0);
+//        // 2.5. Generate NEW salts for this card initialization
+//        rng.generateData(userSalt, (short) 0, SALT_LEN);
+//        rng.generateData(adminSalt, (short) 0, SALT_LEN);
 //
-//        // 4. Encrypt MK with User PIN -> EEPROM
-//        deriveKeyFromPin(buf, userPinOff, PIN_SIZE, pinKeyBuf, (short) 0);
+//        // 3. Hash MK for verification using userSalt -> EEPROM
+//        hashMasterKeyWithSalt(mkBuf, (short) 0, userSalt, mkHash, (short) 0);
+//
+//        // 4. Encrypt MK with User PIN using userSalt -> EEPROM
+//        deriveKeyFromPinWithSalt(buf, userPinOff, PIN_SIZE, userSalt, pinKeyBuf, (short) 0);
 //        wrapKey.setKey(pinKeyBuf, (short) 0);
 //        aesCipher.init(wrapKey, Cipher.MODE_ENCRYPT);
 //        aesCipher.doFinal(mkBuf, (short) 0, AES_KEY_LEN, encMK_User, (short) 0);
 //
-//        // 5. Encrypt MK with Admin PIN -> EEPROM
-//        deriveKeyFromPin(buf, adminPinOff, PIN_SIZE, pinKeyBuf, (short) 0);
+//        // 5. Encrypt MK with Admin PIN using adminSalt -> EEPROM
+//        deriveKeyFromPinWithSalt(buf, adminPinOff, PIN_SIZE, adminSalt, pinKeyBuf, (short) 0);
 //        wrapKey.setKey(pinKeyBuf, (short) 0);
 //        aesCipher.init(wrapKey, Cipher.MODE_ENCRYPT);
 //        aesCipher.doFinal(mkBuf, (short) 0, AES_KEY_LEN, encMK_Admin, (short) 0);
@@ -503,13 +529,23 @@
 //            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
 //        }
 //
-//        // Re-encrypt MK with new PIN
-//        masterKey.getKey(mkBuf, (short) 0); // Get raw MK from RAM
-//        deriveKeyFromPin(buf, offNew, PIN_SIZE, pinKeyBuf, (short) 0);
+//        // === SALT ROTATION: Sinh userSalt moi de tang cuong bao mat ===
+//        // 1. Get raw MK from RAM
+//        masterKey.getKey(mkBuf, (short) 0);
+//
+//        // 2. Generate NEW userSalt (KEY SECURITY FEATURE)
+//        rng.generateData(userSalt, (short) 0, SALT_LEN);
+//
+//        // 3. Derive new TempKey from new PIN + NEW Salt
+//        deriveKeyFromPinWithSalt(buf, offNew, PIN_SIZE, userSalt, pinKeyBuf, (short) 0);
 //        wrapKey.setKey(pinKeyBuf, (short) 0);
 //
+//        // 4. Re-encrypt MK with new key
 //        aesCipher.init(wrapKey, Cipher.MODE_ENCRYPT);
 //        aesCipher.doFinal(mkBuf, (short) 0, AES_KEY_LEN, encMK_User, (short) 0);
+//
+//        // 5. Update mkHash with NEW Salt (CRITICAL for verification)
+//        hashMasterKeyWithSalt(mkBuf, (short) 0, userSalt, mkHash, (short) 0);
 //
 //        triesRemaining = MAX_PIN_TRIES;
 //        userAuthenticated = true;
@@ -559,23 +595,27 @@
 //        if (!ok)
 //            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
 //
+//        // Get raw MK from RAM (unlocked by admin)
 //        masterKey.getKey(mkBuf, (short) 0);
-//        deriveKeyFromPin(buf, offNew, PIN_SIZE, pinKeyBuf, (short) 0);
+//
+//        // === SALT ROTATION khi Admin reset PIN ===
+//        // Sinh userSalt moi de dam bao an toan
+//        rng.generateData(userSalt, (short) 0, SALT_LEN);
+//
+//        // Derive key tu new PIN + NEW userSalt
+//        deriveKeyFromPinWithSalt(buf, offNew, PIN_SIZE, userSalt, pinKeyBuf, (short) 0);
 //        wrapKey.setKey(pinKeyBuf, (short) 0);
 //
 //        aesCipher.init(wrapKey, Cipher.MODE_ENCRYPT);
 //        aesCipher.doFinal(mkBuf, (short) 0, AES_KEY_LEN, encMK_User, (short) 0);
 //
+//        // Update mkHash voi userSalt moi
+//        hashMasterKeyWithSalt(mkBuf, (short) 0, userSalt, mkHash, (short) 0);
+//
 //        Util.arrayFillNonAtomic(mkBuf, (short) 0, AES_KEY_LEN, (byte) 0x00);
 //        Util.arrayFillNonAtomic(pinKeyBuf, (short) 0, AES_KEY_LEN, (byte) 0x00);
 //
-//        // When Admin resets PIN, set flag back to default?
-//        // Logic: if admin sets it to 000000 explicitly?
-//        // For now let's assume Admin resetting PIN is a different flow.
-//        // But if admin initializes the card, initCard is called.
-//        // This is adminSetUserPin (reset PIN). Maybe we should set isDefaultPin = true
-//        // here too?
-//        // Let's safe side set it to true so user is forced to change again.
+//        // Khi Admin reset PIN, user buoc phai doi PIN lan dau
 //        isDefaultPin = true;
 //    }
 //
