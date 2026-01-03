@@ -1,0 +1,2461 @@
+// converted by version 1.3
+// on Fri Jan 02 11:39:15 ICT 2026
+
+.package ProjectCuoiKy {
+	.aid 0x11:0x22:0x33:0x44:0x55;
+	.version 1.0;
+
+	.imports {
+		0xA0:0x0:0x0:0x0:0x62:0x1:0x1 1.3;		//javacard/framework
+		0xA0:0x0:0x0:0x0:0x62:0x1:0x2 1.3;		//javacard/security
+		0xA0:0x0:0x0:0x0:0x62:0x2:0x1 1.3;		//javacardx/crypto
+		0xA0:0x0:0x0:0x0:0x62:0x0:0x1 1.0;		//java/lang
+	}
+
+	.applet {
+		0x11:0x22:0x33:0x44:0x55:0x0 ProjectCuoiKy;
+	}
+
+	.constantPool {
+		// 0
+		instanceFieldRef short ProjectCuoiKy/avatarDataLen;
+		// 1
+		instanceFieldRef 1.14 ProjectCuoiKy/rng;
+		// 2
+		instanceFieldRef byte ProjectCuoiKy/triesRemaining;
+		// 3
+		instanceFieldRef boolean ProjectCuoiKy/blocked;
+		// 4
+		instanceFieldRef boolean ProjectCuoiKy/userAuthenticated;
+		// 5
+		instanceFieldRef boolean ProjectCuoiKy/isDefaultPin;
+		// 6
+		instanceFieldRef 1.20 ProjectCuoiKy/masterKey;
+		// 7
+		instanceFieldRef 1.20 ProjectCuoiKy/wrapKey;
+		// 8
+		instanceFieldRef 2.1 ProjectCuoiKy/aesCipher;
+		// 9
+		instanceFieldRef 1.11 ProjectCuoiKy/sha;
+		// 10
+		instanceFieldRef byte[] ProjectCuoiKy/cardSalt;
+		// 11
+		instanceFieldRef byte[] ProjectCuoiKy/tmpKeyBuf;
+		// 12
+		instanceFieldRef byte[] ProjectCuoiKy/mkHash;
+		// 13
+		instanceFieldRef byte[] ProjectCuoiKy/encMK_User;
+		// 14
+		instanceFieldRef byte[] ProjectCuoiKy/encMK_Admin;
+		// 15
+		instanceFieldRef byte[] ProjectCuoiKy/mkBuf;
+		// 16
+		instanceFieldRef byte[] ProjectCuoiKy/pinKeyBuf;
+		// 17
+		instanceFieldRef byte[] ProjectCuoiKy/mkHashCand;
+		// 18
+		instanceFieldRef byte[] ProjectCuoiKy/balanceTmp;
+		// 19
+		instanceFieldRef byte[] ProjectCuoiKy/nameBuf;
+		// 20
+		instanceFieldRef byte[] ProjectCuoiKy/dobBuf;
+		// 21
+		instanceFieldRef byte[] ProjectCuoiKy/phoneBuf;
+		// 22
+		instanceFieldRef byte[] ProjectCuoiKy/addressBuf;
+		// 23
+		instanceFieldRef byte[] ProjectCuoiKy/packageBuf;
+		// 24
+		instanceFieldRef byte[] ProjectCuoiKy/cardIdBuf;
+		// 25
+		instanceFieldRef byte[] ProjectCuoiKy/avatarBuf;
+		// 26
+		instanceFieldRef byte[] ProjectCuoiKy/checkinBuf;
+		// 27
+		instanceFieldRef byte[] ProjectCuoiKy/servicesBuf;
+		// 28
+		instanceFieldRef byte[] ProjectCuoiKy/balanceBuf;
+		// 29
+		instanceFieldRef byte[] ProjectCuoiKy/encPrivMod;
+		// 30
+		instanceFieldRef byte[] ProjectCuoiKy/encPrivExp;
+		// 31
+		instanceFieldRef byte[] ProjectCuoiKy/ramPrivMod;
+		// 32
+		instanceFieldRef byte[] ProjectCuoiKy/ramPrivExp;
+		// 33
+		instanceFieldRef 1.9 ProjectCuoiKy/cardPublicKey;
+		// 34
+		instanceFieldRef 1.8 ProjectCuoiKy/cardPrivateKey;
+		// 35
+		instanceFieldRef 1.15 ProjectCuoiKy/rsaSign;
+		// 36
+		classRef 1.12;		// javacard/security/CryptoException
+		// 37
+		staticMethodRef 0.8.13(SB)[B;		// javacard/framework/JCSystem.makeTransientByteArray(SB)[B
+		// 38
+		staticMethodRef 2.1.0(BZ)Ljavacardx/crypto/Cipher;;		// javacardx/crypto/Cipher.getInstance(BZ)Ljavacardx/crypto/Cipher;
+			.descriptor	Ljavacardx/crypto/Cipher;	2.1;
+
+		// 39
+		staticMethodRef 0.3.0()V;		// javacard/framework/Applet.<init>()V
+		// 40
+		staticMethodRef 1.11.0(BZ)Ljavacard/security/MessageDigest;;		// javacard/security/MessageDigest.getInstance(BZ)Ljavacard/security/MessageDigest;
+			.descriptor	Ljavacard/security/MessageDigest;	1.11;
+
+		// 41
+		staticMethodRef ProjectCuoiKy/<init>()V;
+		// 42
+		virtualMethodRef 1.14.1([BSS)V;		// generateData([BSS)V
+		// 43
+		staticMethodRef 0.7.1(S)V;		// javacard/framework/ISOException.throwIt(S)V
+		// 44
+		staticMethodRef 1.14.0(B)Ljavacard/security/RandomData;;		// javacard/security/RandomData.getInstance(B)Ljavacard/security/RandomData;
+			.descriptor	Ljavacard/security/RandomData;	1.14;
+
+		// 45
+		classRef 1.9;		// javacard/security/RSAPublicKey
+		// 46
+		staticMethodRef 1.13.0(BSZ)Ljavacard/security/Key;;		// javacard/security/KeyBuilder.buildKey(BSZ)Ljavacard/security/Key;
+			.descriptor	Ljavacard/security/Key;	1.0;
+
+		// 47
+		classRef 1.8;		// javacard/security/RSAPrivateKey
+		// 48
+		classRef 1.20;		// javacard/security/AESKey
+		// 49
+		staticFieldRef byte[] ProjectCuoiKy/EXP_F4;
+		// 50
+		staticMethodRef 1.15.0(BZ)Ljavacard/security/Signature;;		// javacard/security/Signature.getInstance(BZ)Ljavacard/security/Signature;
+			.descriptor	Ljavacard/security/Signature;	1.15;
+
+		// 51
+		classRef ProjectCuoiKy;
+		// 52
+		virtualMethodRef 0.3.1()V;		// register()V
+		// 53
+		virtualMethodRef 1.11.4()V;		// reset()V
+		// 54
+		virtualMethodRef 1.11.5([BSS)V;		// update([BSS)V
+		// 55
+		virtualMethodRef 1.11.1([BSS[BS)S;		// doFinal([BSS[BS)S
+		// 56
+		staticMethodRef 0.16.2([BS[BSS)S;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+		// 57
+		staticMethodRef 0.16.3([BSSB)S;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+		// 58
+		staticMethodRef ProjectCuoiKy/deriveKeyFromPin([BSS[BS)V;
+		// 59
+		virtualMethodRef 2.1.3(Ljavacard/security/Key;B)V;		// init(Ljavacard/security/Key;B)V
+			.descriptor	Ljavacard/security/Key;	1.0;
+
+		// 60
+		virtualMethodRef 2.1.1([BSS[BS)S;		// doFinal([BSS[BS)S
+		// 61
+		staticMethodRef ProjectCuoiKy/hashMasterKey([BS[BS)V;
+		// 62
+		staticMethodRef 0.16.0([BS[BSS)B;		// javacard/framework/Util.arrayCompare([BS[BSS)B
+		// 63
+		virtualMethodRef 0.3.3()Z;		// selectingApplet()Z
+		// 64
+		virtualMethodRef 0.10.1()[B;		// getBuffer()[B
+		// 65
+		staticMethodRef ProjectCuoiKy/initCard(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 66
+		staticMethodRef ProjectCuoiKy/verifyPin(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 67
+		staticMethodRef ProjectCuoiKy/changePin(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 68
+		staticMethodRef ProjectCuoiKy/unlockCard(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 69
+		staticMethodRef ProjectCuoiKy/adminSetUserPin(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 70
+		staticMethodRef ProjectCuoiKy/checkDefaultPin(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 71
+		staticMethodRef ProjectCuoiKy/avatarBegin(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 72
+		staticMethodRef ProjectCuoiKy/avatarChunk(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 73
+		staticMethodRef ProjectCuoiKy/avatarEnd(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 74
+		staticMethodRef ProjectCuoiKy/avatarReadChunk(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 75
+		staticMethodRef ProjectCuoiKy/writePersonal(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 76
+		staticMethodRef ProjectCuoiKy/readPersonal(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 77
+		staticMethodRef ProjectCuoiKy/sendTries(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 78
+		staticMethodRef ProjectCuoiKy/getMem(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 79
+		staticMethodRef ProjectCuoiKy/getCardPublicKey(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 80
+		staticMethodRef ProjectCuoiKy/signChallenge(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 81
+		virtualMethodRef 0.10.6()S;		// setIncomingAndReceive()S
+		// 82
+		virtualMethodRef 0.10.3(S)S;		// receiveBytes(S)S
+		// 83
+		classRef 1.16;		// javacard/security/KeyPair
+		// 84
+		staticMethodRef 1.16.0(BS)V;		// javacard/security/KeyPair.<init>(BS)V
+		// 85
+		virtualMethodRef 1.16.1()V;		// genKeyPair()V
+		// 86
+		virtualMethodRef 1.16.2()Ljavacard/security/PrivateKey;;		// getPrivate()Ljavacard/security/PrivateKey;
+			.descriptor	Ljavacard/security/PrivateKey;	1.2;
+
+		// 87
+		virtualMethodRef 1.16.3()Ljavacard/security/PublicKey;;		// getPublic()Ljavacard/security/PublicKey;
+			.descriptor	Ljavacard/security/PublicKey;	1.3;
+
+		// 88
+		staticMethodRef ProjectCuoiKy/resetBalanceZero()V;
+		// 89
+		staticMethodRef ProjectCuoiKy/unlockMasterWithUserPin([BS)Z;
+		// 90
+		virtualMethodRef 0.10.8(SS)V;		// setOutgoingAndSend(SS)V
+		// 91
+		staticMethodRef ProjectCuoiKy/unlockMasterWithAdminPin([BS)Z;
+		// 92
+		staticMethodRef 0.16.5(BB)S;		// javacard/framework/Util.makeShort(BB)S
+		// 93
+		virtualMethodRef 0.10.7()S;		// setOutgoing()S
+		// 94
+		virtualMethodRef 0.10.9(S)V;		// setOutgoingLength(S)V
+		// 95
+		virtualMethodRef 0.10.4(SS)V;		// sendBytes(SS)V
+		// 96
+		virtualMethodRef 1.15.3(Ljavacard/security/Key;B)V;		// init(Ljavacard/security/Key;B)V
+			.descriptor	Ljavacard/security/Key;	1.0;
+
+		// 97
+		virtualMethodRef 1.15.5([BSS[BS)S;		// sign([BSS[BS)S
+		// 98
+		staticMethodRef ProjectCuoiKy/setBalanceInternalFrom8([BS)V;
+		// 99
+		staticMethodRef ProjectCuoiKy/getBalanceInternalTo8([BS)V;
+		// 100
+		staticMethodRef 0.8.16(B)S;		// javacard/framework/JCSystem.getAvailableMemory(B)S
+		// 101
+		staticMethodRef 0.16.6([BSS)S;		// javacard/framework/Util.setShort([BSS)S
+	}
+
+	.class public ProjectCuoiKy 0 extends 0.3 {		// extends javacard/framework/Applet
+
+		.fields {
+			private 1.14 rng 0;		// Ljavacard/security/RandomData;
+			private 1.20 masterKey 1;		// Ljavacard/security/AESKey;
+			private 1.20 wrapKey 2;		// Ljavacard/security/AESKey;
+			private 2.1 aesCipher 3;		// Ljavacardx/crypto/Cipher;
+			private 1.11 sha 4;		// Ljavacard/security/MessageDigest;
+			private byte[] cardSalt 5;		// [B
+			private byte[] tmpKeyBuf 6;		// [B
+			private byte[] mkBuf 7;		// [B
+			private byte[] mkHash 8;		// [B
+			private byte[] encMK_User 9;		// [B
+			private byte[] encMK_Admin 10;		// [B
+			private byte[] pinKeyBuf 11;		// [B
+			private byte[] mkHashCand 12;		// [B
+			private byte[] nameBuf 13;		// [B
+			private byte[] dobBuf 14;		// [B
+			private byte[] phoneBuf 15;		// [B
+			private byte[] addressBuf 16;		// [B
+			private byte[] packageBuf 17;		// [B
+			private byte[] cardIdBuf 18;		// [B
+			private byte[] avatarBuf 19;		// [B
+			private byte[] checkinBuf 20;		// [B
+			private byte[] servicesBuf 21;		// [B
+			private byte[] balanceBuf 22;		// [B
+			private byte[] balanceTmp 23;		// [B
+			private 1.9 cardPublicKey 24;		// Ljavacard/security/RSAPublicKey;
+			private 1.8 cardPrivateKey 25;		// Ljavacard/security/RSAPrivateKey;
+			private 1.15 rsaSign 26;		// Ljavacard/security/Signature;
+			private byte[] encPrivMod 27;		// [B
+			private byte[] encPrivExp 28;		// [B
+			private byte[] ramPrivMod 29;		// [B
+			private byte[] ramPrivExp 30;		// [B
+			private byte triesRemaining 31;		// B
+			private boolean blocked 32;		// Z
+			private boolean userAuthenticated 33;		// Z
+			private boolean isDefaultPin 34;		// Z
+			private short avatarDataLen 35;		// S
+			private static final byte PIN_SIZE = 6;		// B
+			private static final byte MAX_PIN_TRIES = 3;		// B
+			private static final short AES_KEY_LEN = 16;		// S
+			private static final short SHA_256_LEN = 32;		// S
+			private static final short MK_HASH_LEN = 32;		// S
+			private static final short SALT_LEN = 16;		// S
+			private static final short NAME_LEN = 64;		// S
+			private static final short DOB_LEN = 16;		// S
+			private static final short PHONE_LEN = 16;		// S
+			private static final short ADDRESS_LEN = 128;		// S
+			private static final short PACKAGE_LEN = 32;		// S
+			private static final short CARDID_LEN = 32;		// S
+			private static final short AVATAR_LEN = 8192;		// S
+			private static final short CHECKIN_LEN = 352;		// S
+			private static final short SERVICES_LEN = 256;		// S
+			private static final short BALANCE_LEN = 16;		// S
+			private static final short BALANCE_VALUE_LEN = 8;		// S
+			private static final short RSA_KEY_LEN_BITS = 1024;		// S
+			private static final byte[] EXP_F4 = {1,0,1};		// [B
+			private static final short RSA_MOD_LEN = 128;		// S
+			private static final short GET_PUB_CHUNK = 64;		// S
+			private static final byte CLA_GYM = -128;		// B
+			private static final byte INS_INIT_CARD = 16;		// B
+			private static final byte INS_VERIFY_PIN = 32;		// B
+			private static final byte INS_CHANGE_PIN = 33;		// B
+			private static final byte INS_UNLOCK = 34;		// B
+			private static final byte INS_ADMIN_SET_PIN = 35;		// B
+			private static final byte INS_CHECK_DEFAULT_PIN = 36;		// B
+			private static final byte INS_WRITE_PERSONAL = 48;		// B
+			private static final byte INS_READ_PERSONAL = 49;		// B
+			private static final byte INS_GET_TRIES = 50;		// B
+			private static final byte INS_GET_CARD_PUB = 64;		// B
+			private static final byte INS_SIGN_CHALLENGE = 65;		// B
+			private static final byte INS_AVATAR_BEGIN = 80;		// B
+			private static final byte INS_AVATAR_CHUNK = 81;		// B
+			private static final byte INS_AVATAR_END = 82;		// B
+			private static final byte INS_AVATAR_READ_CHUNK = 83;		// B
+			private static final byte INS_GET_MEM = 85;		// B
+			private static final byte FIELD_NAME = 0;		// B
+			private static final byte FIELD_DOB = 1;		// B
+			private static final byte FIELD_PHONE = 2;		// B
+			private static final byte FIELD_ADDRESS = 3;		// B
+			private static final byte FIELD_PACKAGE = 4;		// B
+			private static final byte FIELD_CARDID = 5;		// B
+			private static final byte FIELD_AVATAR = 6;		// B
+			private static final byte FIELD_CHECKIN = 7;		// B
+			private static final byte FIELD_BALANCE = 8;		// B
+			private static final byte FIELD_SERVICES = 9;		// B
+			private static final byte ALG_SHA_256 = 4;		// B
+		}
+
+		.publicMethodTable 7 {
+			equals(Ljava/lang/Object;)Z;
+			register()V;
+			register([BSB)V;
+			selectingApplet()Z;
+			deselect()V;
+			getShareableInterfaceObject(Ljavacard/framework/AID;B)Ljavacard/framework/Shareable;;
+			select()Z;
+			process(Ljavacard/framework/APDU;)V;
+		}
+
+		.packageMethodTable 0 {
+		}
+
+		.method public static install([BSB)V 0 {
+			.stack 2;
+			.locals 0;
+
+				L0:	new 51;		// ProjectCuoiKy/ProjectCuoiKy
+					dup;
+					invokespecial 41;		// ProjectCuoiKy/ProjectCuoiKy.<init>()V
+					pop;
+					return;
+		}
+
+		.method protected <init>()V 1 {
+			.stack 4;
+			.locals 1;
+
+				L0:	aload_0;
+					invokespecial 39;		// javacard/framework/Applet.<init>()V
+					aload_0;
+					sconst_0;
+					putfield_s 0;		// short ProjectCuoiKy/ProjectCuoiKy.avatarDataLen
+					aload_0;
+					sconst_2;
+					invokestatic 44;		// javacard/security/RandomData.getInstance(B)Ljavacard/security/RandomData;
+					putfield_a 1;		// reference ProjectCuoiKy/ProjectCuoiKy.rng
+					aload_0;
+					sconst_3;
+					putfield_b 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					aload_0;
+					sconst_0;
+					putfield_b 3;		// boolean ProjectCuoiKy/ProjectCuoiKy.blocked
+					aload_0;
+					sconst_0;
+					putfield_b 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					aload_0;
+					sconst_1;
+					putfield_b 5;		// boolean ProjectCuoiKy/ProjectCuoiKy.isDefaultPin
+					aload_0;
+					bspush 15;
+					sspush 128;
+					sconst_0;
+					invokestatic 46;		// javacard/security/KeyBuilder.buildKey(BSZ)Ljavacard/security/Key;
+					checkcast 0 48;		// T_CLASSORINTERFACE javacard/security/AESKey
+					putfield_a 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					aload_0;
+					bspush 15;
+					sspush 128;
+					sconst_0;
+					invokestatic 46;		// javacard/security/KeyBuilder.buildKey(BSZ)Ljavacard/security/Key;
+					checkcast 0 48;		// T_CLASSORINTERFACE javacard/security/AESKey
+					putfield_a 7;		// reference ProjectCuoiKy/ProjectCuoiKy.wrapKey
+					aload_0;
+					bspush 14;
+					sconst_0;
+					invokestatic 38;		// javacardx/crypto/Cipher.getInstance(BZ)Ljavacardx/crypto/Cipher;
+					putfield_a 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+				L1:	aload_0;
+					sconst_4;
+					sconst_0;
+					invokestatic 40;		// javacard/security/MessageDigest.getInstance(BZ)Ljavacard/security/MessageDigest;
+					putfield_a 9;		// reference ProjectCuoiKy/ProjectCuoiKy.sha
+				L2:	goto L5;
+				L3:	astore_1;
+				L4:	sspush 27265;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L5:	aload_0;
+					bspush 16;
+					newarray 11;
+					putfield_a 10;		// reference ProjectCuoiKy/ProjectCuoiKy.cardSalt
+					aload_0;
+					bspush 32;
+					newarray 11;
+					putfield_a 11;		// reference ProjectCuoiKy/ProjectCuoiKy.tmpKeyBuf
+					aload_0;
+					bspush 32;
+					newarray 11;
+					putfield_a 12;		// reference ProjectCuoiKy/ProjectCuoiKy.mkHash
+					aload_0;
+					bspush 16;
+					newarray 11;
+					putfield_a 13;		// reference ProjectCuoiKy/ProjectCuoiKy.encMK_User
+					aload_0;
+					bspush 16;
+					newarray 11;
+					putfield_a 14;		// reference ProjectCuoiKy/ProjectCuoiKy.encMK_Admin
+					aload_0;
+					bspush 16;
+					sconst_2;
+					invokestatic 37;		// javacard/framework/JCSystem.makeTransientByteArray(SB)[B
+					putfield_a 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					aload_0;
+					bspush 16;
+					sconst_2;
+					invokestatic 37;		// javacard/framework/JCSystem.makeTransientByteArray(SB)[B
+					putfield_a 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					aload_0;
+					bspush 32;
+					sconst_2;
+					invokestatic 37;		// javacard/framework/JCSystem.makeTransientByteArray(SB)[B
+					putfield_a 17;		// reference ProjectCuoiKy/ProjectCuoiKy.mkHashCand
+					aload_0;
+					bspush 16;
+					sconst_2;
+					invokestatic 37;		// javacard/framework/JCSystem.makeTransientByteArray(SB)[B
+					putfield_a 18;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceTmp
+					getfield_a_this 1;		// reference ProjectCuoiKy/ProjectCuoiKy.rng
+					getfield_a_this 10;		// reference ProjectCuoiKy/ProjectCuoiKy.cardSalt
+					sconst_0;
+					bspush 16;
+					invokevirtual 42;		// generateData([BSS)V
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					invokeinterface 3 48 4;		// javacard/security/AESKey
+					aload_0;
+					bspush 64;
+					newarray 11;
+					putfield_a 19;		// reference ProjectCuoiKy/ProjectCuoiKy.nameBuf
+					aload_0;
+					bspush 16;
+					newarray 11;
+					putfield_a 20;		// reference ProjectCuoiKy/ProjectCuoiKy.dobBuf
+					aload_0;
+					bspush 16;
+					newarray 11;
+					putfield_a 21;		// reference ProjectCuoiKy/ProjectCuoiKy.phoneBuf
+					aload_0;
+					sspush 128;
+					newarray 11;
+					putfield_a 22;		// reference ProjectCuoiKy/ProjectCuoiKy.addressBuf
+					aload_0;
+					bspush 32;
+					newarray 11;
+					putfield_a 23;		// reference ProjectCuoiKy/ProjectCuoiKy.packageBuf
+					aload_0;
+					bspush 32;
+					newarray 11;
+					putfield_a 24;		// reference ProjectCuoiKy/ProjectCuoiKy.cardIdBuf
+					aload_0;
+					sspush 8192;
+					newarray 11;
+					putfield_a 25;		// reference ProjectCuoiKy/ProjectCuoiKy.avatarBuf
+					aload_0;
+					sspush 352;
+					newarray 11;
+					putfield_a 26;		// reference ProjectCuoiKy/ProjectCuoiKy.checkinBuf
+					aload_0;
+					sspush 256;
+					newarray 11;
+					putfield_a 27;		// reference ProjectCuoiKy/ProjectCuoiKy.servicesBuf
+					aload_0;
+					bspush 16;
+					newarray 11;
+					putfield_a 28;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceBuf
+					aload_0;
+					sspush 128;
+					newarray 11;
+					putfield_a 29;		// reference ProjectCuoiKy/ProjectCuoiKy.encPrivMod
+					aload_0;
+					sspush 128;
+					newarray 11;
+					putfield_a 30;		// reference ProjectCuoiKy/ProjectCuoiKy.encPrivExp
+					aload_0;
+					sspush 128;
+					sconst_2;
+					invokestatic 37;		// javacard/framework/JCSystem.makeTransientByteArray(SB)[B
+					putfield_a 31;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivMod
+					aload_0;
+					sspush 128;
+					sconst_2;
+					invokestatic 37;		// javacard/framework/JCSystem.makeTransientByteArray(SB)[B
+					putfield_a 32;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivExp
+					aload_0;
+					sconst_4;
+					sspush 1024;
+					sconst_0;
+					invokestatic 46;		// javacard/security/KeyBuilder.buildKey(BSZ)Ljavacard/security/Key;
+					checkcast 0 45;		// T_CLASSORINTERFACE javacard/security/RSAPublicKey
+					putfield_a 33;		// reference ProjectCuoiKy/ProjectCuoiKy.cardPublicKey
+					aload_0;
+					sconst_5;
+					sspush 1024;
+					sconst_0;
+					invokestatic 46;		// javacard/security/KeyBuilder.buildKey(BSZ)Ljavacard/security/Key;
+					checkcast 0 47;		// T_CLASSORINTERFACE javacard/security/RSAPrivateKey
+					putfield_a 34;		// reference ProjectCuoiKy/ProjectCuoiKy.cardPrivateKey
+					getfield_a_this 33;		// reference ProjectCuoiKy/ProjectCuoiKy.cardPublicKey
+					getstatic_a 49;		// reference ProjectCuoiKy/ProjectCuoiKy.EXP_F4
+					sconst_0;
+					getstatic_a 49;		// reference ProjectCuoiKy/ProjectCuoiKy.EXP_F4
+					arraylength;
+					invokeinterface 4 45 6;		// javacard/security/RSAPublicKey
+					aload_0;
+					bspush 10;
+					sconst_0;
+					invokestatic 50;		// javacard/security/Signature.getInstance(BZ)Ljavacard/security/Signature;
+					putfield_a 35;		// reference ProjectCuoiKy/ProjectCuoiKy.rsaSign
+					aload_0;
+					invokevirtual 52;		// register()V
+					return;
+			.exceptionTable {
+				// start_block end_block handler_block catch_type_index
+				L1 L2 L3 36;
+			}
+		}
+
+		.method private deriveKeyFromPin([BSS[BS)V {
+			.stack 6;
+			.locals 0;
+
+				L0:	getfield_a_this 9;		// reference ProjectCuoiKy/ProjectCuoiKy.sha
+					invokevirtual 53;		// reset()V
+					getfield_a_this 9;		// reference ProjectCuoiKy/ProjectCuoiKy.sha
+					aload_1;
+					sload_2;
+					sload_3;
+					invokevirtual 54;		// update([BSS)V
+					getfield_a_this 9;		// reference ProjectCuoiKy/ProjectCuoiKy.sha
+					getfield_a_this 10;		// reference ProjectCuoiKy/ProjectCuoiKy.cardSalt
+					sconst_0;
+					bspush 16;
+					getfield_a_this 11;		// reference ProjectCuoiKy/ProjectCuoiKy.tmpKeyBuf
+					sconst_0;
+					invokevirtual 55;		// doFinal([BSS[BS)S
+					pop;
+					getfield_a_this 11;		// reference ProjectCuoiKy/ProjectCuoiKy.tmpKeyBuf
+					sconst_0;
+					aload 4;
+					sload 5;
+					bspush 16;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					getfield_a_this 11;		// reference ProjectCuoiKy/ProjectCuoiKy.tmpKeyBuf
+					sconst_0;
+					bspush 32;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					return;
+		}
+
+		.method private hashMasterKey([BS[BS)V {
+			.stack 6;
+			.locals 0;
+
+				L0:	getfield_a_this 9;		// reference ProjectCuoiKy/ProjectCuoiKy.sha
+					invokevirtual 53;		// reset()V
+					getfield_a_this 9;		// reference ProjectCuoiKy/ProjectCuoiKy.sha
+					aload_1;
+					sload_2;
+					bspush 16;
+					invokevirtual 54;		// update([BSS)V
+					getfield_a_this 9;		// reference ProjectCuoiKy/ProjectCuoiKy.sha
+					getfield_a_this 10;		// reference ProjectCuoiKy/ProjectCuoiKy.cardSalt
+					sconst_0;
+					bspush 16;
+					getfield_a_this 11;		// reference ProjectCuoiKy/ProjectCuoiKy.tmpKeyBuf
+					sconst_0;
+					invokevirtual 55;		// doFinal([BSS[BS)S
+					pop;
+					getfield_a_this 11;		// reference ProjectCuoiKy/ProjectCuoiKy.tmpKeyBuf
+					sconst_0;
+					aload_3;
+					sload 4;
+					bspush 32;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					getfield_a_this 11;		// reference ProjectCuoiKy/ProjectCuoiKy.tmpKeyBuf
+					sconst_0;
+					bspush 32;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					return;
+		}
+
+		.method private unlockMasterWithUserPin([BS)Z {
+			.stack 6;
+			.locals 1;
+
+				L0:	aload_0;
+					aload_1;
+					sload_2;
+					bspush 6;
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					invokespecial 58;		// ProjectCuoiKy/ProjectCuoiKy.deriveKeyFromPin([BSS[BS)V
+					getfield_a_this 7;		// reference ProjectCuoiKy/ProjectCuoiKy.wrapKey
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					invokeinterface 3 48 4;		// javacard/security/AESKey
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 7;		// reference ProjectCuoiKy/ProjectCuoiKy.wrapKey
+					sconst_1;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 13;		// reference ProjectCuoiKy/ProjectCuoiKy.encMK_User
+					sconst_0;
+					bspush 16;
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					aload_0;
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					getfield_a_this 17;		// reference ProjectCuoiKy/ProjectCuoiKy.mkHashCand
+					sconst_0;
+					invokespecial 61;		// ProjectCuoiKy/ProjectCuoiKy.hashMasterKey([BS[BS)V
+					getfield_a_this 17;		// reference ProjectCuoiKy/ProjectCuoiKy.mkHashCand
+					sconst_0;
+					getfield_a_this 12;		// reference ProjectCuoiKy/ProjectCuoiKy.mkHash
+					sconst_0;
+					bspush 32;
+					invokestatic 62;		// javacard/framework/Util.arrayCompare([BS[BSS)B
+					ifne L2;
+				L1:	sconst_1;
+					goto L3;
+				L2:	sconst_0;
+				L3:	sstore_3;
+				L4:	sload_3;
+					ifeq L6;
+				L5:	getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					invokeinterface 3 48 4;		// javacard/security/AESKey
+				L6:	getfield_a_this 17;		// reference ProjectCuoiKy/ProjectCuoiKy.mkHashCand
+					sconst_0;
+					bspush 32;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					sload_3;
+					ifne L8;
+				L7:	getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+				L8:	sload_3;
+					sreturn;
+		}
+
+		.method private unlockMasterWithAdminPin([BS)Z {
+			.stack 6;
+			.locals 1;
+
+				L0:	aload_0;
+					aload_1;
+					sload_2;
+					bspush 6;
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					invokespecial 58;		// ProjectCuoiKy/ProjectCuoiKy.deriveKeyFromPin([BSS[BS)V
+					getfield_a_this 7;		// reference ProjectCuoiKy/ProjectCuoiKy.wrapKey
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					invokeinterface 3 48 4;		// javacard/security/AESKey
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 7;		// reference ProjectCuoiKy/ProjectCuoiKy.wrapKey
+					sconst_1;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 14;		// reference ProjectCuoiKy/ProjectCuoiKy.encMK_Admin
+					sconst_0;
+					bspush 16;
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					aload_0;
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					getfield_a_this 17;		// reference ProjectCuoiKy/ProjectCuoiKy.mkHashCand
+					sconst_0;
+					invokespecial 61;		// ProjectCuoiKy/ProjectCuoiKy.hashMasterKey([BS[BS)V
+					getfield_a_this 17;		// reference ProjectCuoiKy/ProjectCuoiKy.mkHashCand
+					sconst_0;
+					getfield_a_this 12;		// reference ProjectCuoiKy/ProjectCuoiKy.mkHash
+					sconst_0;
+					bspush 32;
+					invokestatic 62;		// javacard/framework/Util.arrayCompare([BS[BSS)B
+					ifne L2;
+				L1:	sconst_1;
+					goto L3;
+				L2:	sconst_0;
+				L3:	sstore_3;
+				L4:	sload_3;
+					ifeq L6;
+				L5:	getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					invokeinterface 3 48 4;		// javacard/security/AESKey
+				L6:	getfield_a_this 17;		// reference ProjectCuoiKy/ProjectCuoiKy.mkHashCand
+					sconst_0;
+					bspush 32;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					sload_3;
+					ifne L8;
+				L7:	getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+				L8:	sload_3;
+					sreturn;
+		}
+
+		.method public process(Ljavacard/framework/APDU;)V 7 {
+			.stack 2;
+			.locals 1;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_0;
+					invokevirtual 63;		// selectingApplet()Z
+					ifeq L2;
+				L1:	aload_0;
+					sconst_0;
+					putfield_b 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					invokeinterface 1 48 0;		// javacard/security/AESKey
+					return;
+				L2:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L3:	aload_2;
+					sconst_0;
+					baload;
+					bspush -128;
+					if_scmpeq L5;
+				L4:	sspush 28160;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L5:	aload_2;
+					sconst_1;
+					baload;
+					stableswitch L22 16 85 L6 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L7 L8 L9 L10 L11 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L16 L17 L18 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L20 L21 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L22 L12 L13 L14 L15 L22 L19;
+				L6:	aload_0;
+					aload_1;
+					invokespecial 65;		// ProjectCuoiKy/ProjectCuoiKy.initCard(Ljavacard/framework/APDU;)V
+					return;
+				L7:	aload_0;
+					aload_1;
+					invokespecial 66;		// ProjectCuoiKy/ProjectCuoiKy.verifyPin(Ljavacard/framework/APDU;)V
+					return;
+				L8:	aload_0;
+					aload_1;
+					invokespecial 67;		// ProjectCuoiKy/ProjectCuoiKy.changePin(Ljavacard/framework/APDU;)V
+					return;
+				L9:	aload_0;
+					aload_1;
+					invokespecial 68;		// ProjectCuoiKy/ProjectCuoiKy.unlockCard(Ljavacard/framework/APDU;)V
+					return;
+				L10:	aload_0;
+					aload_1;
+					invokespecial 69;		// ProjectCuoiKy/ProjectCuoiKy.adminSetUserPin(Ljavacard/framework/APDU;)V
+					return;
+				L11:	aload_0;
+					aload_1;
+					invokespecial 70;		// ProjectCuoiKy/ProjectCuoiKy.checkDefaultPin(Ljavacard/framework/APDU;)V
+					return;
+				L12:	aload_0;
+					aload_1;
+					invokespecial 71;		// ProjectCuoiKy/ProjectCuoiKy.avatarBegin(Ljavacard/framework/APDU;)V
+					return;
+				L13:	aload_0;
+					aload_1;
+					invokespecial 72;		// ProjectCuoiKy/ProjectCuoiKy.avatarChunk(Ljavacard/framework/APDU;)V
+					return;
+				L14:	aload_0;
+					aload_1;
+					invokespecial 73;		// ProjectCuoiKy/ProjectCuoiKy.avatarEnd(Ljavacard/framework/APDU;)V
+					return;
+				L15:	aload_0;
+					aload_1;
+					invokespecial 74;		// ProjectCuoiKy/ProjectCuoiKy.avatarReadChunk(Ljavacard/framework/APDU;)V
+					return;
+				L16:	aload_0;
+					aload_1;
+					invokespecial 75;		// ProjectCuoiKy/ProjectCuoiKy.writePersonal(Ljavacard/framework/APDU;)V
+					return;
+				L17:	aload_0;
+					aload_1;
+					invokespecial 76;		// ProjectCuoiKy/ProjectCuoiKy.readPersonal(Ljavacard/framework/APDU;)V
+					return;
+				L18:	aload_0;
+					aload_1;
+					invokespecial 77;		// ProjectCuoiKy/ProjectCuoiKy.sendTries(Ljavacard/framework/APDU;)V
+					return;
+				L19:	aload_0;
+					aload_1;
+					invokespecial 78;		// ProjectCuoiKy/ProjectCuoiKy.getMem(Ljavacard/framework/APDU;)V
+					return;
+				L20:	aload_0;
+					aload_1;
+					invokespecial 79;		// ProjectCuoiKy/ProjectCuoiKy.getCardPublicKey(Ljavacard/framework/APDU;)V
+					return;
+				L21:	aload_0;
+					aload_1;
+					invokespecial 80;		// ProjectCuoiKy/ProjectCuoiKy.signChallenge(Ljavacard/framework/APDU;)V
+					return;
+				L22:	sspush 27904;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+					return;
+		}
+
+		.method private initCard(Ljavacard/framework/APDU;)V {
+			.stack 6;
+			.locals 12;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	getfield_b_this 3;		// boolean ProjectCuoiKy/ProjectCuoiKy.blocked
+					ifeq L2;
+				L1:	sspush 27013;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L2:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L3:	aload_2;
+					sconst_4;
+					baload;
+					sspush 255;
+					sand;
+					sstore_3;
+				L4:	aload_1;
+					invokevirtual 81;		// setIncomingAndReceive()S
+					sstore 4;
+				L5:	sconst_5;
+					sstore 5;
+				L6:	sload 4;
+					sload_3;
+					if_scmpge L8;
+				L7:	sload 4;
+					aload_1;
+					sload 5;
+					sload 4;
+					sadd;
+					invokevirtual 82;		// receiveBytes(S)S
+					sadd;
+					sstore 4;
+					goto L6;
+				L8:	sload_3;
+					bspush 13;
+					if_scmpge L10;
+				L9:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L10:	sload 5;
+					sstore 6;
+				L11:	aload_2;
+					sload 6;
+					sinc 6 1;
+					baload;
+					sstore 7;
+				L12:	sload 7;
+					ifle L14;
+				L13:	sload 7;
+					bspush 32;
+					if_scmple L15;
+				L14:	sspush 27264;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L15:	sload 6;
+					sstore 8;
+				L16:	sload 8;
+					sload 7;
+					sadd;
+					sstore 9;
+				L17:	sload 9;
+					bspush 6;
+					sadd;
+					sstore 10;
+				L18:	getfield_a_this 24;		// reference ProjectCuoiKy/ProjectCuoiKy.cardIdBuf
+					sconst_0;
+					bspush 32;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					aload_2;
+					sload 8;
+					getfield_a_this 24;		// reference ProjectCuoiKy/ProjectCuoiKy.cardIdBuf
+					sconst_0;
+					sload 7;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					getfield_a_this 1;		// reference ProjectCuoiKy/ProjectCuoiKy.rng
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					bspush 16;
+					invokevirtual 42;		// generateData([BSS)V
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					invokeinterface 3 48 4;		// javacard/security/AESKey
+					aload_0;
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					getfield_a_this 12;		// reference ProjectCuoiKy/ProjectCuoiKy.mkHash
+					sconst_0;
+					invokespecial 61;		// ProjectCuoiKy/ProjectCuoiKy.hashMasterKey([BS[BS)V
+					aload_0;
+					aload_2;
+					sload 9;
+					bspush 6;
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					invokespecial 58;		// ProjectCuoiKy/ProjectCuoiKy.deriveKeyFromPin([BSS[BS)V
+					getfield_a_this 7;		// reference ProjectCuoiKy/ProjectCuoiKy.wrapKey
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					invokeinterface 3 48 4;		// javacard/security/AESKey
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 7;		// reference ProjectCuoiKy/ProjectCuoiKy.wrapKey
+					sconst_2;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					bspush 16;
+					getfield_a_this 13;		// reference ProjectCuoiKy/ProjectCuoiKy.encMK_User
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					aload_0;
+					aload_2;
+					sload 10;
+					bspush 6;
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					invokespecial 58;		// ProjectCuoiKy/ProjectCuoiKy.deriveKeyFromPin([BSS[BS)V
+					getfield_a_this 7;		// reference ProjectCuoiKy/ProjectCuoiKy.wrapKey
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					invokeinterface 3 48 4;		// javacard/security/AESKey
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 7;		// reference ProjectCuoiKy/ProjectCuoiKy.wrapKey
+					sconst_2;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					bspush 16;
+					getfield_a_this 14;		// reference ProjectCuoiKy/ProjectCuoiKy.encMK_Admin
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					sconst_2;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 24;		// reference ProjectCuoiKy/ProjectCuoiKy.cardIdBuf
+					sconst_0;
+					bspush 32;
+					getfield_a_this 24;		// reference ProjectCuoiKy/ProjectCuoiKy.cardIdBuf
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					new 83;		// javacard/security/KeyPair
+					dup;
+					sconst_1;
+					sspush 1024;
+					invokespecial 84;		// javacard/security/KeyPair.<init>(BS)V
+					astore 11;
+				L19:	aload 11;
+					invokevirtual 85;		// genKeyPair()V
+					aload 11;
+					invokevirtual 86;		// getPrivate()Ljavacard/security/PrivateKey;
+					checkcast 0 47;		// T_CLASSORINTERFACE javacard/security/RSAPrivateKey
+					astore 12;
+				L20:	aload 11;
+					invokevirtual 87;		// getPublic()Ljavacard/security/PublicKey;
+					checkcast 0 45;		// T_CLASSORINTERFACE javacard/security/RSAPublicKey
+					astore 13;
+				L21:	aload 13;
+					getfield_a_this 31;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivMod
+					sconst_0;
+					invokeinterface 3 45 5;		// javacard/security/RSAPublicKey
+					pop;
+					getfield_a_this 33;		// reference ProjectCuoiKy/ProjectCuoiKy.cardPublicKey
+					getfield_a_this 31;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivMod
+					sconst_0;
+					sspush 128;
+					invokeinterface 4 45 7;		// javacard/security/RSAPublicKey
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					sconst_2;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					aload 12;
+					getfield_a_this 31;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivMod
+					sconst_0;
+					invokeinterface 3 47 5;		// javacard/security/RSAPrivateKey
+					pop;
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 31;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivMod
+					sconst_0;
+					sspush 128;
+					getfield_a_this 29;		// reference ProjectCuoiKy/ProjectCuoiKy.encPrivMod
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					aload 12;
+					getfield_a_this 32;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivExp
+					sconst_0;
+					invokeinterface 3 47 4;		// javacard/security/RSAPrivateKey
+					pop;
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 32;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivExp
+					sconst_0;
+					sspush 128;
+					getfield_a_this 30;		// reference ProjectCuoiKy/ProjectCuoiKy.encPrivExp
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					getfield_a_this 31;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivMod
+					sconst_0;
+					sspush 128;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					getfield_a_this 32;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivExp
+					sconst_0;
+					sspush 128;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					aconst_null;
+					astore 11;
+					aload_0;
+					sconst_3;
+					putfield_b 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					aload_0;
+					sconst_0;
+					putfield_b 3;		// boolean ProjectCuoiKy/ProjectCuoiKy.blocked
+					aload_0;
+					sconst_0;
+					putfield_b 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					aload_0;
+					sconst_1;
+					putfield_b 5;		// boolean ProjectCuoiKy/ProjectCuoiKy.isDefaultPin
+					aload_0;
+					invokespecial 88;		// ProjectCuoiKy/ProjectCuoiKy.resetBalanceZero()V
+					getfield_a_this 26;		// reference ProjectCuoiKy/ProjectCuoiKy.checkinBuf
+					sconst_0;
+					sspush 352;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					getfield_a_this 25;		// reference ProjectCuoiKy/ProjectCuoiKy.avatarBuf
+					sconst_0;
+					sspush 8192;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					aload_0;
+					sconst_0;
+					putfield_s 0;		// short ProjectCuoiKy/ProjectCuoiKy.avatarDataLen
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					invokeinterface 1 48 0;		// javacard/security/AESKey
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					return;
+		}
+
+		.method private verifyPin(Ljavacard/framework/APDU;)V {
+			.stack 3;
+			.locals 3;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	getfield_b_this 3;		// boolean ProjectCuoiKy/ProjectCuoiKy.blocked
+					ifne L2;
+				L1:	getfield_b_this 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					ifne L3;
+				L2:	sspush 27011;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L3:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L4:	aload_1;
+					invokevirtual 81;		// setIncomingAndReceive()S
+					sstore_3;
+				L5:	sload_3;
+					bspush 6;
+					if_scmpeq L7;
+				L6:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L7:	aload_0;
+					aload_2;
+					sconst_5;
+					invokespecial 89;		// ProjectCuoiKy/ProjectCuoiKy.unlockMasterWithUserPin([BS)Z
+					sstore 4;
+				L8:	sload 4;
+					ifne L14;
+				L9:	getfield_b_this 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					ifle L11;
+				L10:	aload_0;
+					dup;
+					getfield_b 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					sconst_1;
+					ssub;
+					s2b;
+					putfield_b 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+				L11:	getfield_b_this 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					ifne L13;
+				L12:	aload_0;
+					sconst_1;
+					putfield_b 3;		// boolean ProjectCuoiKy/ProjectCuoiKy.blocked
+				L13:	sspush 25536;
+					getfield_b_this 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					bspush 15;
+					sand;
+					sor;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L14:	aload_0;
+					sconst_3;
+					putfield_b 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					aload_0;
+					sconst_1;
+					putfield_b 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					return;
+		}
+
+		.method private changePin(Ljavacard/framework/APDU;)V {
+			.stack 6;
+			.locals 5;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	getfield_b_this 3;		// boolean ProjectCuoiKy/ProjectCuoiKy.blocked
+					ifne L2;
+				L1:	getfield_b_this 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					ifne L3;
+				L2:	sspush 27013;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L3:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L4:	aload_1;
+					invokevirtual 81;		// setIncomingAndReceive()S
+					sstore_3;
+				L5:	sload_3;
+					bspush 12;
+					if_scmpeq L7;
+				L6:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L7:	sconst_5;
+					sstore 4;
+				L8:	sload 4;
+					bspush 6;
+					sadd;
+					sstore 5;
+				L9:	aload_0;
+					aload_2;
+					sload 4;
+					invokespecial 89;		// ProjectCuoiKy/ProjectCuoiKy.unlockMasterWithUserPin([BS)Z
+					sstore 6;
+				L10:	sload 6;
+					ifne L16;
+				L11:	getfield_b_this 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					ifle L13;
+				L12:	aload_0;
+					dup;
+					getfield_b 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					sconst_1;
+					ssub;
+					s2b;
+					putfield_b 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+				L13:	getfield_b_this 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					ifne L15;
+				L14:	aload_0;
+					sconst_1;
+					putfield_b 3;		// boolean ProjectCuoiKy/ProjectCuoiKy.blocked
+				L15:	sspush 27010;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L16:	getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					invokeinterface 3 48 5;		// javacard/security/AESKey
+					pop;
+					aload_0;
+					aload_2;
+					sload 5;
+					bspush 6;
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					invokespecial 58;		// ProjectCuoiKy/ProjectCuoiKy.deriveKeyFromPin([BSS[BS)V
+					getfield_a_this 7;		// reference ProjectCuoiKy/ProjectCuoiKy.wrapKey
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					invokeinterface 3 48 4;		// javacard/security/AESKey
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 7;		// reference ProjectCuoiKy/ProjectCuoiKy.wrapKey
+					sconst_2;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					bspush 16;
+					getfield_a_this 13;		// reference ProjectCuoiKy/ProjectCuoiKy.encMK_User
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					aload_0;
+					sconst_3;
+					putfield_b 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					aload_0;
+					sconst_1;
+					putfield_b 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					aload_0;
+					sconst_0;
+					putfield_b 5;		// boolean ProjectCuoiKy/ProjectCuoiKy.isDefaultPin
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					return;
+		}
+
+		.method private checkDefaultPin(Ljavacard/framework/APDU;)V {
+			.stack 3;
+			.locals 1;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	getfield_b_this 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					ifne L2;
+				L1:	sspush 27010;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L2:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L3:	aload_2;
+					sconst_0;
+					getfield_b_this 5;		// boolean ProjectCuoiKy/ProjectCuoiKy.isDefaultPin
+					ifeq L5;
+				L4:	sconst_1;
+					goto L6;
+				L5:	sconst_0;
+				L6:	bastore;
+					aload_1;
+					sconst_0;
+					sconst_1;
+					invokevirtual 90;		// setOutgoingAndSend(SS)V
+					return;
+		}
+
+		.method private unlockCard(Ljavacard/framework/APDU;)V {
+			.stack 3;
+			.locals 3;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L1:	aload_1;
+					invokevirtual 81;		// setIncomingAndReceive()S
+					sstore_3;
+				L2:	sload_3;
+					bspush 6;
+					if_scmpeq L4;
+				L3:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L4:	aload_0;
+					aload_2;
+					sconst_5;
+					invokespecial 91;		// ProjectCuoiKy/ProjectCuoiKy.unlockMasterWithAdminPin([BS)Z
+					sstore 4;
+				L5:	sload 4;
+					ifne L7;
+				L6:	sspush 27010;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L7:	aload_0;
+					sconst_3;
+					putfield_b 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					aload_0;
+					sconst_0;
+					putfield_b 3;		// boolean ProjectCuoiKy/ProjectCuoiKy.blocked
+					aload_0;
+					sconst_0;
+					putfield_b 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					return;
+		}
+
+		.method private adminSetUserPin(Ljavacard/framework/APDU;)V {
+			.stack 6;
+			.locals 5;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L1:	aload_1;
+					invokevirtual 81;		// setIncomingAndReceive()S
+					sstore_3;
+				L2:	sload_3;
+					bspush 12;
+					if_scmpeq L4;
+				L3:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L4:	sconst_5;
+					sstore 4;
+				L5:	sload 4;
+					bspush 6;
+					sadd;
+					sstore 5;
+				L6:	aload_0;
+					aload_2;
+					sload 4;
+					invokespecial 91;		// ProjectCuoiKy/ProjectCuoiKy.unlockMasterWithAdminPin([BS)Z
+					sstore 6;
+				L7:	sload 6;
+					ifne L9;
+				L8:	sspush 27010;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L9:	getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					invokeinterface 3 48 5;		// javacard/security/AESKey
+					pop;
+					aload_0;
+					aload_2;
+					sload 5;
+					bspush 6;
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					invokespecial 58;		// ProjectCuoiKy/ProjectCuoiKy.deriveKeyFromPin([BSS[BS)V
+					getfield_a_this 7;		// reference ProjectCuoiKy/ProjectCuoiKy.wrapKey
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					invokeinterface 3 48 4;		// javacard/security/AESKey
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 7;		// reference ProjectCuoiKy/ProjectCuoiKy.wrapKey
+					sconst_2;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					bspush 16;
+					getfield_a_this 13;		// reference ProjectCuoiKy/ProjectCuoiKy.encMK_User
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					getfield_a_this 15;		// reference ProjectCuoiKy/ProjectCuoiKy.mkBuf
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					getfield_a_this 16;		// reference ProjectCuoiKy/ProjectCuoiKy.pinKeyBuf
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					aload_0;
+					sconst_1;
+					putfield_b 5;		// boolean ProjectCuoiKy/ProjectCuoiKy.isDefaultPin
+					return;
+		}
+
+		.method private getCardPublicKey(Ljavacard/framework/APDU;)V {
+			.stack 5;
+			.locals 5;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L1:	aload_2;
+					sconst_2;
+					baload;
+					aload_2;
+					sconst_3;
+					baload;
+					invokestatic 92;		// javacard/framework/Util.makeShort(BB)S
+					sstore_3;
+				L2:	sload_3;
+					iflt L4;
+				L3:	sload_3;
+					sspush 128;
+					if_scmplt L5;
+				L4:	sspush 27270;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L5:	getfield_a_this 33;		// reference ProjectCuoiKy/ProjectCuoiKy.cardPublicKey
+					aload_2;
+					sconst_0;
+					invokeinterface 3 45 5;		// javacard/security/RSAPublicKey
+					sstore 4;
+				L6:	sspush 128;
+					sload_3;
+					ssub;
+					sstore 5;
+				L7:	sload 5;
+					bspush 64;
+					if_scmple L9;
+				L8:	bspush 64;
+					goto L10;
+				L9:	sload 5;
+				L10:	sstore 6;
+				L11:	aload_2;
+					sload_3;
+					aload_2;
+					sconst_0;
+					sload 6;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					aload_1;
+					invokevirtual 93;		// setOutgoing()S
+					pop;
+					aload_1;
+					sload 6;
+					invokevirtual 94;		// setOutgoingLength(S)V
+					aload_1;
+					sconst_0;
+					sload 6;
+					invokevirtual 95;		// sendBytes(SS)V
+					return;
+		}
+
+		.method private signChallenge(Ljavacard/framework/APDU;)V {
+			.stack 6;
+			.locals 3;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	getfield_b_this 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					ifne L2;
+				L1:	sspush 27010;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L2:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L3:	aload_1;
+					invokevirtual 81;		// setIncomingAndReceive()S
+					sstore_3;
+				L4:	sload_3;
+					ifgt L6;
+				L5:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L6:	getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					sconst_1;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 29;		// reference ProjectCuoiKy/ProjectCuoiKy.encPrivMod
+					sconst_0;
+					sspush 128;
+					getfield_a_this 31;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivMod
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 30;		// reference ProjectCuoiKy/ProjectCuoiKy.encPrivExp
+					sconst_0;
+					sspush 128;
+					getfield_a_this 32;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivExp
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					getfield_a_this 34;		// reference ProjectCuoiKy/ProjectCuoiKy.cardPrivateKey
+					getfield_a_this 31;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivMod
+					sconst_0;
+					sspush 128;
+					invokeinterface 4 47 7;		// javacard/security/RSAPrivateKey
+					getfield_a_this 34;		// reference ProjectCuoiKy/ProjectCuoiKy.cardPrivateKey
+					getfield_a_this 32;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivExp
+					sconst_0;
+					sspush 128;
+					invokeinterface 4 47 6;		// javacard/security/RSAPrivateKey
+					getfield_a_this 35;		// reference ProjectCuoiKy/ProjectCuoiKy.rsaSign
+					getfield_a_this 34;		// reference ProjectCuoiKy/ProjectCuoiKy.cardPrivateKey
+					sconst_1;
+					invokevirtual 96;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 35;		// reference ProjectCuoiKy/ProjectCuoiKy.rsaSign
+					aload_2;
+					sconst_5;
+					sload_3;
+					aload_2;
+					sconst_0;
+					invokevirtual 97;		// sign([BSS[BS)S
+					sstore 4;
+				L7:	getfield_a_this 34;		// reference ProjectCuoiKy/ProjectCuoiKy.cardPrivateKey
+					invokeinterface 1 47 0;		// javacard/security/RSAPrivateKey
+					getfield_a_this 31;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivMod
+					sconst_0;
+					sspush 128;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					getfield_a_this 32;		// reference ProjectCuoiKy/ProjectCuoiKy.ramPrivExp
+					sconst_0;
+					sspush 128;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					aload_1;
+					invokevirtual 93;		// setOutgoing()S
+					pop;
+					aload_1;
+					sload 4;
+					invokevirtual 94;		// setOutgoingLength(S)V
+					aload_1;
+					sconst_0;
+					sload 4;
+					invokevirtual 95;		// sendBytes(SS)V
+					return;
+		}
+
+		.method private writePersonal(Ljavacard/framework/APDU;)V {
+			.stack 6;
+			.locals 7;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	getfield_b_this 3;		// boolean ProjectCuoiKy/ProjectCuoiKy.blocked
+					ifne L2;
+				L1:	getfield_b_this 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					ifne L3;
+				L2:	sspush 27013;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L3:	getfield_b_this 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					ifne L5;
+				L4:	sspush 27010;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L5:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L6:	aload_1;
+					invokevirtual 81;		// setIncomingAndReceive()S
+					sstore_3;
+				L7:	sload_3;
+					sconst_1;
+					if_scmpge L9;
+				L8:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L9:	aload_2;
+					sconst_5;
+					baload;
+					sstore 4;
+				L10:	sload_3;
+					sconst_1;
+					ssub;
+					sstore 5;
+				L11:	bspush 6;
+					sstore 6;
+				L12:	sload 4;
+					bspush 6;
+					if_scmpne L14;
+				L13:	sspush 27265;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L14:	sload 4;
+					bspush 7;
+					if_scmpne L20;
+				L15:	sload 5;
+					sspush 352;
+					if_scmple L17;
+				L16:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L17:	getfield_a_this 26;		// reference ProjectCuoiKy/ProjectCuoiKy.checkinBuf
+					sconst_0;
+					sspush 352;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					sload 5;
+					ifle L19;
+				L18:	aload_2;
+					sload 6;
+					getfield_a_this 26;		// reference ProjectCuoiKy/ProjectCuoiKy.checkinBuf
+					sconst_0;
+					sload 5;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+				L19:	return;
+				L20:	sload 4;
+					bspush 8;
+					if_scmpne L24;
+				L21:	sload 5;
+					bspush 8;
+					if_scmpeq L23;
+				L22:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L23:	aload_0;
+					aload_2;
+					sload 6;
+					invokespecial 98;		// ProjectCuoiKy/ProjectCuoiKy.setBalanceInternalFrom8([BS)V
+					return;
+				L24:	sload 4;
+					bspush 9;
+					if_scmpne L30;
+				L25:	sload 5;
+					sspush 256;
+					if_scmple L27;
+				L26:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L27:	getfield_a_this 27;		// reference ProjectCuoiKy/ProjectCuoiKy.servicesBuf
+					sconst_0;
+					sspush 256;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					sload 5;
+					ifle L29;
+				L28:	aload_2;
+					sload 6;
+					getfield_a_this 27;		// reference ProjectCuoiKy/ProjectCuoiKy.servicesBuf
+					sconst_0;
+					sload 5;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+				L29:	return;
+				L30:	sload 4;
+					stableswitch L39 0 5 L31 L34 L35 L36 L37 L38;
+				L31:	getfield_a_this 19;		// reference ProjectCuoiKy/ProjectCuoiKy.nameBuf
+					astore 7;
+				L32:	bspush 64;
+					sstore 8;
+				L33:	goto L40;
+				L34:	getfield_a_this 20;		// reference ProjectCuoiKy/ProjectCuoiKy.dobBuf
+					astore 7;
+					bspush 16;
+					sstore 8;
+					goto L40;
+				L35:	getfield_a_this 21;		// reference ProjectCuoiKy/ProjectCuoiKy.phoneBuf
+					astore 7;
+					bspush 16;
+					sstore 8;
+					goto L40;
+				L36:	getfield_a_this 22;		// reference ProjectCuoiKy/ProjectCuoiKy.addressBuf
+					astore 7;
+					sspush 128;
+					sstore 8;
+					goto L40;
+				L37:	getfield_a_this 23;		// reference ProjectCuoiKy/ProjectCuoiKy.packageBuf
+					astore 7;
+					bspush 32;
+					sstore 8;
+					goto L40;
+				L38:	getfield_a_this 24;		// reference ProjectCuoiKy/ProjectCuoiKy.cardIdBuf
+					astore 7;
+					bspush 32;
+					sstore 8;
+					goto L40;
+				L39:	sspush 27270;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+					return;
+				L40:	sload 5;
+					sload 8;
+					if_scmple L42;
+				L41:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L42:	aload 7;
+					sconst_0;
+					sload 8;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					sload 5;
+					ifle L44;
+				L43:	aload_2;
+					sload 6;
+					aload 7;
+					sconst_0;
+					sload 5;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+				L44:	getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					sconst_2;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					aload 7;
+					sconst_0;
+					sload 8;
+					aload 7;
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					return;
+		}
+
+		.method private readPersonal(Ljavacard/framework/APDU;)V {
+			.stack 6;
+			.locals 6;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	getfield_b_this 3;		// boolean ProjectCuoiKy/ProjectCuoiKy.blocked
+					ifne L2;
+				L1:	getfield_b_this 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					ifne L3;
+				L2:	sspush 27013;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L3:	getfield_b_this 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					ifne L5;
+				L4:	sspush 27010;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L5:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L6:	aload_1;
+					invokevirtual 81;		// setIncomingAndReceive()S
+					sstore_3;
+				L7:	sload_3;
+					sconst_1;
+					if_scmpeq L9;
+				L8:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L9:	aload_2;
+					sconst_5;
+					baload;
+					sstore 4;
+				L10:	sload 4;
+					bspush 6;
+					if_scmpne L12;
+				L11:	sspush 27265;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L12:	sload 4;
+					bspush 7;
+					if_scmpne L24;
+				L13:	sspush 352;
+					sstore 5;
+				L14:	sload 5;
+					ifle L17;
+				L15:	getfield_a_this 26;		// reference ProjectCuoiKy/ProjectCuoiKy.checkinBuf
+					sload 5;
+					sconst_1;
+					ssub;
+					baload;
+					ifne L17;
+				L16:	sinc 5 -1;
+					goto L14;
+				L17:	sload 5;
+					sspush 255;
+					if_scmple L19;
+				L18:	sspush 255;
+					sstore 5;
+				L19:	sload 5;
+					ifle L21;
+				L20:	getfield_a_this 26;		// reference ProjectCuoiKy/ProjectCuoiKy.checkinBuf
+					sconst_0;
+					aload_2;
+					sconst_0;
+					sload 5;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+				L21:	aload_1;
+					invokevirtual 93;		// setOutgoing()S
+					pop;
+					aload_1;
+					sload 5;
+					invokevirtual 94;		// setOutgoingLength(S)V
+					sload 5;
+					ifle L23;
+				L22:	aload_1;
+					sconst_0;
+					sload 5;
+					invokevirtual 95;		// sendBytes(SS)V
+				L23:	return;
+				L24:	sload 4;
+					bspush 8;
+					if_scmpne L26;
+				L25:	aload_0;
+					aload_2;
+					sconst_0;
+					invokespecial 99;		// ProjectCuoiKy/ProjectCuoiKy.getBalanceInternalTo8([BS)V
+					aload_1;
+					invokevirtual 93;		// setOutgoing()S
+					pop;
+					aload_1;
+					bspush 8;
+					invokevirtual 94;		// setOutgoingLength(S)V
+					aload_1;
+					sconst_0;
+					bspush 8;
+					invokevirtual 95;		// sendBytes(SS)V
+					return;
+				L26:	sload 4;
+					bspush 9;
+					if_scmpne L38;
+				L27:	sspush 256;
+					sstore 5;
+				L28:	sload 5;
+					ifle L31;
+				L29:	getfield_a_this 27;		// reference ProjectCuoiKy/ProjectCuoiKy.servicesBuf
+					sload 5;
+					sconst_1;
+					ssub;
+					baload;
+					ifne L31;
+				L30:	sinc 5 -1;
+					goto L28;
+				L31:	sload 5;
+					sspush 255;
+					if_scmple L33;
+				L32:	sspush 255;
+					sstore 5;
+				L33:	sload 5;
+					ifle L35;
+				L34:	getfield_a_this 27;		// reference ProjectCuoiKy/ProjectCuoiKy.servicesBuf
+					sconst_0;
+					aload_2;
+					sconst_0;
+					sload 5;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+				L35:	aload_1;
+					invokevirtual 93;		// setOutgoing()S
+					pop;
+					aload_1;
+					sload 5;
+					invokevirtual 94;		// setOutgoingLength(S)V
+					sload 5;
+					ifle L37;
+				L36:	aload_1;
+					sconst_0;
+					sload 5;
+					invokevirtual 95;		// sendBytes(SS)V
+				L37:	return;
+				L38:	sload 4;
+					stableswitch L47 0 5 L39 L42 L43 L44 L45 L46;
+				L39:	getfield_a_this 19;		// reference ProjectCuoiKy/ProjectCuoiKy.nameBuf
+					astore 5;
+				L40:	bspush 64;
+					sstore 6;
+				L41:	goto L48;
+				L42:	getfield_a_this 20;		// reference ProjectCuoiKy/ProjectCuoiKy.dobBuf
+					astore 5;
+					bspush 16;
+					sstore 6;
+					goto L48;
+				L43:	getfield_a_this 21;		// reference ProjectCuoiKy/ProjectCuoiKy.phoneBuf
+					astore 5;
+					bspush 16;
+					sstore 6;
+					goto L48;
+				L44:	getfield_a_this 22;		// reference ProjectCuoiKy/ProjectCuoiKy.addressBuf
+					astore 5;
+					sspush 128;
+					sstore 6;
+					goto L48;
+				L45:	getfield_a_this 23;		// reference ProjectCuoiKy/ProjectCuoiKy.packageBuf
+					astore 5;
+					bspush 32;
+					sstore 6;
+					goto L48;
+				L46:	getfield_a_this 24;		// reference ProjectCuoiKy/ProjectCuoiKy.cardIdBuf
+					astore 5;
+					bspush 32;
+					sstore 6;
+					goto L48;
+				L47:	sspush 27270;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+					return;
+				L48:	getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					sconst_1;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					aload 5;
+					sconst_0;
+					sload 6;
+					aload_2;
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					sload 6;
+					sstore 7;
+				L49:	sload 7;
+					ifle L52;
+				L50:	aload_2;
+					sload 7;
+					sconst_1;
+					ssub;
+					baload;
+					ifne L52;
+				L51:	sinc 7 -1;
+					goto L49;
+				L52:	aload_1;
+					invokevirtual 93;		// setOutgoing()S
+					pop;
+					aload_1;
+					sload 7;
+					invokevirtual 94;		// setOutgoingLength(S)V
+					sload 7;
+					ifle L54;
+				L53:	aload_1;
+					sconst_0;
+					sload 7;
+					invokevirtual 95;		// sendBytes(SS)V
+				L54:	return;
+		}
+
+		.method private avatarBegin(Ljavacard/framework/APDU;)V {
+			.stack 4;
+			.locals 3;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	getfield_b_this 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					ifne L2;
+				L1:	sspush 27010;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L2:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L3:	aload_1;
+					invokevirtual 81;		// setIncomingAndReceive()S
+					sstore_3;
+				L4:	sload_3;
+					sconst_2;
+					if_scmpeq L6;
+				L5:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L6:	aload_2;
+					sconst_5;
+					baload;
+					aload_2;
+					bspush 6;
+					baload;
+					invokestatic 92;		// javacard/framework/Util.makeShort(BB)S
+					sstore 4;
+				L7:	sload 4;
+					iflt L9;
+				L8:	sload 4;
+					sspush 8190;
+					if_scmple L10;
+				L9:	sspush 27264;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L10:	aload_0;
+					sload 4;
+					putfield_s 0;		// short ProjectCuoiKy/ProjectCuoiKy.avatarDataLen
+					getfield_a_this 25;		// reference ProjectCuoiKy/ProjectCuoiKy.avatarBuf
+					sconst_0;
+					sspush 8192;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					return;
+		}
+
+		.method private avatarChunk(Ljavacard/framework/APDU;)V {
+			.stack 5;
+			.locals 3;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	getfield_b_this 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					ifne L2;
+				L1:	sspush 27010;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L2:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L3:	aload_1;
+					invokevirtual 81;		// setIncomingAndReceive()S
+					sstore_3;
+				L4:	sload_3;
+					ifgt L6;
+				L5:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L6:	aload_2;
+					sconst_2;
+					baload;
+					aload_2;
+					sconst_3;
+					baload;
+					invokestatic 92;		// javacard/framework/Util.makeShort(BB)S
+					sstore 4;
+				L7:	sload 4;
+					iflt L9;
+				L8:	sload 4;
+					getfield_s_this 0;		// short ProjectCuoiKy/ProjectCuoiKy.avatarDataLen
+					if_scmplt L10;
+				L9:	sspush 27270;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L10:	sload 4;
+					sload_3;
+					sadd;
+					getfield_s_this 0;		// short ProjectCuoiKy/ProjectCuoiKy.avatarDataLen
+					if_scmple L12;
+				L11:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L12:	aload_2;
+					sconst_5;
+					getfield_a_this 25;		// reference ProjectCuoiKy/ProjectCuoiKy.avatarBuf
+					sload 4;
+					sload_3;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					return;
+		}
+
+		.method private avatarEnd(Ljavacard/framework/APDU;)V {
+			.stack 6;
+			.locals 2;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	getfield_b_this 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					ifne L2;
+				L1:	sspush 27010;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L2:	getfield_s_this 0;		// short ProjectCuoiKy/ProjectCuoiKy.avatarDataLen
+					sstore_2;
+				L3:	getfield_a_this 25;		// reference ProjectCuoiKy/ProjectCuoiKy.avatarBuf
+					sspush 8190;
+					sload_2;
+					bspush 8;
+					sshr;
+					sspush 255;
+					sand;
+					s2b;
+					bastore;
+					getfield_a_this 25;		// reference ProjectCuoiKy/ProjectCuoiKy.avatarBuf
+					sspush 8191;
+					sload_2;
+					sspush 255;
+					sand;
+					s2b;
+					bastore;
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					sconst_2;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					sconst_0;
+					sstore_3;
+				L4:	sload_3;
+					sspush 8192;
+					if_scmpge L6;
+				L5:	getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 25;		// reference ProjectCuoiKy/ProjectCuoiKy.avatarBuf
+					sload_3;
+					bspush 16;
+					getfield_a_this 25;		// reference ProjectCuoiKy/ProjectCuoiKy.avatarBuf
+					sload_3;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					sinc 3 16;
+					goto L4;
+				L6:	return;
+		}
+
+		.method private avatarReadChunk(Ljavacard/framework/APDU;)V {
+			.stack 6;
+			.locals 10;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	getfield_b_this 4;		// boolean ProjectCuoiKy/ProjectCuoiKy.userAuthenticated
+					ifne L2;
+				L1:	sspush 27010;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L2:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L3:	aload_2;
+					sconst_2;
+					baload;
+					aload_2;
+					sconst_3;
+					baload;
+					invokestatic 92;		// javacard/framework/Util.makeShort(BB)S
+					sstore_3;
+				L4:	sload_3;
+					iflt L6;
+				L5:	sload_3;
+					sspush 8192;
+					if_scmplt L7;
+				L6:	sspush 27270;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L7:	aload_1;
+					invokevirtual 93;		// setOutgoing()S
+					sstore 4;
+				L8:	sload 4;
+					ifgt L10;
+				L9:	sspush 26368;
+					invokestatic 43;		// javacard/framework/ISOException.throwIt(S)V
+				L10:	sspush 8192;
+					sload_3;
+					ssub;
+					sstore 5;
+				L11:	sload 4;
+					sstore 6;
+				L12:	sload 6;
+					sload 5;
+					if_scmple L14;
+				L13:	sload 5;
+					sstore 6;
+				L14:	sload_3;
+					sload_3;
+					bspush 16;
+					srem;
+					ssub;
+					sstore 7;
+				L15:	sload_3;
+					sload 6;
+					sadd;
+					sstore 8;
+				L16:	sload 8;
+					bspush 16;
+					srem;
+					ifne L18;
+				L17:	sload 8;
+					goto L19;
+				L18:	sload 8;
+					bspush 16;
+					sload 8;
+					bspush 16;
+					srem;
+					ssub;
+					sadd;
+				L19:	sstore 9;
+				L20:	sload 9;
+					sspush 8192;
+					if_scmple L22;
+				L21:	sspush 8192;
+					sstore 9;
+				L22:	sload 9;
+					sload 7;
+					ssub;
+					sstore 10;
+				L23:	getfield_a_this 25;		// reference ProjectCuoiKy/ProjectCuoiKy.avatarBuf
+					sload 7;
+					aload_2;
+					sconst_0;
+					sload 10;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					sconst_1;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					sconst_0;
+					sstore 11;
+				L24:	sload 11;
+					sload 10;
+					if_scmpge L26;
+				L25:	getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					aload_2;
+					sload 11;
+					bspush 16;
+					aload_2;
+					sload 11;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					sinc 11 16;
+					goto L24;
+				L26:	sload_3;
+					sload 7;
+					ssub;
+					sstore 11;
+				L27:	aload_2;
+					sload 11;
+					aload_2;
+					sconst_0;
+					sload 6;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					aload_1;
+					sload 6;
+					invokevirtual 94;		// setOutgoingLength(S)V
+					aload_1;
+					sconst_0;
+					sload 6;
+					invokevirtual 95;		// sendBytes(SS)V
+					return;
+		}
+
+		.method private setBalanceInternalFrom8([BS)V {
+			.stack 6;
+			.locals 0;
+
+				L0:	getfield_a_this 18;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceTmp
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					aload_1;
+					sload_2;
+					getfield_a_this 18;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceTmp
+					sconst_0;
+					bspush 8;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					sconst_2;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 18;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceTmp
+					sconst_0;
+					bspush 16;
+					getfield_a_this 28;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceBuf
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					getfield_a_this 18;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceTmp
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					return;
+		}
+
+		.method private getBalanceInternalTo8([BS)V {
+			.stack 6;
+			.locals 0;
+
+				L0:	getfield_a_this 28;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceBuf
+					sconst_0;
+					getfield_a_this 18;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceTmp
+					sconst_0;
+					bspush 16;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					sconst_1;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 18;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceTmp
+					sconst_0;
+					bspush 16;
+					getfield_a_this 18;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceTmp
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					getfield_a_this 18;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceTmp
+					sconst_0;
+					aload_1;
+					sload_2;
+					bspush 8;
+					invokestatic 56;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					getfield_a_this 18;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceTmp
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					return;
+		}
+
+		.method private resetBalanceZero()V {
+			.stack 6;
+			.locals 0;
+
+				L0:	getfield_a_this 18;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceTmp
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 6;		// reference ProjectCuoiKy/ProjectCuoiKy.masterKey
+					sconst_2;
+					invokevirtual 59;		// init(Ljavacard/security/Key;B)V
+					getfield_a_this 8;		// reference ProjectCuoiKy/ProjectCuoiKy.aesCipher
+					getfield_a_this 18;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceTmp
+					sconst_0;
+					bspush 16;
+					getfield_a_this 28;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceBuf
+					sconst_0;
+					invokevirtual 60;		// doFinal([BSS[BS)S
+					pop;
+					getfield_a_this 18;		// reference ProjectCuoiKy/ProjectCuoiKy.balanceTmp
+					sconst_0;
+					bspush 16;
+					sconst_0;
+					invokestatic 57;		// javacard/framework/Util.arrayFillNonAtomic([BSSB)S
+					pop;
+					return;
+		}
+
+		.method private sendTries(Ljavacard/framework/APDU;)V {
+			.stack 3;
+			.locals 1;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L1:	aload_2;
+					sconst_0;
+					getfield_b_this 2;		// byte ProjectCuoiKy/ProjectCuoiKy.triesRemaining
+					bastore;
+					aload_1;
+					sconst_0;
+					sconst_1;
+					invokevirtual 90;		// setOutgoingAndSend(SS)V
+					return;
+		}
+
+		.method private getMem(Ljavacard/framework/APDU;)V {
+			.stack 3;
+			.locals 4;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_1;
+					invokevirtual 64;		// getBuffer()[B
+					astore_2;
+				L1:	sconst_0;
+					invokestatic 100;		// javacard/framework/JCSystem.getAvailableMemory(B)S
+					sstore_3;
+				L2:	sconst_1;
+					invokestatic 100;		// javacard/framework/JCSystem.getAvailableMemory(B)S
+					sstore 4;
+				L3:	sconst_2;
+					invokestatic 100;		// javacard/framework/JCSystem.getAvailableMemory(B)S
+					sstore 5;
+				L4:	aload_2;
+					sconst_0;
+					sload_3;
+					invokestatic 101;		// javacard/framework/Util.setShort([BSS)S
+					pop;
+					aload_2;
+					sconst_2;
+					sload 4;
+					invokestatic 101;		// javacard/framework/Util.setShort([BSS)S
+					pop;
+					aload_2;
+					sconst_4;
+					sload 5;
+					invokestatic 101;		// javacard/framework/Util.setShort([BSS)S
+					pop;
+					aload_1;
+					invokevirtual 93;		// setOutgoing()S
+					pop;
+					aload_1;
+					bspush 6;
+					invokevirtual 94;		// setOutgoingLength(S)V
+					aload_1;
+					sconst_0;
+					bspush 6;
+					invokevirtual 95;		// sendBytes(SS)V
+					return;
+		}
+
+	}
+
+}
