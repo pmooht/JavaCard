@@ -206,25 +206,51 @@ public class PackageTab extends BaseTabPanel {
             // No existing package
         }
 
-        // Calculate new expiry date
-        Calendar cal = Calendar.getInstance();
-        String baseDate = "hôm nay";
-
-        // If has existing package and not expired, add days to current expiry
-        if (!currentExpiry.isEmpty()) {
+        // === PHƯƠNG ÁN 2: HOÀN TIỀN TỶ LỆ ===
+        
+        // Tính số ngày còn lại và tiền hoàn
+        int daysRemaining = 0;
+        long refundAmount = 0;
+        PlanInfo oldPlan = null;
+        
+        if (currentPkg != null && currentPkg.type > 0 && !currentExpiry.isEmpty()) {
             try {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
                 Date expiryDate = sdf.parse(currentExpiry);
-                if (expiryDate.after(new Date())) {
-                    // Still valid, extend from expiry date
-                    cal.setTime(expiryDate);
-                    baseDate = currentExpiry;
+                Date today = new Date();
+                
+                if (expiryDate.after(today)) {
+                    // Gói cũ còn hạn - tính số ngày còn lại
+                    long diffMs = expiryDate.getTime() - today.getTime();
+                    daysRemaining = (int) (diffMs / (1000 * 60 * 60 * 24));
+                    
+                    // Lấy thông tin gói cũ từ DB
+                    try {
+                        DatabaseManager db = DatabaseManager.getInstance();
+                        List<PlanInfo> plans = db.getActivePlans();
+                        for (PlanInfo p : plans) {
+                            if (p.id == currentPkg.type) {
+                                oldPlan = p;
+                                break;
+                            }
+                        }
+                        
+                        // Tính tiền hoàn theo tỷ lệ
+                        if (oldPlan != null && oldPlan.durationDays > 0) {
+                            double pricePerDay = oldPlan.price / oldPlan.durationDays;
+                            refundAmount = (long) (pricePerDay * daysRemaining);
+                        }
+                    } catch (Exception e) {
+                        log("Lỗi lấy thông tin gói cũ: " + e.getMessage());
+                    }
                 }
             } catch (Exception e) {
-                // Use today if parse fails
+                // Parse date failed
             }
         }
 
+        // Gói mới bắt đầu từ HÔM NAY (không cộng dồn)
+        Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_MONTH, plan.durationDays);
         String newExpiry = new SimpleDateFormat("dd/MM/yyyy").format(cal.getTime());
 
@@ -234,6 +260,12 @@ public class PackageTab extends BaseTabPanel {
             currentBalance = cardComm.getBalance();
         } catch (Exception ex) {
         }
+        
+        // Số dư sau khi hoàn tiền
+        final long balanceAfterRefund = currentBalance + refundAmount;
+        final int finalDaysRemaining = daysRemaining;
+        final long finalRefundAmount = refundAmount;
+        final PlanInfo finalOldPlan = oldPlan;
 
         // Create dialog
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Xác nhận mua gói", true);
@@ -290,13 +322,34 @@ public class PackageTab extends BaseTabPanel {
         contentPanel.add(Box.createVerticalStrut(12));
         contentPanel.add(createInfoRow("Hết hạn mới:", newExpiry, new Color(46, 204, 113), true));
         contentPanel.add(Box.createVerticalStrut(12));
-        contentPanel.add(createInfoRow("Cộng từ:", baseDate, new Color(100, 116, 139), false));
-        contentPanel.add(Box.createVerticalStrut(12));
+        
+        // Hiển thị thông tin hoàn tiền nếu có
+        if (finalRefundAmount > 0 && finalOldPlan != null) {
+            JLabel refundInfoLabel = new JLabel(String.format("Hoàn %,d VNĐ cho %d ngày gói %s chưa dùng",
+                    finalRefundAmount, finalDaysRemaining, finalOldPlan.name));
+            refundInfoLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            refundInfoLabel.setForeground(new Color(34, 139, 34));
+            refundInfoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            contentPanel.add(refundInfoLabel);
+            contentPanel.add(Box.createVerticalStrut(12));
+        }
+        
         contentPanel.add(createInfoRow("Số dư hiện tại:", String.format("%,d VND", currentBalance),
-                currentBalance >= (long) plan.price ? new Color(46, 204, 113) : new Color(239, 68, 68), true));
+                new Color(100, 116, 139), false));
+        
+        if (finalRefundAmount > 0) {
+            contentPanel.add(Box.createVerticalStrut(8));
+            contentPanel.add(createInfoRow("Sau khi hoàn tiền:", String.format("%,d VND", balanceAfterRefund),
+                    new Color(34, 139, 34), true));
+        }
+        
+        contentPanel.add(Box.createVerticalStrut(12));
+        contentPanel.add(createInfoRow("Số dư sau mua:", 
+                String.format("%,d VND", balanceAfterRefund - (long)plan.price),
+                balanceAfterRefund >= (long) plan.price ? new Color(46, 204, 113) : new Color(239, 68, 68), true));
 
         // Warning if not enough balance
-        if (currentBalance < (long) plan.price) {
+        if (balanceAfterRefund < (long) plan.price) {
             contentPanel.add(Box.createVerticalStrut(15));
             JLabel warningLabel = new JLabel("⚠️ Số dư không đủ! Vui lòng nạp thêm tiền.");
             warningLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -349,15 +402,24 @@ public class PackageTab extends BaseTabPanel {
 
         confirmBtn.addActionListener(ev -> {
             try {
-                if (finalBalance < priceInVND) {
+                // Kiểm tra số dư sau khi hoàn tiền
+                if (balanceAfterRefund < priceInVND) {
                     JOptionPane.showMessageDialog(dialog,
                             "Số dư không đủ! Vui lòng nạp thêm tiền.",
                             "Không đủ tiền", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
 
+                // Bước 1: Hoàn tiền gói cũ (nếu có)
+                if (finalRefundAmount > 0) {
+                    log(String.format("Hoàn %,d VNĐ cho %d ngày gói cũ chưa dùng", 
+                            finalRefundAmount, finalDaysRemaining));
+                    cardComm.addBalance(finalRefundAmount);
+                }
+                
+                // Bước 2: Trừ tiền gói mới
                 if (cardComm.deductBalance(priceInVND)) {
-                    // Use plan.id as package type to preserve the package name
+                    // Bước 3: Set gói mới (bắt đầu từ hôm nay)
                     byte packageType = (byte) plan.id;
                     if (packageType <= 0)
                         packageType = 1; // fallback
@@ -370,10 +432,22 @@ public class PackageTab extends BaseTabPanel {
 
                     long newBalance = cardComm.getBalance();
 
+                    // Hiển thị thông báo thành công
+                    StringBuilder message = new StringBuilder();
+                    message.append("Mua gói thành công!\n\n");
+                    message.append(plan.name).append("\n");
+                    message.append("Hết hạn: ").append(finalNewExpiry).append("\n");
+                    
+                    if (finalRefundAmount > 0) {
+                        message.append("\n✅ Đã hoàn ").append(String.format("%,d VNĐ", finalRefundAmount));
+                        message.append(" cho gói cũ\n");
+                    }
+                    
+                    message.append("\nSố dư còn lại: ").append(String.format("%,d VND", newBalance));
+                    
                     log("Đã mua thành công: " + plan.name + " - " + String.format("%,.0f", plan.price) + " VND");
                     JOptionPane.showMessageDialog(dialog,
-                            "Mua gói thành công!\n\n" + plan.name + "\nHết hạn: " + finalNewExpiry +
-                                    "\nSố dư còn lại: " + String.format("%,d VND", newBalance),
+                            message.toString(),
                             "Thành công", JOptionPane.INFORMATION_MESSAGE);
                     dialog.dispose();
                 }
