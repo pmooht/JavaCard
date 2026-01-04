@@ -1151,9 +1151,10 @@ public class CardCommunicator {
 
     /**
      * Lưu danh sách dịch vụ đã mua lên thẻ
-     * Format: service1;service2;service3;...
+     * Format mới: service1:count1;service2:count2;...
+     * Ví dụ: "Khăn tập:2;Nước uống:1;Xông hơi:3"
      * 
-     * @param services Danh sách dịch vụ đã mua
+     * @param services Danh sách dịch vụ đã mua (có thể có trùng lặp)
      * @return true nếu thành công
      */
     public boolean savePurchasedServices(List<String> services) {
@@ -1161,19 +1162,49 @@ public class CardCommunicator {
             return false;
         }
         try {
-            String data = String.join(";", services);
-            byte[] bytes = data.getBytes("UTF-8");
-            // Limit to 255 bytes (APDU limit)
-            if (bytes.length > 255) {
-                // Truncate by removing oldest entries
-                while (bytes.length > 255 && services.size() > 0) {
-                    services.remove(0);
-                    data = String.join(";", services);
-                    bytes = data.getBytes("UTF-8");
+            // Đếm số lần mỗi dịch vụ được mua
+            java.util.Map<String, Integer> serviceCount = new java.util.LinkedHashMap<>();
+            for (String service : services) {
+                if (service != null && !service.trim().isEmpty()) {
+                    String s = service.trim();
+                    serviceCount.put(s, serviceCount.getOrDefault(s, 0) + 1);
                 }
             }
+
+            // Build string format: service:count;service:count;...
+            StringBuilder sb = new StringBuilder();
+            boolean first = true;
+            for (java.util.Map.Entry<String, Integer> entry : serviceCount.entrySet()) {
+                if (!first)
+                    sb.append(";");
+                sb.append(entry.getKey()).append(":").append(entry.getValue());
+                first = false;
+            }
+
+            String data = sb.toString();
+            byte[] bytes = data.getBytes("UTF-8");
+
+            // Limit to 255 bytes (APDU limit) - remove oldest entries if needed
+            while (bytes.length > 255 && serviceCount.size() > 0) {
+                // Remove first (oldest) entry
+                String firstKey = serviceCount.keySet().iterator().next();
+                serviceCount.remove(firstKey);
+
+                // Rebuild string
+                sb = new StringBuilder();
+                first = true;
+                for (java.util.Map.Entry<String, Integer> entry : serviceCount.entrySet()) {
+                    if (!first)
+                        sb.append(";");
+                    sb.append(entry.getKey()).append(":").append(entry.getValue());
+                    first = false;
+                }
+                data = sb.toString();
+                bytes = data.getBytes("UTF-8");
+            }
+
             cardManager.writeField(CardManager.FIELD_SERVICES, bytes);
-            System.out.println("[CARD] Saved " + services.size() + " purchased services to card");
+            System.out.println("[CARD] Saved " + serviceCount.size() + " unique services to card: " + data);
             return true;
         } catch (Exception e) {
             System.out.println("[WARN] Could not save services to card: " + e.getMessage());
@@ -1183,8 +1214,10 @@ public class CardCommunicator {
 
     /**
      * Đọc danh sách dịch vụ đã mua từ thẻ
+     * Format mới: service1:count1;service2:count2;...
      * 
      * @param targetList Danh sách để đổ dữ liệu vào (sẽ được clear trước)
+     *                   Mỗi dịch vụ được thêm vào list theo số lần đã mua
      * @return true nếu đọc thành công
      */
     public boolean loadPurchasedServices(List<String> targetList) {
@@ -1197,16 +1230,204 @@ public class CardCommunicator {
             if (data != null && data.length > 0) {
                 String str = new String(data, "UTF-8");
                 String[] parts = str.split(";");
+                int totalCount = 0;
                 for (String part : parts) {
                     if (part != null && !part.trim().isEmpty()) {
-                        targetList.add(part.trim());
+                        String trimmed = part.trim();
+                        // Parse format: service:count
+                        int colonIdx = trimmed.lastIndexOf(':');
+                        if (colonIdx > 0 && colonIdx < trimmed.length() - 1) {
+                            String serviceName = trimmed.substring(0, colonIdx);
+                            try {
+                                int count = Integer.parseInt(trimmed.substring(colonIdx + 1));
+                                // Thêm dịch vụ vào list theo số lần đã mua
+                                for (int i = 0; i < count; i++) {
+                                    targetList.add(serviceName);
+                                }
+                                totalCount += count;
+                            } catch (NumberFormatException e) {
+                                // Fallback: treat as old format (no count)
+                                targetList.add(trimmed);
+                                totalCount++;
+                            }
+                        } else {
+                            // Old format without count - add once
+                            targetList.add(trimmed);
+                            totalCount++;
+                        }
                     }
                 }
-                System.out.println("[CARD] Loaded " + targetList.size() + " purchased services from card");
+                System.out.println("[CARD] Loaded " + targetList.size()
+                        + " purchased services from card (total purchases: " + totalCount + ")");
             }
             return true;
         } catch (Exception e) {
             System.out.println("[WARN] Could not load services from card: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Lấy danh sách dịch vụ với số lần mua (dạng Map)
+     * 
+     * @return Map<serviceName, count> hoặc empty map nếu lỗi
+     */
+    public java.util.Map<String, Integer> getPurchasedServicesWithCount() {
+        java.util.Map<String, Integer> result = new java.util.LinkedHashMap<>();
+        if (!connected || !authenticated) {
+            return result;
+        }
+        try {
+            byte[] data = cardManager.readField(CardManager.FIELD_SERVICES);
+            if (data != null && data.length > 0) {
+                String str = new String(data, "UTF-8");
+                String[] parts = str.split(";");
+                for (String part : parts) {
+                    if (part != null && !part.trim().isEmpty()) {
+                        String trimmed = part.trim();
+                        int colonIdx = trimmed.lastIndexOf(':');
+                        if (colonIdx > 0 && colonIdx < trimmed.length() - 1) {
+                            String serviceName = trimmed.substring(0, colonIdx);
+                            try {
+                                int count = Integer.parseInt(trimmed.substring(colonIdx + 1));
+                                result.put(serviceName, count);
+                            } catch (NumberFormatException e) {
+                                result.put(trimmed, 1);
+                            }
+                        } else {
+                            result.put(trimmed, 1);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("[WARN] Could not load services from card: " + e.getMessage());
+        }
+        return result;
+    }
+
+    /**
+     * Sử dụng 1 lần dịch vụ đã mua (giảm count và lưu xuống thẻ)
+     * 
+     * @param serviceName Tên dịch vụ cần sử dụng
+     * @return true nếu thành công, false nếu không còn dịch vụ đó
+     */
+    public boolean useService(String serviceName) throws Exception {
+        if (!connected || !authenticated) {
+            throw new Exception("Chưa xác thực PIN");
+        }
+        if (serviceName == null || serviceName.trim().isEmpty()) {
+            throw new Exception("Tên dịch vụ không hợp lệ");
+        }
+
+        String targetService = serviceName.trim();
+
+        // 1. Đọc danh sách dịch vụ hiện tại từ thẻ
+        java.util.Map<String, Integer> serviceMap = getPurchasedServicesWithCount();
+
+        // 2. Kiểm tra xem có dịch vụ này không
+        if (!serviceMap.containsKey(targetService) || serviceMap.get(targetService) <= 0) {
+            System.out.println("[CARD] Service not found or count is 0: " + targetService);
+            return false;
+        }
+
+        // 3. Giảm count
+        int currentCount = serviceMap.get(targetService);
+        int newCount = currentCount - 1;
+
+        if (newCount <= 0) {
+            // Xóa dịch vụ nếu hết
+            serviceMap.remove(targetService);
+        } else {
+            serviceMap.put(targetService, newCount);
+        }
+
+        // 4. Lưu lại xuống thẻ
+        return saveServiceMapToCard(serviceMap);
+    }
+
+    /**
+     * Thêm 1 dịch vụ đã mua (tăng count và lưu xuống thẻ)
+     * 
+     * @param serviceName Tên dịch vụ đã mua
+     * @return true nếu thành công
+     */
+    public boolean addPurchasedService(String serviceName) throws Exception {
+        if (!connected || !authenticated) {
+            throw new Exception("Chưa xác thực PIN");
+        }
+        if (serviceName == null || serviceName.trim().isEmpty()) {
+            throw new Exception("Tên dịch vụ không hợp lệ");
+        }
+
+        String targetService = serviceName.trim();
+
+        // 1. Đọc danh sách dịch vụ hiện tại từ thẻ
+        java.util.Map<String, Integer> serviceMap = getPurchasedServicesWithCount();
+
+        // 2. Tăng count hoặc thêm mới
+        int currentCount = serviceMap.getOrDefault(targetService, 0);
+        serviceMap.put(targetService, currentCount + 1);
+
+        // 3. Lưu lại xuống thẻ
+        return saveServiceMapToCard(serviceMap);
+    }
+
+    /**
+     * Lưu Map<serviceName, count> xuống thẻ
+     */
+    private boolean saveServiceMapToCard(java.util.Map<String, Integer> serviceMap) {
+        try {
+            if (serviceMap.isEmpty()) {
+                // Ghi dữ liệu rỗng
+                cardManager.writeField(CardManager.FIELD_SERVICES, new byte[0]);
+                System.out.println("[CARD] Cleared services on card");
+                return true;
+            }
+
+            // Build string format: service:count;service:count;...
+            StringBuilder sb = new StringBuilder();
+            boolean first = true;
+            for (java.util.Map.Entry<String, Integer> entry : serviceMap.entrySet()) {
+                if (entry.getValue() > 0) {
+                    if (!first)
+                        sb.append(";");
+                    sb.append(entry.getKey()).append(":").append(entry.getValue());
+                    first = false;
+                }
+            }
+
+            String data = sb.toString();
+            byte[] bytes = data.getBytes("UTF-8");
+
+            // Limit to 255 bytes (APDU limit)
+            if (bytes.length > 255) {
+                System.out.println("[WARN] Service data too long (" + bytes.length + " bytes), truncating...");
+                // Truncate by removing oldest entries
+                while (bytes.length > 255 && serviceMap.size() > 0) {
+                    String firstKey = serviceMap.keySet().iterator().next();
+                    serviceMap.remove(firstKey);
+
+                    sb = new StringBuilder();
+                    first = true;
+                    for (java.util.Map.Entry<String, Integer> entry : serviceMap.entrySet()) {
+                        if (entry.getValue() > 0) {
+                            if (!first)
+                                sb.append(";");
+                            sb.append(entry.getKey()).append(":").append(entry.getValue());
+                            first = false;
+                        }
+                    }
+                    data = sb.toString();
+                    bytes = data.getBytes("UTF-8");
+                }
+            }
+
+            cardManager.writeField(CardManager.FIELD_SERVICES, bytes);
+            System.out.println("[CARD] Saved services to card: " + data);
+            return true;
+        } catch (Exception e) {
+            System.out.println("[WARN] Could not save services to card: " + e.getMessage());
             return false;
         }
     }
