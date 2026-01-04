@@ -86,29 +86,66 @@ public class GymCardApp extends JFrame {
             // Ignore - will handle during verify
         }
 
-        // === Kiểm tra thẻ đã được khởi tạo chưa bằng Public Key Fingerprint ===
-        // (Public key có thể đọc mà không cần xác thực PIN)
+        // === Kiểm tra thẻ đã được đăng ký trong Database chưa ===
         String cardFingerprint = null;
         boolean isKnownCard = false;
+
+        byte[] modulus = null;
         try {
-            byte[] modulus = cardComm.getCardPublicKeyModulus();
-            if (modulus != null && modulus.length > 0) {
-                // Tạo fingerprint đơn giản từ 8 bytes đầu + 8 bytes cuối của modulus
-                StringBuilder fp = new StringBuilder();
-                for (int i = 0; i < Math.min(8, modulus.length); i++) {
-                    fp.append(String.format("%02X", modulus[i]));
-                }
-                fp.append("...");
-                for (int i = Math.max(0, modulus.length - 8); i < modulus.length; i++) {
-                    fp.append(String.format("%02X", modulus[i]));
-                }
-                cardFingerprint = fp.toString();
-                isKnownCard = isCardKnown(cardFingerprint);
-                System.out.println("[LOGIN] Card fingerprint: " + cardFingerprint);
-                System.out.println("[LOGIN] isKnownCard: " + isKnownCard);
-            }
+            modulus = cardComm.getCardPublicKeyModulus();
         } catch (Exception e) {
-            System.out.println("[LOGIN] Cannot get card fingerprint: " + e.getMessage());
+            // SW=6F00 -> Thẻ chưa init key (cardPublicKey chưa setModulus)
+            System.err.println("[LOGIN] Error getting public key: " + e.getMessage());
+            JOptionPane.showMessageDialog(this,
+                    "Không thể đọc thông tin thẻ!\n\n" +
+                            "Nguyên nhân có thể:\n" +
+                            "- Thẻ chưa được khởi tạo (Format nhưng chưa Init)\n" +
+                            "- Thẻ bị lỗi hoặc không đúng loại\n\n" +
+                            "Vui lòng liên hệ Admin để kiểm tra.",
+                    "Lỗi thẻ", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            if (modulus == null || modulus.length == 0) {
+                JOptionPane.showMessageDialog(this, "Dữ liệu thẻ không hợp lệ (Modulus rỗng)!", "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // 1. Check DB Registration
+            String base64Key = java.util.Base64.getEncoder().encodeToString(modulus);
+            gymcard.databaseManager.DatabaseManager db = gymcard.databaseManager.DatabaseManager.getInstance();
+            if (!db.isCardRegistered(base64Key)) {
+                JOptionPane.showMessageDialog(this,
+                        "Thẻ chưa được đăng ký!\n\nVui lòng liên hệ Quản trị viên để đăng ký thẻ hội viên.",
+                        "Thẻ chưa đăng ký", JOptionPane.ERROR_MESSAGE);
+                try {
+                    cardComm.disconnect();
+                } catch (Exception ex) {
+                }
+                welcomePanel.updateConnectionStatus();
+                return;
+            }
+
+            // 2. Card IS registered. Calculate fingerprint for local cache check
+            StringBuilder fp = new StringBuilder();
+            for (int i = 0; i < Math.min(8, modulus.length); i++) {
+                fp.append(String.format("%02X", modulus[i]));
+            }
+            fp.append("...");
+            for (int i = Math.max(0, modulus.length - 8); i < modulus.length; i++) {
+                fp.append(String.format("%02X", modulus[i]));
+            }
+            cardFingerprint = fp.toString();
+            isKnownCard = isCardKnown(cardFingerprint);
+            System.out.println("[LOGIN] Card registered. Fingerprint: " + cardFingerprint);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi kiểm tra thẻ: " + e.getMessage(), "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
         }
 
         // === Nếu là thẻ MỚI (chưa từng thấy) → Thử PIN mặc định 000000 ===

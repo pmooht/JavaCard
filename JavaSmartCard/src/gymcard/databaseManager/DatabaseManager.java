@@ -423,6 +423,22 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * Kiểm tra xem thẻ (theo public key) đã được đăng ký cho user nào chưa.
+     */
+    public boolean isCardRegistered(String cardPublicKeyBase64) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM users WHERE card_public_key = ? AND status = 'ACTIVE'";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, cardPublicKeyBase64);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+        return false;
+    }
+
     // ===== Package Management methods =====
 
     /**
