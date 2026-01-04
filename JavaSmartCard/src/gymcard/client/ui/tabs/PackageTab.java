@@ -362,7 +362,7 @@ public class PackageTab extends BaseTabPanel {
         confirmBtn.setContentAreaFilled(false);
         confirmBtn.setFocusPainted(false);
         confirmBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        confirmBtn.setEnabled(finalBalance >= priceInVND);
+        // Button always enabled - show popup if insufficient balance when clicked
 
         confirmBtn.addActionListener(ev -> {
             try {
@@ -374,7 +374,10 @@ public class PackageTab extends BaseTabPanel {
                 }
 
                 if (cardComm.deductBalance(priceInVND)) {
-                    byte packageType = 1;
+                    // Use plan.id as package type to preserve the package name
+                    byte packageType = (byte) plan.id;
+                    if (packageType <= 0)
+                        packageType = 1; // fallback
                     String today = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
 
                     cardComm.setPackage(packageType, finalNewExpiry, today, (short) 0);

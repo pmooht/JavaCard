@@ -330,25 +330,15 @@ public class StatisticsTab extends BaseTabPanel {
         countRow.add(servicesCountLabel);
         countRow.add(unitLabel);
 
-        JPanel linkRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        linkRow.setOpaque(false);
-        linkRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-
+        // Service info label (shows service names with counts)
         servicesInfoLabel = new JLabel("Chưa đăng ký dịch vụ bổ sung");
         servicesInfoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         servicesInfoLabel.setForeground(TEXT_GRAY);
-
-        JLabel buyLink = new JLabel("Mua ngay →");
-        buyLink.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        buyLink.setForeground(PRIMARY_PINK);
-        buyLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        linkRow.add(servicesInfoLabel);
-        linkRow.add(buyLink);
+        servicesInfoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         content.add(countRow);
         content.add(Box.createVerticalStrut(8));
-        content.add(linkRow);
+        content.add(servicesInfoLabel);
 
         card.add(topRow, BorderLayout.NORTH);
         card.add(content, BorderLayout.CENTER);
@@ -678,23 +668,28 @@ public class StatisticsTab extends BaseTabPanel {
             long balance = cardComm.getBalance();
             balanceValueLabel.setText(String.format("%,d", balance));
 
-            // Load services count and update info label
-            int svcCount = purchasedServices.size();
-            servicesCountLabel.setText(String.valueOf(svcCount));
-            if (svcCount > 0) {
-                // Build a short list of service names
+            // Load services with count using new method
+            java.util.Map<String, Integer> servicesMap = cardComm.getPurchasedServicesWithCount();
+            int totalServices = 0;
+            for (int count : servicesMap.values()) {
+                totalServices += count;
+            }
+            servicesCountLabel.setText(String.valueOf(totalServices));
+
+            if (!servicesMap.isEmpty()) {
+                // Build service list with counts: "Khăn tập x2, Nước uống x1"
                 StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < Math.min(svcCount, 2); i++) {
-                    String svc = purchasedServices.get(i);
-                    // Extract just the service name (before " - ")
-                    int dashIdx = svc.indexOf(" - ");
-                    String name = dashIdx > 0 ? svc.substring(0, dashIdx) : svc;
-                    if (i > 0)
+                int shown = 0;
+                for (java.util.Map.Entry<String, Integer> entry : servicesMap.entrySet()) {
+                    if (shown > 0)
                         sb.append(", ");
-                    sb.append(name);
+                    sb.append(entry.getKey()).append(" x").append(entry.getValue());
+                    shown++;
+                    if (shown >= 3)
+                        break; // Show max 3 services
                 }
-                if (svcCount > 2) {
-                    sb.append(" +").append(svcCount - 2).append(" khác");
+                if (servicesMap.size() > 3) {
+                    sb.append(" +").append(servicesMap.size() - 3).append(" khác");
                 }
                 servicesInfoLabel.setText(sb.toString());
             } else {

@@ -786,6 +786,23 @@ public class CardCommunicator {
             }
         }
 
+        // Lookup package name from database based on type (plan.id)
+        if (p.type > 0) {
+            try {
+                DatabaseManager db = DatabaseManager.getInstance();
+                List<DatabaseManager.PlanInfo> plans = db.getActivePlans();
+                for (DatabaseManager.PlanInfo plan : plans) {
+                    if (plan.id == p.type) {
+                        p.packageName = plan.name;
+                        break;
+                    }
+                }
+            } catch (Exception ex) {
+                // Ignore database errors, fallback to generic name
+                System.out.println("[WARN] Could not lookup package name: " + ex.getMessage());
+            }
+        }
+
         this.packageInfo = p;
         return p;
     }

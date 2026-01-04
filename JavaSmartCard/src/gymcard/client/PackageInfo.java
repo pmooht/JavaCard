@@ -5,12 +5,13 @@ package gymcard.client;
  * Hỗ trợ gói theo ngày và gói theo lượt với giới hạn thời gian
  */
 public class PackageInfo {
-    public byte type; // 0=chưa có, 1=gói ngày, 2=gói theo lượt
+    public byte type; // 0=chưa có, 1+ = ID gói trong database
     public String expiry; // Ngày hết hạn dd/MM/yyyy
     public String registration; // Ngày đăng ký dd/MM/yyyy
     public int remainingSessions; // Số buổi còn lại (gói theo lượt)
     public int maxDurationMinutes; // Thời lượng tối đa/buổi (phút), 0 = không giới hạn
     public int usedMinutesToday; // Số phút đã tập hôm nay
+    public String packageName; // Tên gói (lưu từ database khi mua)
 
     public PackageInfo() {
         this.type = 0;
@@ -19,17 +20,19 @@ public class PackageInfo {
         this.remainingSessions = 0;
         this.maxDurationMinutes = 0;
         this.usedMinutesToday = 0;
+        this.packageName = "";
     }
 
     public String getPackageTypeName() {
-        switch (type) {
-            case 1:
-                return "Gói Ngày";
-            case 2:
-                return "Gói Theo Lượt";
-            default:
-                return "Chưa có gói";
+        // Return stored package name if available
+        if (packageName != null && !packageName.isEmpty()) {
+            return packageName;
         }
+        // Fallback to generic names
+        if (type > 0) {
+            return "Gói Tập #" + type;
+        }
+        return "Chưa có gói";
     }
 
     /**
