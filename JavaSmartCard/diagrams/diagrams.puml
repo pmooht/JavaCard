@@ -1,0 +1,685 @@
+@startuml architecture
+!theme plain
+title Kiến Trúc Tổng Quan - Gym Card System
+
+skinparam backgroundColor #FEFEFE
+skinparam componentStyle rectangle
+skinparam defaultFontName Segoe UI
+
+package "Desktop Application" {
+    [GymCardApp\n(Main UI)] as App
+    [WelcomePanel] as Welcome
+    [AdminPanel] as Admin
+    [UserPanel] as User
+    
+    App --> Welcome
+    Welcome --> Admin : Admin Click
+    Welcome --> User : User Click
+}
+
+package "Business Layer" {
+    [CardCommunicator\n(Giao tiếp App ↔ Card)] as CC
+}
+
+package "Data Layer" {
+    [CardManager\n(APDU Layer)] as CM
+    database "SQLite\nDatabaseManager" as DB
+}
+
+package "SmartCard" {
+    [JavaCard Applet\nProjectCuoiKy.java] as Applet
+    
+    note right of Applet
+        • AES-128 Encryption
+        • RSA-1024 Key Pair
+        • PIN Management
+        • Personal Data Storage
+    end note
+}
+
+Admin --> CC
+User --> CC
+CC --> CM
+CC --> DB
+CM --> Applet : APDU Commands
+
+@enduml
+
+
+@startuml master_key_architecture
+!theme plain
+title Master Key Architecture
+
+skinparam backgroundColor #FEFEFE
+skinparam activityBackgroundColor #E8F5E9
+skinparam activityBorderColor #4CAF50
+
+start
+:Init Card;
+
+:Generate Random\nMaster Key (16 bytes);
+
+fork
+    :User PIN + Salt;
+    :SHA-256;
+    :PIN Key (16 bytes);
+    :AES Encrypt(MK);
+    :encMK_User\n(EEPROM);
+fork again
+    :Admin PIN + Salt;
+    :SHA-256;
+    :Admin Key (16 bytes);
+    :AES Encrypt(MK);
+    :encMK_Admin\n(EEPROM);
+end fork
+
+:SHA-256(MK || Salt);
+:mkHash (32 bytes)\nđể verify khi unlock;
+
+stop
+
+@enduml
+
+
+@startuml rsa_protection
+!theme plain
+title RSA Private Key Protection
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceMessageAlign center
+
+participant "Init Card" as Init
+participant "Public Key" as Pub
+participant "Private Key" as Priv
+participant "EEPROM" as EE
+participant "RAM" as RAM
+
+Init -> Pub : Generate RSA-1024
+Init -> Priv : Generate RSA-1024
+
+note over Pub
+    Modulus (128 bytes)
+    Exponent = 65537 (F4)
+    **Plaintext - Export OK**
+end note
+
+Init -> EE : cardPublicKey
+
+Priv -> EE : AES(MK, Modulus)\n→ encPrivMod
+Priv -> EE : AES(MK, Exponent)\n→ encPrivExp
+
+note over EE #FFE0B2
+    Private Key được mã hóa
+    bằng Master Key
+end note
+
+== Khi cần ký (signChallenge) ==
+
+EE -> RAM : Decrypt encPrivMod
+EE -> RAM : Decrypt encPrivExp
+RAM -> RAM : Load vào RSAPrivateKey
+RAM -> RAM : Sign challenge
+RAM -> RAM : **CLEAR ngay lập tức!**
+
+@enduml
+
+
+@startuml init_card_flow
+!theme plain
+title Luồng 1: Khởi Tạo Thẻ Mới (Admin)
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam sequenceMessageAlign center
+
+actor Admin
+participant "RegistrationTab" as RT
+participant "CardCommunicator" as CC
+participant "CardManager" as CM
+participant "Applet" as App
+database "Database" as DB
+
+Admin -> RT : 1. Điền form đăng ký\n(tên, SĐT, ngày sinh, ảnh)
+RT -> CC : 2. initNewCard(cardId, "000000")
+CC -> CM : 3. initCard(cardId, userPin, adminPin)
+CM -> App : **APDU: INS_INIT_CARD**\n[cardId | userPin | adminPin]
+
+note right of App #E3F2FD
+    **Applet xử lý:**
+    1. Lưu CardID
+    2. Sinh Master Key (random)
+    3. Hash MK → mkHash
+    4. Encrypt MK với UserPIN
+    5. Encrypt MK với AdminPIN
+    6. Sinh RSA Key Pair
+    7. Encrypt Private Key bằng MK
+    8. Set isDefaultPin = true
+end note
+
+App --> CM : SW = 0x9000
+CM --> CC : Success
+
+CC -> CM : 4. writeField(FIELD_NAME, ...)
+CM -> App : **APDU: INS_WRITE_PERSONAL**
+App --> CM : SW = 0x9000
+
+CC -> CM : 5. writeAvatar(bytes)
+CM -> App : **APDU: INS_AVATAR_***
+App --> CM : SW = 0x9000
+
+CC -> DB : 6. saveCardPublicKeyToDb(cardId)
+DB --> CC : userId
+
+CC --> RT : Success
+RT --> Admin : "Đăng ký thành công!"
+
+@enduml
+
+
+@startuml user_login_flow
+!theme plain
+title Luồng 2: Đăng Nhập Hội Viên (User)
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor User
+participant "GymCardApp" as App
+participant "CardCommunicator" as CC
+participant "CardManager" as CM
+participant "Applet" as Applet
+database "Database" as DB
+
+User -> App : 1. Click "Hội viên"
+
+== Bước 1: Lấy Card Fingerprint ==
+App -> CC : getCardPublicKeyModulus()
+CC -> CM : INS_GET_CARD_PUB
+CM -> Applet : APDU
+Applet --> CM : modulus (128 bytes)
+CM --> CC : modulus
+CC --> App : fingerprint
+
+App -> App : 2. Check isKnownCard?\n(so sánh với known_cards.txt)
+
+alt Thẻ MỚI (chưa từng thấy)
+    App -> CC : 3. verifyPinWithCardAuth("000000")
+    CC -> CM : INS_VERIFY_PIN
+    CM -> Applet : APDU
+    Applet --> CM : 0x9000
+    
+    CC -> CM : INS_CHECK_DEFAULT_PIN
+    CM -> Applet : APDU
+    Applet --> CM : 0x01 (true)
+    
+    App -> User : 4. **Bắt buộc đổi PIN**\n(showForceChangePinDialog)
+    
+else Thẻ ĐÃ BIẾT
+    App -> User : 5. Hiện dialog nhập PIN
+    User -> App : Nhập PIN
+    
+    == Bước 2: Verify PIN ==
+    App -> CC : verifyPinWithCardAuth(pin)
+    CC -> CM : INS_VERIFY_PIN
+    CM -> Applet : APDU [PIN]
+    
+    note right of Applet #E8F5E9
+        • Derive key từ PIN
+        • Decrypt encMK_User
+        • Verify hash
+        • Load MK vào RAM
+    end note
+    
+    Applet --> CM : 0x9000
+    
+    == Bước 3: RSA Challenge-Response ==
+    CC -> CC : Generate challenge\n(32 bytes random)
+    CC -> CM : INS_SIGN_CHALLENGE
+    CM -> Applet : APDU [challenge]
+    
+    note right of Applet #FFF3E0
+        • Decrypt Private Key → RAM
+        • Sign challenge
+        • Clear RAM immediately
+    end note
+    
+    Applet --> CM : signature (128 bytes)
+    
+    CC -> DB : getCardPublicKeyBytes(cardId)
+    DB --> CC : storedModulus
+    CC -> CC : Verify signature\nvới stored public key
+    
+    CC --> App : AuthResult {\n  pinVerified: true\n  rsaVerified: true\n}
+end
+
+App -> User : 6. Vào UserPanel
+
+@enduml
+
+
+@startuml rsa_auth_flow
+!theme plain
+title Luồng 3: Xác Thực RSA (Challenge-Response)
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+participant "Client App" as Client
+database "Database" as DB
+participant "SmartCard" as Card
+
+Client -> DB : 1. Lấy stored public key\n(theo CardID)
+DB --> Client : modulus (128 bytes)
+
+Client -> Client : 2. Import RSAPublicKey\nfrom modulus
+
+Client -> Client : 3. Tạo challenge\n(32 bytes random)
+
+Client -> Card : 4. INS_SIGN_CHALLENGE\n[challenge]
+
+note right of Card #FFEBEE
+    **Trên thẻ:**
+    1. Kiểm tra đã auth PIN?
+    2. Decrypt encPrivMod → RAM
+    3. Decrypt encPrivExp → RAM
+    4. Load vào RSAPrivateKey
+    5. Sign(challenge)
+    6. **CLEAR RAM ngay!**
+end note
+
+Card --> Client : signature (128 bytes)
+
+Client -> Client : 5. Verify signature\nbằng stored public key
+
+alt Signature KHỚP
+    Client -> Client : ✅ Thẻ là **CHÍNH CHỦ**
+else Signature KHÔNG KHỚP
+    Client -> Client : ❌ Thẻ có thể là **GIẢ MẠO**
+end
+
+@enduml
+
+
+@startuml checkin_flow
+!theme plain
+title Luồng 4: Check-in / Check-out
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor User
+participant "CheckInTab" as Tab
+participant "CardCommunicator" as CC
+participant "CardManager" as CM
+participant "Applet" as App
+
+== CHECK-IN ==
+
+User -> Tab : 1. Click CHECK-IN
+Tab -> CC : checkIn(date, time)
+
+CC -> CM : readField(FIELD_CHECKIN)
+CM -> App : APDU
+App --> CM : lastCheckIn data
+CM --> CC : lastCheckIn
+
+CC -> CC : Validate:\n• Chưa check-in hôm nay?\n• Đã checkout rồi?
+
+alt Đã đang trong phòng tập
+    CC --> Tab : Error: "Vui lòng checkout trước!"
+else OK
+    CC -> CC : Cập nhật lastCheckIn\n• isCheckedIn = true\n• checkInTime = time
+    
+    CC -> CM : writeField(FIELD_CHECKIN, data)
+    CM -> App : APDU
+    App --> CM : 0x9000
+    
+    CC --> Tab : Success
+    Tab --> User : "Check-in OK!"\nCalendar đánh dấu 🟢
+end
+
+== CHECK-OUT ==
+
+User -> Tab : 2. Click CHECK-OUT
+Tab -> CC : checkOut(time)
+
+CC -> CM : readField(FIELD_CHECKIN)
+CM -> App : APDU
+App --> CC : lastCheckIn
+
+alt Chưa check-in
+    CC --> Tab : Error: "Chưa check-in!"
+else OK
+    CC -> CC : Tính thời gian buổi tập\nsessionMinutes = checkout - checkin
+    
+    CC -> CC : Cộng dồn totalMinutesToday\nThêm vào history
+    
+    CC -> CM : writeField(FIELD_CHECKIN, data)
+    CM -> App : APDU
+    App --> CM : 0x9000
+    
+    CC --> Tab : Success
+    Tab --> User : "Check-out OK!"\nTổng: X phút\nCalendar đánh dấu 🟣
+end
+
+@enduml
+
+
+@startuml change_pin_flow
+!theme plain
+title Luồng 5: Đổi PIN
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor User
+participant "ChangePinTab" as Tab
+participant "CardCommunicator" as CC
+participant "CardManager" as CM
+participant "Applet" as App
+database "Database" as DB
+
+User -> Tab : 1. Nhập oldPIN, newPIN
+Tab -> CC : changePin(oldPin, newPin)
+CC -> CM : changePin(oldPin, newPin)
+CM -> App : **APDU: INS_CHANGE_PIN**\n[oldPIN | newPIN]
+
+note right of App #E3F2FD
+    **Bước a: Verify oldPIN**
+    1. Derive key từ oldPIN
+    2. Decrypt encMK_User
+    3. Verify hash(MK) == mkHash
+end note
+
+alt oldPIN SAI
+    App --> CM : SW = 0x63CX\n(còn X lần thử)
+    CM --> CC : Exception
+    CC --> Tab : "PIN cũ không đúng!"
+else oldPIN ĐÚNG
+    note right of App #E8F5E9
+        **Bước b: Re-encrypt MK với newPIN**
+        1. masterKey.getKey() → mkBuf
+        2. Derive key từ newPIN
+        3. AES Encrypt(MK, newKey)
+        4. Save → encMK_User
+        5. isDefaultPin = false
+    end note
+    
+    App --> CM : SW = 0x9000
+    CM --> CC : Success
+    
+    == Update Public Key trong DB ==
+    CC -> CM : readField(FIELD_CARDID)
+    CM --> CC : cardId
+    
+    CC -> CM : getCardPublicKeyModulus()
+    CM --> CC : modulus
+    
+    CC -> DB : updateCardPublicKey(cardId, modulus)
+    DB --> CC : OK
+    
+    CC --> Tab : Success
+    Tab --> User : "Đổi PIN thành công!"
+end
+
+@enduml
+
+
+@startuml database_erd
+!theme plain
+title Database Schema (ERD)
+
+skinparam backgroundColor #FEFEFE
+skinparam linetype ortho
+
+entity "users" as users {
+    * id : INTEGER <<PK>>
+    --
+    * user_code : TEXT <<UNIQUE>>
+    * card_public_key : TEXT
+    status : TEXT = 'ACTIVE'
+    created_at : DATETIME
+    updated_at : DATETIME
+}
+
+entity "membership_plans" as plans {
+    * id : INTEGER <<PK>>
+    --
+    * code : TEXT <<UNIQUE>>
+    * name : TEXT
+    description : TEXT
+    duration_days : INTEGER
+    session_count : INTEGER
+    max_duration_minutes : INTEGER
+    * price : REAL
+    is_active : INTEGER = 1
+    created_at : DATETIME
+}
+
+entity "services" as services {
+    * id : INTEGER <<PK>>
+    --
+    * code : TEXT <<UNIQUE>>
+    * name : TEXT
+    description : TEXT
+    * price : REAL
+    service_type : TEXT
+    is_active : INTEGER = 1
+    created_at : DATETIME
+}
+
+entity "user_memberships" as um {
+    * id : INTEGER <<PK>>
+    --
+    * user_id : INTEGER <<FK>>
+    * plan_id : INTEGER <<FK>>
+    * start_date : DATE
+    end_date : DATE
+    remaining_sessions : INTEGER
+    status : TEXT = 'ACTIVE'
+    created_at : DATETIME
+}
+
+entity "checkin_logs" as checkin {
+    * id : INTEGER <<PK>>
+    --
+    * user_id : INTEGER <<FK>>
+    * checkin_time : DATETIME
+    checkout_time : DATETIME
+    device_id : TEXT
+    note : TEXT
+}
+
+entity "transactions" as trans {
+    * id : INTEGER <<PK>>
+    --
+    * user_id : INTEGER <<FK>>
+    * type : TEXT
+    * amount : REAL
+    description : TEXT
+    related_plan_id : INTEGER <<FK>>
+    created_at : DATETIME
+}
+
+users ||--o{ um : "has"
+plans ||--o{ um : "subscribed by"
+users ||--o{ checkin : "logs"
+users ||--o{ trans : "makes"
+plans ||--o{ trans : "related to"
+
+@enduml
+
+
+@startuml component_diagram
+!theme plain
+title Component Diagram
+
+skinparam backgroundColor #FEFEFE
+skinparam componentStyle rectangle
+
+package "UI Layer" #E3F2FD {
+    [GymCardApp] as main
+    [WelcomePanel] as welcome
+    [AdminPanel] as admin
+    [UserPanel] as user
+    
+    package "Admin Tabs" {
+        [RegistrationTab]
+        [PackageManagementTab]
+        [ServiceManagementTab]
+        [PinManagementTab]
+    }
+    
+    package "User Tabs" {
+        [InfoTab]
+        [CheckInTab]
+        [TopUpTab]
+        [PackageTab]
+        [ServicesTab]
+        [StatisticsTab]
+        [ChangePinTab]
+    }
+}
+
+package "Business Layer" #E8F5E9 {
+    [CardCommunicator] as cc
+}
+
+package "Data Access Layer" #FFF3E0 {
+    [CardManager] as cm
+    [DatabaseManager] as db
+}
+
+package "Crypto" #FFEBEE {
+    [AESUtils]
+    [RSAUtils]
+    [RSAKeyUtils]
+}
+
+package "SmartCard" #F3E5F5 {
+    [ProjectCuoiKy\nApplet] as applet
+}
+
+database "SQLite" as sqlite
+
+main --> welcome
+welcome --> admin
+welcome --> user
+
+admin --> cc
+user --> cc
+
+cc --> cm
+cc --> db
+cc --> RSAKeyUtils
+
+cm --> applet : APDU
+db --> sqlite
+
+@enduml
+
+
+@startuml state_diagram
+!theme plain
+title Card State Diagram
+
+skinparam backgroundColor #FEFEFE
+
+[*] --> Blank : Thẻ trắng
+
+Blank --> Initialized : INS_INIT_CARD\n(Admin đăng ký)
+
+state Initialized {
+    [*] --> DefaultPIN
+    DefaultPIN : PIN = 000000
+    DefaultPIN : isDefaultPin = true
+    
+    DefaultPIN --> PINChanged : User đổi PIN\nlần đầu đăng nhập
+    
+    PINChanged : isDefaultPin = false
+    PINChanged : PIN do user chọn
+}
+
+state "Authenticated" as Auth {
+    [*] --> Unlocked
+    Unlocked : MasterKey loaded
+    Unlocked : Có thể đọc/ghi data
+    
+    Unlocked --> [*] : Deselect Applet\n(MK cleared)
+}
+
+Initialized --> Auth : INS_VERIFY_PIN\n(PIN đúng)
+Auth --> Initialized : Card deselected
+
+state "Blocked" as Block {
+    Block : triesRemaining = 0
+    Block : Không thể verify PIN
+}
+
+Initialized --> Block : 3 lần sai PIN
+Block --> Initialized : INS_UNLOCK\n(Admin PIN)
+
+@enduml
+
+
+@startuml apdu_commands
+!theme plain
+title APDU Commands Reference
+
+skinparam backgroundColor #FEFEFE
+
+object "INS_INIT_CARD (0x10)" as init {
+    CLA = 0x80
+    INS = 0x10
+    P1 = 0x00
+    P2 = 0x00
+    Data = [idLen | CardID | UserPIN | AdminPIN]
+    Response = 0x9000
+}
+
+object "INS_VERIFY_PIN (0x20)" as verify {
+    CLA = 0x80
+    INS = 0x20
+    P1 = 0x00
+    P2 = 0x00
+    Data = [PIN 6 bytes]
+    Response = 0x9000 | 0x63CX
+}
+
+object "INS_CHANGE_PIN (0x21)" as change {
+    CLA = 0x80
+    INS = 0x21
+    P1 = 0x00
+    P2 = 0x00
+    Data = [oldPIN | newPIN]
+    Response = 0x9000
+}
+
+object "INS_WRITE_PERSONAL (0x30)" as write {
+    CLA = 0x80
+    INS = 0x30
+    P1 = 0x00
+    P2 = 0x00
+    Data = [fieldId | data]
+    Response = 0x9000
+}
+
+object "INS_READ_PERSONAL (0x31)" as read {
+    CLA = 0x80
+    INS = 0x31
+    P1 = 0x00
+    P2 = 0x00
+    Data = [fieldId]
+    Response = [decrypted data]
+}
+
+object "INS_SIGN_CHALLENGE (0x41)" as sign {
+    CLA = 0x80
+    INS = 0x41
+    P1 = 0x00
+    P2 = 0x00
+    Data = [challenge 32 bytes]
+    Response = [signature 128 bytes]
+}
+
+@enduml
