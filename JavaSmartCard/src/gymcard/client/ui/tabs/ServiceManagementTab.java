@@ -66,7 +66,7 @@ public class ServiceManagementTab extends BaseTabPanel {
         mainPanel.add(Box.createVerticalStrut(15));
 
         // Footer
-        JLabel footerLabel = new JLabel("⚡ Dịch vụ được lưu trong database. Thay đổi sẽ được cập nhật ngay đến User.");
+        JLabel footerLabel = new JLabel("Dịch vụ được lưu trong database. Thay đổi sẽ được cập nhật ngay đến User.");
         footerLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         footerLabel.setForeground(TEXT_GRAY);
         footerLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -209,10 +209,10 @@ public class ServiceManagementTab extends BaseTabPanel {
             setForeground(TEXT_WHITE);
             setBorder(new EmptyBorder(5, 10, 5, 10));
 
-            // ID column - with badge style
+            // ID column - plain text with accent color
             if (column == 1 && value != null) {
-                setText("<html><span style='background:#3498db;color:white;padding:2px 6px;border-radius:4px;'>" + value
-                        + "</span></html>");
+                setText(value.toString());
+                setForeground(TEXT_WHITE);
             }
 
             // Status column styling

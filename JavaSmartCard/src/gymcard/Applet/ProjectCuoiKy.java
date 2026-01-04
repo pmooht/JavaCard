@@ -476,6 +476,8 @@
 //
 //        resetBalanceZero();
 //        Util.arrayFillNonAtomic(checkinBuf, (short) 0, CHECKIN_LEN, (byte) 0x00);
+//        Util.arrayFillNonAtomic(servicesBuf, (short) 0, SERVICES_LEN, (byte) 0x00); // Clear services
+//        Util.arrayFillNonAtomic(packageBuf, (short) 0, PACKAGE_LEN, (byte) 0x00); // Clear package
 //        Util.arrayFillNonAtomic(avatarBuf, (short) 0, AVATAR_LEN, (byte) 0x00);
 //        avatarDataLen = 0;
 //

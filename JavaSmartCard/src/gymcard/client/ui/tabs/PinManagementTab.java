@@ -268,17 +268,17 @@ public class PinManagementTab extends BaseTabPanel {
         warningBox.setAlignmentX(Component.LEFT_ALIGNMENT);
         warningBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
 
-        JLabel warningIcon = new JLabel("⚠ Hệ thống sẽ tự động khóa thẻ khi hội viên nhập");
+        JLabel warningIcon = new JLabel("Hệ thống sẽ tự động khóa thẻ khi hội viên nhập");
         warningIcon.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         warningIcon.setForeground(new Color(255, 150, 150));
         warningBox.add(warningIcon);
 
-        JLabel warningText = new JLabel("   sai PIN quá số lần cho phép (thường là 5 lần).");
+        JLabel warningText = new JLabel("sai PIN quá số lần cho phép (thường là 5 lần).");
         warningText.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         warningText.setForeground(new Color(255, 150, 150));
         warningBox.add(warningText);
 
-        JLabel warningText2 = new JLabel("   Chức năng này sẽ reset bộ đếm lỗi và kích hoạt lại thẻ.");
+        JLabel warningText2 = new JLabel("Chức năng này sẽ reset bộ đếm lỗi và kích hoạt lại thẻ.");
         warningText2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         warningText2.setForeground(new Color(255, 150, 150));
         warningBox.add(warningText2);

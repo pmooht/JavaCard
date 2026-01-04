@@ -35,7 +35,7 @@ public class StatisticsTab extends BaseTabPanel {
     private JLabel servicesCountLabel;
     private JLabel servicesInfoLabel;
     private JLabel totalSessionsLabel;
-    private JLabel avgTimeLabel;
+
     private JPanel activityLogPanel;
     private JLabel lastUpdateLabel;
     private JPanel chartPanel;
@@ -118,7 +118,7 @@ public class StatisticsTab extends BaseTabPanel {
     }
 
     private JButton createRefreshButton() {
-        JButton btn = new JButton("↻  Tải lại dữ liệu") {
+        JButton btn = new JButton("Tải lại dữ liệu") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -406,20 +406,7 @@ public class StatisticsTab extends BaseTabPanel {
         totalPanel.add(totalLabel);
         totalPanel.add(totalSessionsLabel);
 
-        JPanel avgPanel = new JPanel();
-        avgPanel.setLayout(new BoxLayout(avgPanel, BoxLayout.Y_AXIS));
-        avgPanel.setOpaque(false);
-        JLabel avgLabel = new JLabel("TRUNG BÌNH");
-        avgLabel.setFont(new Font("Segoe UI", Font.PLAIN, 9));
-        avgLabel.setForeground(TEXT_GRAY);
-        avgTimeLabel = new JLabel("~60p");
-        avgTimeLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        avgTimeLabel.setForeground(TEXT_DARK);
-        avgPanel.add(avgLabel);
-        avgPanel.add(avgTimeLabel);
-
         statsPanel.add(totalPanel);
-        statsPanel.add(avgPanel);
         header.add(statsPanel, BorderLayout.EAST);
 
         // Chart area (bar chart based on check-in data)

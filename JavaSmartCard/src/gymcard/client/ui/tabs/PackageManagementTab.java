@@ -74,7 +74,7 @@ public class PackageManagementTab extends BaseTabPanel {
 
         // Footer
         JLabel footerLabel = new JLabel(
-                "⚡ Gói tập được lưu trong database. Thay đổi sẽ được cập nhật ngay đến User sau khi làm mới.");
+                "Gói tập được lưu trong database. Thay đổi sẽ được cập nhật ngay đến User sau khi làm mới.");
         footerLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         footerLabel.setForeground(TEXT_GRAY);
         footerLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -272,9 +272,9 @@ public class PackageManagementTab extends BaseTabPanel {
         planTable.getColumnModel().getColumn(4).setPreferredWidth(45);
         planTable.getColumnModel().getColumn(5).setPreferredWidth(45);
         planTable.getColumnModel().getColumn(6).setPreferredWidth(80); // Thời lượng
-        planTable.getColumnModel().getColumn(7).setPreferredWidth(90); // Giá
-        planTable.getColumnModel().getColumn(8).setPreferredWidth(50); // Trạng thái
-        planTable.getColumnModel().getColumn(9).setPreferredWidth(150); // Thao tác
+        planTable.getColumnModel().getColumn(7).setPreferredWidth(60); // Giá
+        planTable.getColumnModel().getColumn(8).setPreferredWidth(45); // Trạng thái
+        planTable.getColumnModel().getColumn(9).setPreferredWidth(190); // Thao tác
 
         // Custom renderers
         planTable.setDefaultRenderer(Object.class, new DarkTableCellRenderer());
@@ -343,7 +343,7 @@ public class PackageManagementTab extends BaseTabPanel {
         String title = isEdit ? "Sửa gói tập" : "Thêm gói tập mới";
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), title, true);
-        dialog.setSize(450, 420);
+        dialog.setSize(550, 520);
         dialog.setLocationRelativeTo(this);
 
         JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
@@ -647,7 +647,7 @@ public class PackageManagementTab extends BaseTabPanel {
     private void togglePlan(int row) {
         try {
             int id = (Integer) tableModel.getValueAt(row, 0);
-            String status = (String) tableModel.getValueAt(row, 7);
+            String status = (String) tableModel.getValueAt(row, 8);
             db.togglePlanActive(id, !status.contains("Active"));
             loadPlans();
         } catch (SQLException e) {

@@ -34,7 +34,7 @@ public class CheckInTab extends BaseTabPanel {
         setBorder(new EmptyBorder(10, 10, 10, 10));
         setBackground(new Color(248, 249, 250));
 
-        JLabel titleLabel = new JLabel("LICH TAP GYM & CHECK-IN");
+        JLabel titleLabel = new JLabel("LỊCH TẬP GYM & CHECK-IN");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLabel.setForeground(new Color(52, 73, 94));
         titleLabel.setHorizontalAlignment(SwingConstants.LEFT);
@@ -78,12 +78,12 @@ public class CheckInTab extends BaseTabPanel {
                 BorderFactory.createLineBorder(new Color(52, 152, 219), 2, true),
                 new EmptyBorder(15, 15, 15, 15)));
 
-        JLabel statsTitle = new JLabel("THONG KE");
+        JLabel statsTitle = new JLabel("THỐNG KÊ");
         statsTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
         statsTitle.setForeground(new Color(52, 73, 94));
         statsPanel.add(statsTitle);
 
-        countLabel = new JLabel("So ngay da tap: 0 ngay");
+        countLabel = new JLabel("Số ngày đã tập: 0 ngày");
         countLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         statsPanel.add(countLabel);
 

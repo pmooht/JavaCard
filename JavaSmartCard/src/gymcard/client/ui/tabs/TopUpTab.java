@@ -202,7 +202,7 @@ public class TopUpTab extends BaseTabPanel {
         bottomRow.add(numberPanel, BorderLayout.WEST);
 
         // Reload button
-        JLabel reloadBtn = new JLabel("↻ TẢI DỮ LIỆU") {
+        JLabel reloadBtn = new JLabel("Ngân hàng") {
             private boolean hover = false;
             {
                 setCursor(new Cursor(Cursor.HAND_CURSOR));

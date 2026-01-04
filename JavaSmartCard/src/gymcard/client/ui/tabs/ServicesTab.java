@@ -152,7 +152,7 @@ public class ServicesTab extends BaseTabPanel {
     }
 
     private JButton createRefreshButton() {
-        JButton btn = new JButton("↻  Tải lại") {
+        JButton btn = new JButton("Tải lại") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -205,7 +205,7 @@ public class ServicesTab extends BaseTabPanel {
                     category = "ĐỒ UỐNG";
                     iconColor = COLOR_DRINK;
                     iconBgColor = new Color(254, 243, 199);
-                    icon = "🥤";
+                    icon = "🏋";
                 } else if (codeLower.contains("nutri") || nameLower.contains("protein") || nameLower.contains("shake")
                         || nameLower.contains("dinh dưỡng")) {
                     category = "DINH DƯỠNG";
@@ -227,7 +227,7 @@ public class ServicesTab extends BaseTabPanel {
                     category = "DỊCH VỤ";
                     iconColor = COLOR_SERVICE;
                     iconBgColor = new Color(243, 232, 255);
-                    icon = "✂";
+                    icon = "🏋";
                 }
 
                 JPanel card = createServiceCard(svc, icon, iconColor, iconBgColor, category);

@@ -74,6 +74,7 @@ public class CardCommunicator {
         packageInfo.expiry = "";
         packageInfo.registration = "";
         packageInfo.remainingSessions = 0;
+        packageInfo.packageName = "";
 
         lastCheckIn = new CheckInInfo();
         lastCheckIn.date = "";
@@ -81,6 +82,11 @@ public class CardCommunicator {
         lastCheckIn.checkOutTime = "";
 
         checkInHistory = new ArrayList<>();
+
+        // Reset cached values
+        balance = 0L;
+        checkInCount = 0;
+        transactionCount = 0;
     }
 
     // ---------------------------------------------------------------------

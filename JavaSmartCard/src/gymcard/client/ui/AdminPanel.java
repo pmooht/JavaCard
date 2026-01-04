@@ -517,7 +517,7 @@ public class AdminPanel extends JPanel {
         footer.setOpaque(false);
         footer.setBorder(new EmptyBorder(10, 0, 15, 0));
 
-        JLabel footerLabel = new JLabel("© 2024 Gym Card Management System - JavaCard SmartCard. All rights reserved.");
+        JLabel footerLabel = new JLabel("© 2026 Gym Card Management System - JavaCard SmartCard. All rights reserved.");
         footerLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         footerLabel.setForeground(new Color(100, 100, 130));
         footer.add(footerLabel);

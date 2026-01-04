@@ -165,12 +165,7 @@ public class RegistrationTab extends BaseTabPanel {
         notePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         notePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel note1 = new JLabel("ℹ  Ghi chú: Thẻ mới sẽ có mã PIN mặc định là 000000.");
-        note1.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        note1.setForeground(TEXT_GRAY);
-        notePanel.add(note1);
-
-        JLabel note2 = new JLabel("🔒  Dữ liệu cá nhân trên thẻ được mã hóa AES-128.");
+        JLabel note2 = new JLabel("Dữ liệu cá nhân trên thẻ được mã hóa AES-128.");
         note2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         note2.setForeground(TEXT_GRAY);
         notePanel.add(note2);

@@ -149,7 +149,7 @@ public class WelcomePanel extends JPanel {
         footerPanel.setOpaque(false);
         footerPanel.setBorder(new EmptyBorder(10, 20, 25, 20));
 
-        JLabel footerLabel = new JLabel("© 2024 Gym Card Management System - JavaCard SmartCard. All rights reserved.");
+        JLabel footerLabel = new JLabel("© 2026 Gym Card Management System - JavaCard SmartCard. All rights reserved.");
         footerLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         footerLabel.setForeground(new Color(140, 140, 160));
         footerPanel.add(footerLabel);

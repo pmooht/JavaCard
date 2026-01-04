@@ -19,6 +19,8 @@ import javax.swing.border.EmptyBorder;
  */
 public class PackageTab extends BaseTabPanel {
 
+    private JLabel currentPackageLabel;
+
     public PackageTab(CardCommunicator cardComm) {
         super(cardComm);
         initUI();
@@ -58,7 +60,7 @@ public class PackageTab extends BaseTabPanel {
         gbc.gridwidth = 1;
         currentPackagePanel.add(currentTitleLabel, gbc);
 
-        JLabel currentPackageLabel = new JLabel("Chưa có gói tập");
+        currentPackageLabel = new JLabel("Chưa có gói tập");
         currentPackageLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         currentPackageLabel.setForeground(Color.WHITE);
         gbc.gridy = 1;
@@ -110,27 +112,8 @@ public class PackageTab extends BaseTabPanel {
 
         add(scrollPane, BorderLayout.CENTER);
 
-        // Load current package button
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        buttonPanel.setBackground(new Color(248, 249, 250));
-        JButton loadBtn = createModernButton("Tải gói hiện tại từ thẻ", new Color(52, 152, 219), 14);
-        loadBtn.setPreferredSize(new Dimension(240, 40));
-        loadBtn.addActionListener(e -> {
-            try {
-                PackageInfo pkg = cardComm.getPackage();
-                String packageInfo = String.format("%s | Hết hạn: %s", pkg.getPackageTypeName(), pkg.expiry);
-                currentPackageLabel.setText(packageInfo);
-                log("Đã tải thông tin gói tập hiện tại");
-            } catch (Exception ex) {
-                log("LỖI: " + ex.getMessage());
-                JOptionPane.showMessageDialog(this,
-                        "Lỗi tải thông tin: " + ex.getMessage(),
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-        buttonPanel.add(loadBtn);
-
-        add(buttonPanel, BorderLayout.SOUTH);
+        // Auto-load current package from card
+        loadCurrentPackage();
     }
 
     private JPanel createDBPackageCard(PlanInfo plan, String icon, Color color, JLabel currentPackageLabel) {
@@ -464,11 +447,36 @@ public class PackageTab extends BaseTabPanel {
     }
 
     /**
-     * Refresh data from database - reload all packages
+     * Load current package from card
+     */
+    private void loadCurrentPackage() {
+        if (currentPackageLabel == null)
+            return;
+
+        try {
+            PackageInfo pkg = cardComm.getPackage();
+            if (pkg != null && pkg.type > 0) {
+                String expiry = pkg.expiry.isEmpty() ? "--" : pkg.expiry;
+                String packageInfo = String.format("%s | Hết hạn: %s", pkg.getPackageTypeName(), expiry);
+                currentPackageLabel.setText(packageInfo);
+                log("Đã tải gói tập hiện tại: " + pkg.getPackageTypeName());
+            } else {
+                currentPackageLabel.setText("Chưa có gói tập");
+            }
+        } catch (Exception ex) {
+            // Silent fail if not authenticated yet - don't change label
+            if (!ex.getMessage().contains("PIN")) {
+                log("Không thể tải gói tập: " + ex.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Refresh data from database + load current package from card
      */
     public void refreshData() {
         removeAll();
-        initUI();
+        initUI(); // This already calls loadCurrentPackage()
         revalidate();
         repaint();
         log("Đã reload gói tập từ database");

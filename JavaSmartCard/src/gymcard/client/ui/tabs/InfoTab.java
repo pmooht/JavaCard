@@ -196,8 +196,6 @@ public class InfoTab extends BaseTabPanel {
         titlePanel.add(infoSubtitle);
         headerPanel.add(titlePanel, BorderLayout.WEST);
 
-        JButton editQuickBtn = createLinkButton("Chỉnh sửa nhanh", ACCENT_BLUE);
-        headerPanel.add(editQuickBtn, BorderLayout.EAST);
 
         panel.add(headerPanel, BorderLayout.NORTH);
 
