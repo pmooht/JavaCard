@@ -486,7 +486,7 @@ public class ServicesTab extends BaseTabPanel {
             headerPanel.setOpaque(false);
             headerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            JLabel headerLabel = new JLabel("🛒 DỊCH VỤ ĐÃ MUA (" + servicesMap.size() + " loại)");
+            JLabel headerLabel = new JLabel("DỊCH VỤ ĐÃ MUA (" + servicesMap.size() + " loại)");
             headerLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
             headerLabel.setForeground(new Color(34, 197, 94)); // Green
             headerPanel.add(headerLabel);

@@ -414,7 +414,7 @@ public class TopUpTab extends BaseTabPanel {
         wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, 55));
         wrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JButton submitBtn = new JButton("💳  NẠP TIỀN NGAY") {
+        JButton submitBtn = new JButton("NẠP TIỀN NGAY") {
             private boolean hover = false;
             {
                 addMouseListener(new MouseAdapter() {

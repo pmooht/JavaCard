@@ -155,7 +155,7 @@ public class PackageTab extends BaseTabPanel {
 
         // Hiển thị số buổi nếu là gói theo lượt
         if (plan.sessionCount > 0) {
-            JLabel sessionsLabel = new JLabel("⚙ " + plan.sessionCount + " buổi tập");
+            JLabel sessionsLabel = new JLabel(plan.sessionCount + " buổi tập");
             sessionsLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
             sessionsLabel.setForeground(new Color(155, 89, 182));
             infoPanel.add(sessionsLabel);
@@ -286,13 +286,13 @@ public class PackageTab extends BaseTabPanel {
         contentPanel.setBorder(new EmptyBorder(20, 25, 20, 25));
 
         // Info rows
-        contentPanel.add(createInfoRow("💰 Giá gói:", String.format("%,.0f VNĐ", plan.price), color, true));
+        contentPanel.add(createInfoRow("Giá gói:", String.format("%,.0f VNĐ", plan.price), color, true));
         contentPanel.add(Box.createVerticalStrut(12));
-        contentPanel.add(createInfoRow("📅 Hết hạn mới:", newExpiry, new Color(46, 204, 113), true));
+        contentPanel.add(createInfoRow("Hết hạn mới:", newExpiry, new Color(46, 204, 113), true));
         contentPanel.add(Box.createVerticalStrut(12));
-        contentPanel.add(createInfoRow("📍 Cộng từ:", baseDate, new Color(100, 116, 139), false));
+        contentPanel.add(createInfoRow("Cộng từ:", baseDate, new Color(100, 116, 139), false));
         contentPanel.add(Box.createVerticalStrut(12));
-        contentPanel.add(createInfoRow("💳 Số dư hiện tại:", String.format("%,d VND", currentBalance),
+        contentPanel.add(createInfoRow("Số dư hiện tại:", String.format("%,d VND", currentBalance),
                 currentBalance >= (long) plan.price ? new Color(46, 204, 113) : new Color(239, 68, 68), true));
 
         // Warning if not enough balance
@@ -317,7 +317,7 @@ public class PackageTab extends BaseTabPanel {
         final String finalNewExpiry = newExpiry;
 
         // Confirm button with custom painting
-        JButton confirmBtn = new JButton("✓ Xác nhận mua") {
+        JButton confirmBtn = new JButton("Xác nhận mua") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g;
@@ -372,7 +372,7 @@ public class PackageTab extends BaseTabPanel {
 
                     log("Đã mua thành công: " + plan.name + " - " + String.format("%,.0f", plan.price) + " VND");
                     JOptionPane.showMessageDialog(dialog,
-                            "🎉 Mua gói thành công!\n\n" + plan.name + "\nHết hạn: " + finalNewExpiry +
+                            "Mua gói thành công!\n\n" + plan.name + "\nHết hạn: " + finalNewExpiry +
                                     "\nSố dư còn lại: " + String.format("%,d VND", newBalance),
                             "Thành công", JOptionPane.INFORMATION_MESSAGE);
                     dialog.dispose();
@@ -385,7 +385,7 @@ public class PackageTab extends BaseTabPanel {
         });
 
         // Cancel button with custom painting
-        JButton cancelBtn = new JButton("✕ Hủy") {
+        JButton cancelBtn = new JButton("Hủy") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g;
