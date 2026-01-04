@@ -321,15 +321,10 @@ public class CardCommunicator {
         }
     }
 
-    public boolean checkDefaultPin() {
+    public boolean checkDefaultPin() throws Exception {
         if (!connected || !authenticated)
-            return false;
-        try {
-            return cardManager.checkDefaultPin();
-        } catch (Exception e) {
-            System.out.println("[WARN] Check Default PIN failed: " + e.getMessage());
-            return false;
-        }
+            throw new Exception("Chưa kết nối hoặc xác thực");
+        return cardManager.checkDefaultPin();
     }
 
     /**
